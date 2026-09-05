@@ -167,7 +167,24 @@ class Rooms {
       role?: any
     } = {},
   ): Promise<boolean> {
-    const res = Rooms.get(roomId, { includePassword: true })
+    // Nobody's room is not a missing room. An admin may sign in without
+    // choosing one — /login allows it deliberately, so they can reach Settings
+    // — and their roomId is null from then on. Without this guard that null
+    // falls through Rooms.get's `typeof roomId === 'number'` check, the query
+    // runs with no room in it at all, and every playing room comes back; it
+    // only fails because entities[null] happens to be undefined. Queueing a
+    // song then told an admin "Room not found", which names the wrong thing
+    // and sends them looking for a room that is sitting right there.
+    if (typeof roomId !== 'number') {
+      throw new Error('You\'re not in a room')
+    }
+
+    // Every status, not just the playing ones. Rooms.get defaults to
+    // status: ['play'], so a paused or stopped room did not come back at all
+    // and threw "Room not found" here — which made both branches below
+    // unreachable, and made "admins can sign in to closed rooms" on the login
+    // route a comment describing something that could not happen.
+    const res = Rooms.get(roomId, { includePassword: true, status: STATUSES })
     const room = res.entities[roomId]
 
     if (!room) {

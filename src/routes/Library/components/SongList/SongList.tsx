@@ -7,6 +7,7 @@ import { toggleSongStarred } from 'store/modules/userStars'
 import { challengeSinger, getBattlePick, pickBattleSong } from 'store/modules/battle'
 import getBattleTargetQueueId from 'routes/Queue/selectors/getBattleTargetQueueId'
 import getSongsStatus from '../../selectors/getSongsStatus'
+import getQueueBlocker from '../../selectors/getQueueBlocker'
 
 interface SongListProps {
   filterKeywords?: string[]
@@ -36,6 +37,12 @@ const SongList = (props: SongListProps) => {
   const pendingUserId = useAppSelector(state => state.battle.pending?.userId ?? 0)
   const battleQueueId = useAppSelector(getBattleTargetQueueId)
 
+  // Why a tap would be refused, or null. Not consulted while picking for a
+  // battle: that tap names a song for somebody else and never reaches the
+  // queue, so a paused room has no say in it.
+  const queueBlocker = useAppSelector(getQueueBlocker)
+  const isQueueBlocked = !battleForName && queueBlocker !== null
+
   const handleSongQueue = (songId: number) => {
     if (!battleForName) return dispatch(queueSong(songId))
 
@@ -56,6 +63,7 @@ const SongList = (props: SongListProps) => {
       battleForName={battleForName}
       filterKeywords={props.filterKeywords}
       isPlayed={played.includes(songId)}
+      isQueueBlocked={isQueueBlocked}
       isUpcoming={upcoming.includes(songId) || current === songId}
       myQueueId={mine[songId]}
       isStarred={starredSongs.includes(songId)}

@@ -18,6 +18,10 @@ interface SongItemProps {
   isStarred: boolean
   isUpcoming: boolean
   isAdmin: boolean
+  /** Nothing this device queues would be accepted right now — no room, or a
+   *  room that is not playing. The row goes inert like a played one; the star
+   *  stays live, because starring never needed a room. */
+  isQueueBlocked?: boolean
   /** Set when this song is the signed-in user's own upcoming item: tapping takes it back out. */
   myQueueId?: number
   /**
@@ -51,6 +55,7 @@ const SongItem = ({
   isStarred,
   isUpcoming,
   isAdmin,
+  isQueueBlocked,
   myQueueId,
   battleForName,
   numStars,
@@ -67,7 +72,10 @@ const SongItem = ({
   // while picking, and no tap removes anything either: a battle pick is not a
   // queue action and must not take somebody's own song back out from under them.
   const isBattle = !!battleForName
-  const isInert = !isBattle && (isUpcoming || isPlayed) && !isMine
+  // A blocked room kills the tap outright, including taking your own song back
+  // out: removing from the queue goes through the same room check the server
+  // applies to adding, so offering it would be the same lie one row over.
+  const isInert = !isBattle && (((isUpcoming || isPlayed) && !isMine) || !!isQueueBlocked)
   const handleClick = () => isMine && !isBattle ? onSongDequeue(myQueueId) : onSongQueue(songId)
   const handleStarClick = () => onSongStarClick(songId)
 
@@ -77,6 +85,7 @@ const SongItem = ({
         styles.container,
         isPlayed && styles.played,
         isUpcoming && styles.upcoming,
+        isQueueBlocked && !isBattle && styles.blocked,
       )}
     >
       <div className={styles.duration}>
@@ -111,7 +120,9 @@ const SongItem = ({
       {isUpcoming || (isBattle && isPlayed)
         ? (
             <span className={styles.queued}>
-              {isBattle ? 'TAP TO PICK' : isMine ? 'TAP TO REMOVE' : 'QUEUED'}
+              {/* "tap to remove" on a row whose tap does nothing is the same
+                  lie the whole blocked state exists to stop telling. */}
+              {isBattle ? 'TAP TO PICK' : (isMine && !isInert) ? 'TAP TO REMOVE' : 'QUEUED'}
             </span>
           )
         : (

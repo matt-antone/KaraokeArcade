@@ -1,6 +1,9 @@
 /* Square keys in a fixed order, like the player's transport — the strip has to
-   read as one control rather than three buttons that happen to sit together.
-   Smaller than the player's: this one lives in a table row, one per room. */
+   read as one control rather than two buttons that happen to sit together.
+   Smaller than the player's: this one lives in a table row, one per room.
+
+   Two keys, and the first one swaps between play and pause, so the strip is
+   the same width whatever the room is doing and the stop key never moves. */
 
 .container {
   display: flex;
@@ -18,8 +21,9 @@
   }
 }
 
-/* the lit key is where the room is, so it stays lit rather than reading as a
-   hover or a press */
+/* Stop lights when the room is stopped, and pressing it again is a no-op, so
+   it reads as a state rather than as a hover or a press. The running key never
+   takes this: it is always something to press. */
 .active {
   cursor: default;
 }

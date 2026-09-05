@@ -1,0 +1,10 @@
+/* A confirm is asked from wherever the control that needs it lives, and one of
+   those is a cell in the rooms table, which sets white-space: nowrap for the
+   room names. The dialog is drawn in the top layer but it still *lives* in
+   that cell, and white-space inherits — without this the warning runs off the
+   side of the panel in one clipped line. Normal wrapping is what a paragraph
+   of prose wants everywhere else too, so it is set here rather than patched
+   per caller. */
+.modal {
+  white-space: normal;
+}

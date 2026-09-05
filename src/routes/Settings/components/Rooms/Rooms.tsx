@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
-import { formatShortDate } from 'lib/dateTime'
 import Panel from 'components/Panel/Panel'
 import Button from 'components/Button/Button'
 import EditRoom from './EditRoom/EditRoom'
@@ -48,7 +47,6 @@ const Rooms = () => {
             </a>
           )}
         </td>
-        <td>{formatShortDate(new Date(room.dateCreated * 1000))}</td>
       </tr>
     )
   })
@@ -65,15 +63,10 @@ const Rooms = () => {
   return (
     <Panel title='Rooms' titleComponent={roomsFilter}>
       <>
+        {/* No header row. Three columns wide, each one self-evident — a name,
+            a transport that names its own keys, and a count — a row of
+            headings over them was labelling what the cells already say. */}
         <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Transport</th>
-              <th>In</th>
-              <th>Created</th>
-            </tr>
-          </thead>
           <tbody>
             {rows}
           </tbody>

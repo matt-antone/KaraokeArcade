@@ -91,7 +91,8 @@ describe('a battle, beat by beat', () => {
     const sing1 = screen(beat('sing1', 10_000, BATTLE_SING_MS))
     expect(sing1).toContain('Dot Matrix')
     expect(sing1).toContain('Barracuda')
-    expect(sing1).toContain('120')
+    // a clock, not a score: two minutes opens at 2:00, not at 120
+    expect(sing1).toContain('2:00')
     // the opponent's half of the row is not on screen while the first one sings
     expect(sing1).not.toContain('Africa')
     // and the stage is not covered: the corner card is the whole overlay
@@ -126,11 +127,18 @@ describe('a battle, beat by beat', () => {
     expect(meter1).toContain('Dot Matrix')
     expect(meter1).toContain('role="meter"')
 
-    // --- meter2: and for the opponent
+    // nothing to beat yet on the first one: the challenger is the first thing
+    // measured, and a target invented here would be a number the battle does
+    // not use
+    expect(meter1).not.toContain('to beat')
+
+    // --- meter2: and for the opponent, who has a number to beat
     at(275_000)
-    const meter2 = screen(beat('meter2', 275_000, BATTLE_METER_MS))
+    const meter2 = screen(beat('meter2', 275_000, BATTLE_METER_MS, { challengerScore: 61 }))
     expect(meter2).toContain('Barf')
     expect(meter2).toContain('role="meter"')
+    expect(meter2).toContain('to beat')
+    expect(meter2).toContain('61')
 
     // --- winner: the verdict and both grades
     at(290_000)

@@ -237,7 +237,11 @@ phones, run by the server, judged by the room.
    emitted as one `BattleTurn` carrying its own `endsAt`, so a phone joining
    mid-battle lands on the right beat and every screen agrees on the clock. A
    singing beat ends at its deadline *or* when the player reports the song
-   ran out, whichever is first.
+   ran out, whichever is first. Six of them on a player that cannot hear the
+   room: `judge` sits in `CROWD_BEATS` with the two meters, because the
+   question and the answer go together — on its own it was five seconds of
+   asking who wins immediately before announcing a nil-all draw, which reads
+   as a crashed screen rather than as a rule.
 
 6. **Two minutes per song, about five minutes per battle.** `BATTLE_SING_MS`
    caps each side at 120s and the eight surrounding beats add 65s. That is two
@@ -266,14 +270,41 @@ phones, run by the server, judged by the room.
     the battle ends level. Documented in the room editor and in the app docs,
     because a silent draw looks exactly like a broken feature.
 
+11. **The room is shown the number it is shouting at.** The metering beats used
+    to draw a bouncing bar and nothing else, and the bar is a level while the
+    verdict is the mean of the loudest quarter of the beat — two different
+    measurements, one of them invisible. The grade is now sampled on the same
+    100ms paint as the bar and set beside it, and the opponent's beat carries
+    the challenger's grade as a target. It can fall as well as rise, because
+    the loudest quarter of a longer beat is a different quarter, and that is
+    the honest reading rather than a bug to smooth away.
+
+12. **The phones caption the fight.** Five minutes of one queue row is two
+    songs of everybody else's waiting, and until `BattleStrip` the phones said
+    nothing at all for the whole of it — the queue showed a row that was
+    somehow still current and the header showed a wait that had stopped
+    moving. One row in the chrome under Your Turn, in the deck's language
+    rather than the television's: an arcade splash is illegible at that size,
+    and a modal that owns the phone for five minutes is worse than silence.
+    The same strip for everyone, fighters included — a fighter is holding a
+    microphone, not a phone.
+
+13. **Both fighters' songs count as sung.** `User.addPlay` recorded
+    `queue.userId` and `queue.songId`, which is the challenger's half of the
+    row; the opponent sang for two minutes and it never reached
+    `songHistory`. Fixed in `addPlay` rather than at the call site, because
+    that is the single path every song departs the stage through.
+
 ### Where it lives
 
 - `server/Battle/Battle.ts` — invite negotiation, the singer list, and the beat machine
 - `server/Battle/socket.ts` — one handler per `server/BATTLE_*` action
 - `server/lib/schemas/016-queue-battle.sql` — the two nullable opponent columns
 - `server/Queue/Queue.ts` — per-fighter media resolution, `setBattle`/`addBattle`, `isOwner` widened to the opponent
+- `server/User/User.ts` — `addPlay`'s second statement, the opponent's half of a battle row
 - `src/store/modules/battle.ts` — the eager slice and the `getBattlePick` selector the library asks
-- `src/lib/useBattleStage.ts` — which beat is on screen and how much of it is left
+- `src/lib/useBattleStage.ts` — which beat is on screen, how much of it is left, and which fighter it belongs to
+- `src/components/Header/BattleStrip/` — the same battle, captioned on every phone
 
 ### Still open
 

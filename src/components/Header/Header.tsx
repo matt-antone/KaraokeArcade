@@ -16,6 +16,7 @@ import getWaits from 'routes/Queue/selectors/getWaits'
 import LibraryHeader from 'routes/Library/components/LibraryHeader/LibraryHeader'
 import QueueHeader from 'routes/Queue/components/QueueHeader/QueueHeader'
 import Logo from 'components/Logo/Logo'
+import BattleStrip from './BattleStrip/BattleStrip'
 import ProgressBar from './ProgressBar/ProgressBar'
 import YourTurn from './YourTurn/YourTurn'
 import styles from './Header.css'
@@ -202,6 +203,15 @@ const Header = React.forwardRef<HTMLDivElement, HeaderProps>(({ onBattle }, ref)
             isBattleEnabled={isBattleEnabled}
           />
         )}
+
+      {/* A battle takes one queue row and five minutes of everybody's evening,
+          and the phones used to say nothing at all for the whole of it. Under
+          Your Turn because it is the same kind of fact — what is happening on
+          stage right now — and inside this container so the header measures
+          itself with the strip in place and the screens below clear it.
+
+          Not on the player: that screen is drawing the fight. */}
+      {!isPlayer && <BattleStrip />}
 
       {isAdmin && !isPlayer
         && (

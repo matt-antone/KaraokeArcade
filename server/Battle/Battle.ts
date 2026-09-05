@@ -42,13 +42,18 @@ const BEAT_MS: Record<BattlePhase, number> = {
 }
 
 /** The beats a battle always runs, in order. */
-const BEATS: BattlePhase[] = ['versus', 'intro1', 'sing1', 'intro2', 'sing2', 'judge', 'winner']
+const BEATS: BattlePhase[] = ['versus', 'intro1', 'sing1', 'intro2', 'sing2', 'winner']
 
-/** The two that only happen when the player can hear the room, spliced in
+/** The three that only happen when the player can hear the room, spliced in
  *  before the verdict. A player opened at a LAN address has no microphone
  *  permission and no room to hear, and metering a silent input would hand
- *  every battle to whoever the rounding favoured. */
-const CROWD_BEATS: BattlePhase[] = ['meter1', 'meter2']
+ *  every battle to whoever the rounding favoured.
+ *
+ *  `judge` is in here rather than in BEATS because it is the question the two
+ *  metering beats answer. On a player that cannot hear the room it was five
+ *  seconds of asking "who wins" immediately before announcing a nil-all draw,
+ *  which reads as a screen that has crashed rather than as a rule. */
+const CROWD_BEATS: BattlePhase[] = ['judge', 'meter1', 'meter2']
 
 /** Everything about a fight that is settled before the first beat and does not
  *  change during it. The per-beat payload is built by spreading this, which is
@@ -436,8 +441,8 @@ class Battle {
    *
    * isJudgedByCrowd is the player's own answer to "can you hear this room" —
    * it is the machine with the microphone, so it is the only one that knows.
-   * A no drops the two metering beats entirely rather than running them
-   * against silence.
+   * A no drops the judging beats entirely rather than running them against
+   * silence — the two meters and the question they answer.
    *
    * Idempotent: a second call while a battle is running is a no-op, so two
    * players in one room cannot start two. There is deliberately no in-flight
@@ -575,8 +580,11 @@ class Battle {
   /**
    * Drop a room's battle and its pending challenge, timers and all.
    *
-   * Deliberately silent — the callers are the room being stopped and the room
-   * being deleted, and by then there is nobody left to emit to. A timer that
+   * Silent, and it has no io to talk through. That is right for the room being
+   * deleted, which has nobody left to tell, and not enough on its own for the
+   * room being stopped, which disconnects nobody: `setRoomTransport` follows
+   * this call with BATTLE_TURN_CLEAR and BATTLE_INVITE_CLEAR, because a room
+   * that is still listening has to be told the fight is off. A timer that
    * outlives its room is not a leak here, it is a bug that was actually hit:
    * it fires against a queue that has just been emptied and pushes a beat into
    * a room that no longer exists.

@@ -237,7 +237,9 @@ The battle takes over the challenger's next queued song, keeping its exact place
 
 When the player reaches it, the row runs as one continuous sequence: both fighters and both songs, then each singer introduced and singing in turn, then the verdict. **Each song is capped at two minutes** - it ends at the cap or when the song runs out, whichever comes first - so a whole battle is about five minutes of the night. That's two songs' worth of queue time spent on one turn, which is the trade to know about before switching it on for a room with a long queue.
 
-The winner is decided by the room. After both songs the player listens through the microphone and takes a reading while the room cheers for each singer in turn, and the loudest one wins.
+The winner is decided by the room. After both songs the player listens through the microphone and takes a reading while the room cheers for each singer in turn, and the loudest one wins. The score climbs on screen as it's measured, and the second singer's turn shows the number they have to beat.
+
+While a battle is on, every phone in the room carries a strip under the status strip saying who's singing, how long is left on their two minutes, and the scores once there are any.
 
 <aside class="info">
   {{% icon-info %}}

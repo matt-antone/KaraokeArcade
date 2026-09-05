@@ -2,25 +2,14 @@ import React, { useEffect, useRef } from 'react'
 import clsx from 'clsx'
 import UserImage from 'components/UserImage/UserImage'
 import VuMeter from 'components/VuMeter/VuMeter'
-import useBattleStage from 'lib/useBattleStage'
+import useBattleStage, { sideOfPhase } from 'lib/useBattleStage'
+import { useAppSelector } from 'store/hooks'
+import { formatDuration } from 'lib/dateTime'
 import createVersusSting from './versusSting'
 import useCrowdMic from './useCrowdMic'
 import type { BattleSide, BattleSong, BattleTurn } from 'shared/types'
 import { CHEER, GROAN, playCue, soundCue } from 'lib/soundCue'
 import styles from './PlayerBattle.css'
-
-/** Which fighter each beat belongs to. `null` is a beat about both of them, or
- *  about neither. One table rather than six ternaries scattered down the
- *  render, because the phase-to-side mapping is the thing most likely to be
- *  got wrong in one place and right in five. */
-const SIDE_OF: Partial<Record<BattleTurn['phase'], BattleSide>> = {
-  intro1: 1,
-  sing1: 1,
-  meter1: 1,
-  intro2: 2,
-  sing2: 2,
-  meter2: 2,
-}
 
 const sideClass = (side: BattleSide) => (side === 1 ? styles.sideOne : styles.sideTwo)
 
@@ -110,16 +99,20 @@ interface PlayerBattleProps {
  */
 const PlayerBattle = ({ queueId, getAudioCtx, width, height }: PlayerBattleProps) => {
   const { turn, phase, msLeft } = useBattleStage()
+  // The last beat the server sent, expiry ignored. Only the holding card wants
+  // this: it is the one thing that tells "the server has not answered yet"
+  // apart from "it answered and then stopped".
+  const stored = useAppSelector(state => state.battle.turn)
 
   // A beat for another row is not ours to draw. The player can reach a battle
   // row a moment before the server's first beat lands, and it can still be
   // holding the last beat of the *previous* battle when it does.
   const live = turn && turn.queueId === queueId ? turn : null
   const beat = live ? phase : null
-  const side = beat ? SIDE_OF[beat] ?? null : null
+  const side = sideOfPhase(beat)
 
   const meterSide = beat === 'meter1' || beat === 'meter2' ? side : null
-  const level = useCrowdMic(queueId, meterSide, getAudioCtx)
+  const crowd = useCrowdMic(queueId, meterSide, getAudioCtx)
 
   // The verdict lands with a noise, on the one machine in the room with
   // speakers. Best-effort throughout and nothing depends on it: autoplay
@@ -149,7 +142,19 @@ const PlayerBattle = ({ queueId, getAudioCtx, width, height }: PlayerBattleProps
   // Something opaque has to hold the stage either way: this row's media is not
   // playing and the screen behind is the thread field.
   if (!live || !beat) {
-    return stage(<div className={styles.headline}>Battle</div>)
+    return stage(
+      <>
+        <div className={styles.headline}>Battle</div>
+        {/* Two different silences, and the room can tell them apart even if it
+            never knows the words for them. Nothing stored for this row means
+            the server has not answered yet, which is a blink. A stored beat
+            that has expired means one arrived and then stopped, which is the
+            twenty seconds before PlayerController gives up on the row. */}
+        <div className={styles.silk}>
+          {stored?.queueId === queueId ? 'hold on' : 'getting ready'}
+        </div>
+      </>,
+    )
   }
 
   if (beat === 'sing1' || beat === 'sing2') {
@@ -167,7 +172,10 @@ const PlayerBattle = ({ queueId, getAudioCtx, width, height }: PlayerBattleProps
             {songOf(live, at).artist}
           </div>
         </div>
-        <div className={styles.cornerClock}>{Math.ceil(msLeft / 1000)}</div>
+        {/* A two-minute cut counted in bare seconds opens at 120, which reads
+            as a score rather than a clock. formatDuration is what every other
+            length in the app is set in. */}
+        <div className={styles.cornerClock}>{formatDuration(Math.ceil(msLeft / 1000))}</div>
       </div>
     )
   }
@@ -210,10 +218,23 @@ const PlayerBattle = ({ queueId, getAudioCtx, width, height }: PlayerBattleProps
             is an audio level, and the top of the scale really should go red. */}
         <VuMeter
           className={styles.meter}
-          value={level}
+          value={crowd.level}
           height={40}
           label={`How loud the room is for ${nameOf(live, at)}`}
         />
+        {/* The bar is a level and the verdict is a number, and until now the
+            room only ever saw the first. Same type as the winner beat's scores
+            on purpose: this is that number, still moving. */}
+        <div className={styles.gradeScore}>{crowd.grade}</div>
+        {/* Only the second fighter has something to beat. On meter1 there is
+            no target yet, and inventing one — a par, an average — would be a
+            number the battle does not actually use. */}
+        {at === 2 && (
+          <div className={styles.silk}>
+            {'to beat '}
+            {live.challengerScore}
+          </div>
+        )}
       </>,
       sideClass(at),
     )

@@ -39,13 +39,13 @@ export default function useCrowdMic (
    *  owns a second one. A function rather than the context itself because
    *  Player builds it on mount and this hook must not read a ref in render. */
   getAudioCtx: () => AudioContext | null,
-): number {
+): { level: number, grade: number } {
   const dispatch = useAppDispatch()
   // The reading carries the side it was taken for, so the bar cannot show the
   // challenger's last frame for the first tenth of a second of the opponent's
   // beat — and so nothing has to be reset in a cleanup, which would be a
   // setState in an effect and is an error in this codebase.
-  const [reading, setReading] = useState({ side: 0, level: 0 })
+  const [reading, setReading] = useState({ side: 0, level: 0, grade: 0 })
   /** Every frame's level for the beat in progress. A ref because the grade is
    *  read once at the end and nothing re-renders on it. */
   const levels = useRef<number[]>([])
@@ -121,7 +121,12 @@ export default function useCrowdMic (
 
         if (now - lastPaint >= PAINT_MS) {
           lastPaint = now
-          setReading({ side, level: next })
+          // The grade so far, graded exactly the way the final one will be, so
+          // the room is watching the number it is about to be judged on rather
+          // than a bar with no arithmetic behind it. It can fall as well as
+          // rise — the loudest quarter of a longer beat is a different quarter
+          // — and that is the honest reading, not a bug to smooth out.
+          setReading({ side, level: next, grade: gradeFromLevels(levels.current) })
         }
 
         req = requestAnimationFrame(read)
@@ -149,5 +154,7 @@ export default function useCrowdMic (
     }
   }, [dispatch, getAudioCtx, queueId, side])
 
-  return reading.side === side ? reading.level : 0
+  const isMine = reading.side === side
+
+  return { level: isMine ? reading.level : 0, grade: isMine ? reading.grade : 0 }
 }

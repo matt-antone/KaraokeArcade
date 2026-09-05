@@ -183,18 +183,42 @@ class User {
   /**
    * Record that a user sang a song all the way through. Keyed on the queue item so
    * the singer is whoever queued it, not whoever's signed in on the player.
+   *
+   * A battle row is two people singing two songs, and the second one is in the
+   * opponent* columns rather than in a row of its own. Written here rather than
+   * at the call site because this is the single path every song departs the
+   * stage through, and an opponent who sang for two minutes and cannot find it
+   * in Sung Tonight has no way to tell that from the song never counting.
    */
   static addPlay ({ queueId, roomId }: { queueId: number, roomId: number }): number {
+    const dateSung = Math.floor(Date.now() / 1000)
+
     const query = sql`
       INSERT INTO songHistory (userId, artistNorm, titleNorm, dateSung)
-      SELECT queue.userId, artists.nameNorm, songs.titleNorm, ${Math.floor(Date.now() / 1000)}
+      SELECT queue.userId, artists.nameNorm, songs.titleNorm, ${dateSung}
       FROM queue
       INNER JOIN songs USING(songId)
       INNER JOIN artists USING(artistId)
       WHERE queue.queueId = ${queueId} AND queue.roomId = ${roomId}
       ON CONFLICT (userId, artistNorm, titleNorm) DO UPDATE SET dateSung = excluded.dateSung
     `
-    return db.run(String(query), query.parameters).changes
+    const changes = db.run(String(query), query.parameters).changes
+
+    // Its own statement rather than a UNION with the one above: the two halves
+    // join through different columns, and the INNER JOINs are what make this a
+    // no-op on every row that is not a battle.
+    const opponent = sql`
+      INSERT INTO songHistory (userId, artistNorm, titleNorm, dateSung)
+      SELECT queue.opponentUserId, artists.nameNorm, songs.titleNorm, ${dateSung}
+      FROM queue
+      INNER JOIN songs ON songs.songId = queue.opponentSongId
+      INNER JOIN artists USING(artistId)
+      WHERE queue.queueId = ${queueId} AND queue.roomId = ${roomId}
+        AND queue.opponentUserId IS NOT NULL
+      ON CONFLICT (userId, artistNorm, titleNorm) DO UPDATE SET dateSung = excluded.dateSung
+    `
+
+    return changes + db.run(String(opponent), opponent.parameters).changes
   }
 
   /**

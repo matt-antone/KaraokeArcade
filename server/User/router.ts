@@ -116,6 +116,56 @@ router.get('/logout', (ctx) => {
   ctx.body = {}
 })
 
+/**
+ * Change which room you are in, without signing out and back in.
+ *
+ * The room is carried in the JWT, so until this existed the only way to be in
+ * a different one was to sign in again — and an admin, who /login deliberately
+ * lets in with no room at all so they can reach Settings, had no way to get
+ * into a room from inside the app. Their queue attempts refused with "you're
+ * not in a room" and nothing on any screen offered them one.
+ *
+ * Same validation as /login and a re-issued cookie, so the two ways of ending
+ * up in a room cannot drift apart: the password is checked, and an admin may
+ * join a room that is paused or stopped where a singer may not.
+ */
+router.post('/user/room', async (ctx) => {
+  const req = ctx.request as unknown as RequestWithBody
+
+  if (typeof ctx.user.userId !== 'number') {
+    ctx.throw(401)
+  }
+
+  const user = User.getById(ctx.user.userId, true)
+
+  if (!user) {
+    ctx.throw(404)
+  }
+
+  const roomId = parseInt(req.body.roomId, 10) || null
+
+  if (!roomId) {
+    ctx.throw(422, 'Please select a room')
+  }
+
+  try {
+    await Rooms.validate(roomId, req.body.roomPassword, {
+      isOpen: user.role !== 'admin',
+      validatePassword: true,
+    })
+  } catch (err) {
+    ctx.throw(401, err.message)
+  }
+
+  const userCtx = createUserCtx(user, roomId)
+
+  // @todo: this should not extend the JWT expiry date, the same way the
+  // account update above should not
+  setSessionCookie(ctx, userCtx)
+
+  ctx.body = userCtx
+})
+
 // get own account (helps sync account changes across devices)
 router.get('/user', (ctx) => {
   if (typeof ctx.user.userId !== 'number') {

@@ -7,7 +7,7 @@ import QueueItem from '../QueueItem/QueueItem'
 import QueueTriviaItem from '../QueueTriviaItem/QueueTriviaItem'
 import QueueListAnimator from '../QueueListAnimator/QueueListAnimator'
 import { formatSeconds } from 'lib/dateTime'
-import { isBattleItem, isTriviaItem } from 'shared/types'
+import { isBattleItem, isTriviaItem, type QueueItem as QueueItemData } from 'shared/types'
 import { moveItem } from '../../modules/queue'
 import getMyUpcoming from '../../selectors/getMyUpcoming'
 import getPlayerHistory from '../../selectors/getPlayerHistory'
@@ -70,95 +70,112 @@ const QueueList = () => {
     }
   }
 
-  const renderItem = (qId: number, dragHandleProps?: DraggableProvidedDragHandleProps | null) => {
-    const item = queue.entities[qId]
+  /** Where a row sits relative to the player: on stage, still to come, or done.
+   *  Every row kind asks this and only this before anything else. */
+  const placeOf = (qId: number) => ({
+    isCurrent: (qId === queueId) && !isAtQueueEnd,
+    isUpcoming: qId !== queueId && !playerHistory.includes(qId),
+    isPlayed: qId !== queueId && playerHistory.includes(qId),
+  })
 
-    // a round has no song to read a duration or an artist from, and none of
-    // the row's actions apply to it
-    if (isTriviaItem(item)) {
-      return (
-        <QueueTriviaItem
-          key={qId}
-          isCurrent={(qId === queueId) && !isAtQueueEnd}
-          isPlayed={qId !== queueId && playerHistory.includes(qId)}
-        />
-      )
+  /** A battle can reach a song this device has never loaded — the library
+   *  arrives by artist — so an absent title is an ordinary state here, not a
+   *  bug to crash on. */
+  const songNameOf = (songId: number) => {
+    const song = songs.entities[songId]
+
+    return {
+      title: song?.title ?? 'Their song',
+      artist: song ? artists.entities[song.artistId]?.name ?? '' : '',
     }
+  }
 
-    // Two singers and two songs, so nothing below this line applies: the very
-    // next statement reads a single duration off a single songId, which for a
-    // battle would silently describe half the row. Its own component, for the
-    // same reason a round has one.
-    if (isBattleItem(item)) {
-      const nameOf = (songId: number) => {
-        const song = songs.entities[songId]
-        // A battle can reach a song this device has never loaded — the library
-        // arrives by artist — so an absent title is an ordinary state here, not
-        // a bug to crash on.
-        return {
-          title: song?.title ?? 'Their song',
-          artist: song ? artists.entities[song.artistId]?.name ?? '' : '',
-        }
-      }
-
-      return (
-        <QueueBattleItem
-          key={qId}
-          isCurrent={(qId === queueId) && !isAtQueueEnd}
-          isPlayed={qId !== queueId && playerHistory.includes(qId)}
-          challenger={{
-            userId: item.userId,
-            name: item.userDisplayName,
-            dateUpdated: item.userDateUpdated,
-            ...nameOf(item.songId),
-          }}
-          opponent={{
-            userId: item.opponentUserId,
-            name: item.opponentDisplayName,
-            dateUpdated: item.opponentDateUpdated,
-            ...nameOf(item.opponentSongId),
-          }}
-        />
-      )
-    }
-
-    const duration = songs.entities[item.songId].duration
-    const isCurrent = (qId === queueId) && !isAtQueueEnd
-    const isUpcoming = qId !== queueId && !playerHistory.includes(qId)
+  /** Which of a song row's actions this viewer may reach. Ten booleans off the
+   *  same four facts, and none of them about how the row draws. */
+  const songRowFlags = (item: QueueItemData, isCurrent: boolean, isUpcoming: boolean) => {
     const isOwner = item.userId === user.userId
     const isPaused = isUpcoming && pausedUserIds.includes(item.userId)
+
+    return {
+      isOwner,
+      isPaused,
+      isMovable: isUpcoming && !isPaused && user.isAdmin && queueTab !== 'me',
+      isPlayed: !isUpcoming && !isCurrent,
+      isPlaying: isCurrent && isPlaying,
+      isRemovable: isUpcoming && (isOwner || user.isAdmin),
+      isReplayable: (!isUpcoming || isCurrent) && (user.isAdmin || isOwner),
+      isSkippable: isCurrent && (user.isAdmin || isOwner),
+      // Me tab only: elsewhere the row already carries up to four keys, and a
+      // fifth puts the row past the travel a swipe can comfortably cover
+      isTunable: queueTab === 'me' && isUpcoming && isOwner,
+    }
+  }
+
+  const renderSong = (qId: number, item: QueueItemData, dragHandleProps?: DraggableProvidedDragHandleProps | null) => {
+    const { isCurrent, isUpcoming } = placeOf(qId)
+    const flags = songRowFlags(item, isCurrent, isUpcoming)
+    const duration = songs.entities[item.songId].duration
 
     return (
       <QueueItem
         {...item}
+        {...flags}
         artist={artists.entities[songs.entities[item.songId].artistId].name}
         dragHandleProps={dragHandleProps}
         errorMessage={isCurrent && errorMessage ? errorMessage : ''}
         isCurrent={isCurrent}
         key={qId}
         isErrored={isCurrent && isErrored}
-        isMovable={isUpcoming && !isPaused && user.isAdmin && queueTab !== 'me'}
-        isOwner={isOwner}
-        isPaused={isPaused}
-        isPlayed={!isUpcoming && !isCurrent}
-        isPlaying={isCurrent && isPlaying}
-        isRemovable={isUpcoming && (isOwner || user.isAdmin)}
-        isReplayable={(!isUpcoming || isCurrent) && (user.isAdmin || isOwner)}
-        isSkippable={isCurrent && (user.isAdmin || isOwner)}
         isStarred={starredSongs.includes(item.songId)}
-        // Me tab only: elsewhere the row already carries up to four keys, and a
-        // fifth puts the row past the travel a swipe can comfortably cover
-        isTunable={queueTab === 'me' && isUpcoming && isOwner}
         isUpcoming={isUpcoming}
         pctPlayed={isCurrent ? position / duration * 100 : 0}
         showStar={queueTab !== 'me'}
         starCount={starCounts.songs[item.songId] || 0}
         title={songs.entities[item.songId].title}
-        wait={isPaused ? '' : formatSeconds(waits[qId], true)} // fuzzy
+        wait={flags.isPaused ? '' : formatSeconds(waits[qId], true)} // fuzzy
         // actions
         onMoveClick={handleMoveClick}
       />
     )
+  }
+
+  const renderItem = (qId: number, dragHandleProps?: DraggableProvidedDragHandleProps | null) => {
+    const item = queue.entities[qId]
+    const { isCurrent, isPlayed } = placeOf(qId)
+
+    // a round has no song to read a duration or an artist from, and none of
+    // the row's actions apply to it
+    if (isTriviaItem(item)) {
+      return <QueueTriviaItem key={qId} isCurrent={isCurrent} isPlayed={isPlayed} />
+    }
+
+    // Two singers and two songs, so nothing in renderSong applies: it reads a
+    // single duration off a single songId, which for a battle would silently
+    // describe half the row. Its own component, for the same reason a round
+    // has one.
+    if (isBattleItem(item)) {
+      return (
+        <QueueBattleItem
+          key={qId}
+          isCurrent={isCurrent}
+          isPlayed={isPlayed}
+          challenger={{
+            userId: item.userId,
+            name: item.userDisplayName,
+            dateUpdated: item.userDateUpdated,
+            ...songNameOf(item.songId),
+          }}
+          opponent={{
+            userId: item.opponentUserId,
+            name: item.opponentDisplayName,
+            dateUpdated: item.opponentDateUpdated,
+            ...songNameOf(item.opponentSongId),
+          }}
+        />
+      )
+    }
+
+    return renderSong(qId, item, dragHandleProps)
   }
 
   if ((queueTab === 'me' || (queueTab === 'queue' && user.isAdmin)) && result.length > 1) {

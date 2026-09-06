@@ -194,7 +194,7 @@ function peakHold (i: number, t: number) {
   return lerp(top, LOW[i] * at, outCubic(span(since, ATTACK + PEAK_HOLD, BEAT)))
 }
 
-export interface TriviaStingOptions {
+interface TriviaStingOptions {
   /** 'still' draws the resting frame once and never animates — what every
    *  small placement wants. */
   mode?: 'sting' | 'still'
@@ -210,7 +210,7 @@ export interface TriviaStingOptions {
   isDim?: boolean
 }
 
-export interface TriviaSting {
+interface TriviaSting {
   play (): void
   replay (): void
   /** Jump to an authored millisecond and hold there. */

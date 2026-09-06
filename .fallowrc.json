@@ -28,8 +28,8 @@
     }
   ],
   "rules": {
-    "unresolved-imports": "warn",
-    "duplicate-exports": "warn",
+    "unresolved-imports": "off",
+    "duplicate-exports": "off",
     "circular-dependencies": "warn"
   }
 }

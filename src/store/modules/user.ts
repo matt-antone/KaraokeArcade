@@ -2,6 +2,7 @@ import { createAction, createAsyncThunk, createReducer } from '@reduxjs/toolkit'
 import { persistReducer } from 'redux-persist'
 import storage from 'redux-persist/lib/storage'
 import socket from 'lib/socket'
+import { navigate } from 'lib/navigate'
 import type { ThunkDispatch, UnknownAction } from '@reduxjs/toolkit'
 import type { RootState } from 'store/store'
 import { SongHistoryItem } from 'shared/types'
@@ -40,11 +41,7 @@ const completeSignIn = async (user: object, dispatch: ThunkDispatch<RootState, u
   const redirect = new URLSearchParams(window.location.search).get('redirect')
   if (!redirect) return
 
-  // imported here, not at module scope: AppRouter renders <App/>, which reaches
-  // this module back through the store — a cycle that only works by luck of
-  // evaluation order
-  const { default: AppRouter } = await import('lib/AppRouter')
-  AppRouter.navigate(basename.replace(/\/$/, '') + redirect)
+  navigate(basename.replace(/\/$/, '') + redirect)
 }
 
 // ------------------------------------

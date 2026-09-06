@@ -47,6 +47,59 @@ export interface YourTurnProps {
  * This is the only status surface in the product. There is no one-line strip
  * and the Me tab does not repeat it.
  */
+/**
+ * The strip is one state machine with four outputs — paused, on stage,
+ * standby, idle — and read down the middle of the render they were four
+ * stacked ternaries all branching on the same conditions in a slightly
+ * different order. One function per output, and the states stay legible.
+ */
+
+/** Nothing queued and not sitting out is its own state: idle, not armed. The
+ *  strip is on screen from the moment you walk in — it carries the Battle
+ *  key — so this is the state most people see first, and it has to look like
+ *  an invitation rather than a turn that is nearly up. Without it the level
+ *  fallback parks the meter at half and tints the strip standby teal, which
+ *  promises a turn to somebody who has not picked a song yet.
+ *
+ *  A place in the rotation counts as queued even when the caller passed no
+ *  count, so this asks both: idle is having nothing coming and nowhere to be. */
+const getIsIdle = (isPaused?: boolean, isUpNow?: boolean, songCount = 0, position = 0) =>
+  !isPaused && !isUpNow && songCount === 0 && !position
+
+/** The meter fills as their turn approaches and empties completely when
+ *  paused. Position lives in the value, never in the segment count. waitLevel
+ *  is the live one — the room's queue draining toward them — and the rotation
+ *  index is the fallback for before the player has reported a position. */
+const getLevel = (
+  { isPaused, isUpNow, isIdle }: { isPaused?: boolean, isUpNow?: boolean, isIdle: boolean },
+  { waitLevel, position, rotationSize }: { waitLevel?: number, position: number, rotationSize: number },
+) => {
+  if (isPaused || isIdle) return 0
+  if (isUpNow) return 1
+  if (waitLevel !== undefined) return waitLevel
+  if (position && rotationSize) return Math.max(0.06, 1 - (position - 1) / rotationSize)
+
+  return 0.5
+}
+
+const getHeadline = (isPaused?: boolean, isUpNow?: boolean, wait?: string) => {
+  if (isPaused) return 'Paused'
+  if (isUpNow) return 'Now'
+
+  return wait || '--'
+}
+
+const getLabel = (
+  { isPaused, isUpNow }: { isPaused?: boolean, isUpNow?: boolean },
+  { nextSong, position, rotationSize }: { nextSong?: string, position: number, rotationSize: number },
+) => {
+  if (isPaused) return 'you are out of the rotation'
+  if (isUpNow) return 'you are on stage'
+  if (nextSong !== undefined) return nextSong
+
+  return position ? `${position} of ${rotationSize} in the rotation` : 'nothing queued'
+}
+
 const YourTurn = ({
   isUpNow,
   wait,
@@ -62,37 +115,10 @@ const YourTurn = ({
   inHeader,
   className,
 }: YourTurnProps) => {
-  // the meter fills as their turn approaches and empties completely when
-  // paused. Position lives in the value, never in the segment count. waitLevel
-  // is the live one — the room's queue draining toward them — and the rotation
-  // index is the fallback for before the player has reported a position.
-  // Nothing queued and not sitting out is its own state: idle, not armed. The
-  // strip is on screen from the moment you walk in now — it carries the Battle
-  // key — so this is the state most people see first, and it has to look like
-  // an invitation rather than like a turn that is nearly up. Without it the
-  // fallback below parks the meter at half and tints the strip standby teal,
-  // which promises a turn to somebody who has not picked a song yet.
-  // A place in the rotation counts as queued even when the caller passed no
-  // count, so this asks both: idle is having nothing coming and nowhere to be.
-  const isIdle = !isPaused && !isUpNow && songCount === 0 && !position
-
-  const level = isPaused || isIdle
-    ? 0
-    : isUpNow
-      ? 1
-      : waitLevel ?? (position && rotationSize
-        ? Math.max(0.06, 1 - (position - 1) / rotationSize)
-        : 0.5)
-
-  const headline = isPaused ? 'Paused' : isUpNow ? 'Now' : wait || '--'
-
-  const label = isPaused
-    ? 'you are out of the rotation'
-    : isUpNow
-      ? 'you are on stage'
-      : nextSong ?? (position
-        ? `${position} of ${rotationSize} in the rotation`
-        : 'nothing queued')
+  const isIdle = getIsIdle(isPaused, isUpNow, songCount, position)
+  const level = getLevel({ isPaused, isUpNow, isIdle }, { waitLevel, position, rotationSize })
+  const headline = getHeadline(isPaused, isUpNow, wait)
+  const label = getLabel({ isPaused, isUpNow }, { nextSong, position, rotationSize })
 
   // Queued but not on stage is the same state the library gives a queued song:
   // "armed but not running", which the system says in standby teal. Amber is

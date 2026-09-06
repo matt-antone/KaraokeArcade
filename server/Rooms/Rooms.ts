@@ -59,7 +59,10 @@ async function checkPassword (roomId: number, stored: string, given: string | un
  * reason as the password: it is a lookup and a prefs read, and neither is
  * about the room's identity or its transport.
  */
-function checkRoleAllowed (room: { prefs?: any }, role: string): void {
+function checkRoleAllowed (
+  room: { prefs?: { roles?: Record<number, { allowNew?: boolean }> } },
+  role: string,
+): void {
   const query = sql`SELECT roleId FROM roles WHERE name = ${role}`
   const roleId = db.get<{ roleId: number }>(String(query), query.parameters)?.roleId
 

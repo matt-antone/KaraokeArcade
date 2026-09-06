@@ -31,9 +31,18 @@ const BattlePrefs = ({ onChange, prefs = {} }: BattlePrefsProps) => {
           <InputCheckbox
             label='Allow song battles'
             checked={isEnabled}
+            disabled
             onChange={event => handleSetPref({ isEnabled: event.currentTarget.checked })}
           />
         </div>
+
+        {/* A key that cannot be pressed and says nothing about why is the same
+            fault as one that silently does nothing. The checkbox dims itself;
+            this is the sentence that makes it a state rather than a bug. */}
+        <p className={styles.note}>
+          Battles are turned off while the feature is being finished. A room that
+          already has them on keeps them until this is switched back on.
+        </p>
         {isEnabled && (
           // The one thing about battles an operator cannot work out from the
           // screen. Crowd scoring is a getUserMedia call, and browsers only

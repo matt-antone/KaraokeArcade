@@ -18,6 +18,63 @@ const log = getLogger('FileScanner')
 const audioExts = Object.keys(fileTypes).filter(ext => fileTypes[ext].mimeType.startsWith('audio/'))
 const searchExts = Object.keys(fileTypes).filter(ext => fileTypes[ext].scan !== false)
 
+/**
+ * The audio to read tags from, and what kind it is.
+ *
+ * A .zip is a CDG pair packed together, so the audio has to come out of the
+ * archive before anything can be parsed; every other kind is the file itself,
+ * and only has to be checked for the sidecar it claims to need.
+ */
+async function readAudio (file: string): Promise<{ buffer: Buffer, mimeType: string }> {
+  const buffer = await fsPromises.readFile(file)
+
+  if (getExt(file) !== '.zip') {
+    if (fileTypes[getExt(file)].requiresCDG && !(getCdgName(file))) throw new Error('no .cdg sidecar found')
+
+    return { buffer, mimeType: fileTypes[getExt(file)].mimeType }
+  }
+
+  const { entries } = await unzip(new Uint8Array(buffer))
+  // only the archive root: a folder inside it is somebody else's business
+  const rootNames = Object.keys(entries).filter(f => !f.includes('/'))
+
+  const audioName = rootNames.find(f => audioExts.includes(getExt(f)))
+  if (!audioName) throw new Error(`no valid audio file ${JSON.stringify(audioExts)} found in archive`)
+
+  if (!rootNames.some(f => getExt(f) === '.cdg')) throw new Error('no .cdg sidecar found in archive')
+
+  return {
+    buffer: Buffer.from(await entries[audioName].arrayBuffer()),
+    mimeType: fileTypes[getExt(audioName)].mimeType,
+  }
+}
+
+/** A file already in the library: send only the columns that actually moved,
+ *  so a rescan of an unchanged folder writes nothing. */
+async function updateIfChanged (row: Record<string, unknown>, media: Record<string, unknown>): Promise<void> {
+  const diff = {}
+
+  for (const key of Object.keys(media)) {
+    if (media[key] !== row[key]) diff[key] = media[key]
+  }
+
+  if (!Object.keys(diff).length) {
+    log.info('  => ok')
+    return
+  }
+
+  await (IPC as any).req({
+    type: MEDIA_UPDATE,
+    payload: {
+      mediaId: row.mediaId,
+      dateUpdated: Math.round(new Date().getTime() / 1000), // seconds
+      ...diff,
+    },
+  })
+
+  log.info('  => updated: %s', Object.keys(diff).join(', '))
+}
+
 class FileScanner extends Scanner {
   paths: any
   parser: any
@@ -96,23 +153,7 @@ class FileScanner extends Scanner {
   }
 
   async process ({ file }, pathId) {
-    let buffer = await fsPromises.readFile(file)
-    let mimeType = fileTypes[getExt(file)].mimeType
-
-    if (getExt(file) === '.zip') {
-      const { entries } = await unzip(new Uint8Array(buffer))
-
-      const audioName = Object.keys(entries).find(f => !f.includes('/') && audioExts.includes(getExt(f)))
-      if (!audioName) throw new Error(`no valid audio file ${JSON.stringify(audioExts)} found in archive`)
-
-      const cdgName = Object.keys(entries).find(f => !f.includes('/') && getExt(f) === '.cdg')
-      if (!cdgName) throw new Error('no .cdg sidecar found in archive')
-
-      buffer = Buffer.from(await entries[audioName].arrayBuffer())
-      mimeType = fileTypes[getExt(audioName)].mimeType
-    } else {
-      if (fileTypes[getExt(file)].requiresCDG && !(getCdgName(file))) throw new Error('no .cdg sidecar found')
-    }
+    const { buffer, mimeType } = await readAudio(file)
 
     const data = await parseBuffer(buffer, mimeType, {
       duration: true,
@@ -160,27 +201,8 @@ class FileScanner extends Scanner {
 
     if (res.result.length) {
       const row = res.entities[res.result[0]]
-      const diff = {}
 
-      // did anything change?
-      Object.keys(media).forEach((key) => {
-        if (media[key] !== row[key]) diff[key] = media[key]
-      })
-
-      if (Object.keys(diff).length) {
-        await (IPC as any).req({
-          type: MEDIA_UPDATE,
-          payload: {
-            mediaId: row.mediaId,
-            dateUpdated: Math.round(new Date().getTime() / 1000), // seconds
-            ...diff,
-          },
-        })
-
-        log.info('  => updated: %s', Object.keys(diff).join(', '))
-      } else {
-        log.info('  => ok')
-      }
+      await updateIfChanged(row, media)
 
       return { mediaId: row.mediaId, isNew: false }
     } // end if

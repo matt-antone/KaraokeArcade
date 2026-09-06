@@ -16,6 +16,49 @@ const router = new KoaRouter({ prefix: '/api/media' })
 const audioExts = Object.keys(fileTypes).filter(ext => fileTypes[ext].mimeType.startsWith('audio/'))
 
 // stream a media file
+/** What a request is asking for out of a packed CDG archive. The audio and the
+ *  graphics live in the same .zip, so which one comes back is the query's
+ *  `type` — and only the archive root is looked at, never a folder inside it. */
+async function fromArchive (ctx, file: string, type: string) {
+  const { entries } = await unzip(new Uint8Array(await fsPromises.readFile(file)))
+  const rootNames = Object.keys(entries).filter(f => !f.includes('/'))
+
+  const entry = type === 'cdg'
+    ? rootNames.find(f => getExt(f) === '.cdg')
+    : rootNames.find(f => audioExts.includes(getExt(f)))
+
+  if (!entry) {
+    ctx.throw(404, type === 'cdg' ? 'No .cdg file found in archive' : 'No valid audio file found in archive')
+  }
+
+  return {
+    file,
+    buffer: Buffer.from(await entries[entry].arrayBuffer()),
+    length: entries[entry].size,
+    mimeType: fileTypes[getExt(entry)]?.mimeType,
+  }
+}
+
+/** The same two things as loose files, where the .cdg is a sidecar sitting
+ *  beside the audio rather than packed with it. Streamed from disk rather than
+ *  read into memory — these are whole songs. */
+async function fromDisk (ctx, audioFile: string, type: string) {
+  let file = audioFile
+
+  if (type === 'cdg') {
+    const cdg = getCdgName(file)
+    if (!cdg) ctx.throw(404, 'The .cdg file could not be found')
+    file = cdg as string
+  }
+
+  return {
+    file,
+    buffer: undefined,
+    length: (await fsPromises.stat(file)).size,
+    mimeType: fileTypes[getExt(file)]?.mimeType,
+  }
+}
+
 router.get('/:mediaId', requireAdmin, async (ctx) => {
   const { type } = ctx.query
 
@@ -38,35 +81,14 @@ router.get('/:mediaId', requireAdmin, async (ctx) => {
   const { paths } = Prefs.get()
   const basePath = paths.entities[pathId].path
 
-  let file = path.join(basePath, relPath)
-  let buffer
+  const packed = path.join(basePath, relPath)
 
-  if (getExt(file) === '.zip') {
-    const { entries } = await unzip(new Uint8Array(await fsPromises.readFile(file)))
-    let entry
+  const { file, buffer, length, mimeType } = getExt(packed) === '.zip'
+    ? await fromArchive(ctx, packed, type as string)
+    : await fromDisk(ctx, packed, type as string)
 
-    if (type === 'cdg') {
-      entry = Object.keys(entries).find(f => !f.includes('/') && getExt(f) === '.cdg')
-      if (!entry) ctx.throw(404, 'No .cdg file found in archive')
-    } else {
-      entry = Object.keys(entries).find(f => !f.includes('/') && audioExts.includes(getExt(f)))
-      if (!entry) ctx.throw(404, 'No valid audio file found in archive')
-    }
-
-    ctx.length = entries[entry].size
-    ctx.type = fileTypes[getExt(entry)]?.mimeType
-    buffer = Buffer.from(await entries[entry].arrayBuffer())
-  } else {
-    if (type === 'cdg') {
-      const cdg = getCdgName(file)
-      if (!cdg) ctx.throw(404, 'The .cdg file could not be found')
-      file = cdg
-    }
-
-    const stats = await fsPromises.stat(file)
-    ctx.length = stats.size
-    ctx.type = fileTypes[getExt(file)]?.mimeType
-  }
+  ctx.length = length
+  ctx.type = mimeType
 
   if (!ctx.type) ctx.throw(404, `Unknown MIME type: ${file}`)
 

@@ -15,8 +15,9 @@ import useBattleStage from 'lib/useBattleStage'
 import { requestTriviaRound } from 'store/modules/trivia'
 import { battleSongEnded, requestBattleTurn } from 'store/modules/battle'
 import getSkipEndsAt, { INTERMISSION_MS } from './getSkipEndsAt'
+import { getBattleSide, getIsMediaVisible, resolveMedia } from './playerStage'
 import { SONG_PLAYED } from 'shared/actionTypes'
-import { isBattleItem, isTriviaItem, type BattleSide, type QueueItem } from 'shared/types'
+import { isBattleItem, isTriviaItem, type QueueItem } from 'shared/types'
 
 interface PlayerControllerProps {
   width: number
@@ -58,6 +59,80 @@ const BATTLE_STRANDED_MS = 20000
 const CAN_HEAR_ROOM = typeof window !== 'undefined'
   && window.isSecureContext
   && !!navigator.mediaDevices?.getUserMedia
+
+/** The room's join code, when the room is showing one. Its own component so
+ *  the two levels of "has the room asked for this" do not sit in the middle of
+ *  the stage's render. */
+const RoomQR = ({ roomPrefs, height, queueItem }: {
+  roomPrefs?: { qr?: React.ComponentProps<typeof PlayerQR>['prefs'] & { isEnabled?: boolean } }
+  height: number
+  queueItem?: QueueItem
+}) => {
+  if (!roomPrefs?.qr?.isEnabled) return null
+
+  return <PlayerQR height={height} prefs={roomPrefs.qr} queueItem={queueItem} />
+}
+
+/**
+ * Whatever owns the stage above the media: a trivia round, a battle, or the
+ * ordinary text overlay.
+ *
+ * A round and a battle each own the whole stage for their turn, so the text
+ * overlay stands down rather than drawing a countdown behind them.
+ */
+const StageOverlay = ({
+  trivia,
+  isTriviaOnStage,
+  isTriviaRow,
+  isTriviaLeadIn,
+  isBattleRow,
+  battleQueueId,
+  getAudioCtx,
+  width,
+  height,
+  overlay,
+}: {
+  trivia: { round?, result? }
+  isTriviaOnStage: boolean
+  isTriviaRow: boolean
+  isTriviaLeadIn: boolean
+  isBattleRow: boolean
+  battleQueueId: number
+  getAudioCtx: () => AudioContext | null
+  width: number
+  height: number
+  overlay: Omit<React.ComponentProps<typeof PlayerTextOverlay>, 'width' | 'height'>
+}) => {
+  if (isTriviaOnStage) {
+    return (
+      <PlayerTrivia
+        key={trivia.round.roundId}
+        round={trivia.round}
+        result={trivia.result}
+        width={width}
+        height={height}
+      />
+    )
+  }
+
+  // A battle owns the stage for its whole row, including the gap before the
+  // server's first beat lands — PlayerBattle draws its own holding card for
+  // that, the way the trivia mark covers a round's lead-in.
+  if (isBattleRow) {
+    return <PlayerBattle queueId={battleQueueId} getAudioCtx={getAudioCtx} width={width} height={height} />
+  }
+
+  return (
+    <>
+      {/* One mount across the whole lead-in. Rendering the mark from the
+          intermission branch and again from the row's would replay the sting
+          the moment the row went current, and the question would cut the
+          replay off halfway. */}
+      {isTriviaLeadIn && <TriviaMark variant='stage' />}
+      {!isTriviaRow && <PlayerTextOverlay {...overlay} width={width} height={height} />}
+    </>
+  )
+}
 
 const PlayerController = (props: PlayerControllerProps) => {
   const queue = useAppSelector(getRoundRobinQueue)
@@ -130,51 +205,8 @@ const PlayerController = (props: PlayerControllerProps) => {
   const isBattleRow = isBattleItem(queueItem)
   const isBattleOnStage = isBattleRow && liveBattle.turn?.queueId === player.queueId
 
-  // Which fighter is at the microphone right now, or null on the seven beats
-  // that are not somebody singing. Read from the *live* beat rather than the
-  // stored one on purpose: an expired sing1 must stop playing, not run on into
-  // the intro that follows it.
-  const battleSide: BattleSide | null = isBattleOnStage
-    ? (liveBattle.phase === 'sing1' ? 1 : liveBattle.phase === 'sing2' ? 2 : null)
-    : null
-
-  // Which half of a battle row is at the microphone, resolved to one set of
-  // media props.
-  //
-  // During sing2 every one of these has to come from the opponent* fields: it
-  // is a different file, often in a different format, with its own replay gain.
-  // The row's own mediaId/mediaType/rgTrack* describe the *challenger's* song —
-  // a battle row is deliberately readable as an ordinary one — so driving the
-  // media straight off queueItem plays song one twice and nobody notices until
-  // the second fighter is standing there with the wrong words on screen.
-  //
-  // The key matters as much as the file. A media component reloads only when
-  // mediaKey changes (componentDidUpdate), and one queue row is one queueId, so
-  // both halves would share a key. The five-second intro2 splash sits exactly
-  // between them and drops isMediaVisible, which unmounts the component and
-  // makes componentDidMount load the new sources unconditionally — but a
-  // distinct key is what makes the *volume* right too: Player uses a changed
-  // mediaKey to hold off applying the next song's replay gain until it plays.
-  // Negated rather than invented so it stays one row's key, and stays a number.
-  const media = queueItem && (battleSide === 2
-    ? {
-        key: -queueItem.queueId,
-        mediaId: queueItem.opponentMediaId,
-        mediaType: queueItem.opponentMediaType,
-        keyChange: queueItem.opponentKeyChange,
-        rgTrackGain: queueItem.opponentRgTrackGain,
-        rgTrackPeak: queueItem.opponentRgTrackPeak,
-        isVideoKeyingEnabled: queueItem.opponentIsVideoKeyingEnabled,
-      }
-    : {
-        key: queueItem.queueId,
-        mediaId: queueItem.mediaId,
-        mediaType: queueItem.mediaType,
-        keyChange: queueItem.keyChange,
-        rgTrackGain: queueItem.rgTrackGain,
-        rgTrackPeak: queueItem.rgTrackPeak,
-        isVideoKeyingEnabled: queueItem.isVideoKeyingEnabled,
-      })
+  const battleSide = getBattleSide(isBattleOnStage, liveBattle.phase)
+  const media = resolveMedia(queueItem as QueueItem | undefined, battleSide)
 
   // Player owns the page's AudioContext and stays mounted even on the beats
   // where its render returns null, so the crowd microphone can borrow it
@@ -489,16 +521,18 @@ const PlayerController = (props: PlayerControllerProps) => {
     }
   }, [handleStatus, player.isErrored, player.isPlaying])
 
-  // the media layer covers the stage completely; the thread field behind it stops
-  // drawing whenever it does — and the mark's card is opaque too, so a lead-in
-  // stops it for the same reason
-  //
-  // A battle row shows media on two of its nine beats and nothing but this
-  // overlay on the other seven. Unmounting IS the stop: the element leaves the
-  // document and the UA pauses it per spec, which is why there is no pause()
-  // call anywhere in this file and why the two-minute cut needs no new one.
-  const isMediaVisible = !!queueItem && !isTriviaRow && !player.isErrored && !player.isAtQueueEnd
-    && !intermissionEndsAt && (!isBattleRow || battleSide !== null)
+  // Unmounting IS the stop: the element leaves the document and the UA pauses
+  // it per spec, which is why there is no pause() call anywhere in this file
+  // and why a battle's two-minute cut needs no new one.
+  const isMediaVisible = getIsMediaVisible({
+    queueItem,
+    isTriviaRow,
+    isErrored: player.isErrored,
+    isAtQueueEnd: player.isAtQueueEnd,
+    intermissionEndsAt,
+    isBattleRow,
+    battleSide,
+  })
 
   return (
     <>
@@ -512,89 +546,55 @@ const PlayerController = (props: PlayerControllerProps) => {
         cdgSize={player.cdgSize}
         isPlaying={player.isPlaying}
         isVisible={isMediaVisible}
-        keyChange={media?.keyChange ?? 0}
+        keyChange={media.keyChange}
         isReplayGainEnabled={prefs.isReplayGainEnabled}
-        isVideoKeyingEnabled={!!media?.isVideoKeyingEnabled}
+        isVideoKeyingEnabled={media.isVideoKeyingEnabled}
         isWebGLSupported={player.isWebGLSupported}
-        mediaId={media ? media.mediaId : null}
-        mediaKey={media ? media.key : null}
+        mediaId={media.mediaId}
+        mediaKey={media.key}
         mediaReplayKey={player._lastReplayTime}
-        mediaType={media ? media.mediaType : null}
+        mediaType={media.mediaType}
         mp4Alpha={player.mp4Alpha}
         onEnd={handleMediaEnd}
         onError={handleError}
         onLoad={handleLoad}
         onPlay={handlePlay}
         onStatus={handleStatus}
-        rgTrackGain={media ? media.rgTrackGain : null}
-        rgTrackPeak={media ? media.rgTrackPeak : null}
+        rgTrackGain={media.rgTrackGain}
+        rgTrackPeak={media.rgTrackPeak}
         visualizer={playerVisualizer}
         volume={player.volume}
         width={props.width}
         height={props.height}
       />
-      {/* A round owns the whole stage for its turn, so the text overlay stands
-          down rather than drawing a countdown behind it. */}
-      {isTriviaOnStage
-        ? (
-            <PlayerTrivia
-              key={trivia.round.roundId}
-              round={trivia.round}
-              result={trivia.result}
-              width={props.width}
-              height={props.height}
-            />
-          )
-        : isBattleRow
-          ? (
-              /* A battle owns the stage for its whole row, including the gap
-                 before the server's first beat lands — PlayerBattle draws its
-                 own holding card for that, the way the trivia mark covers a
-                 round's lead-in. The text overlay stands down for the same
-                 reason it does for a round. */
-              <PlayerBattle
-                queueId={player.queueId}
-                getAudioCtx={getAudioCtx}
-                width={props.width}
-                height={props.height}
-              />
-            )
-          : (
-              <>
-                {/* One mount across the whole lead-in. Rendering the mark from
-                  the intermission branch and again from the row's would replay
-                  the sting the moment the row went current, and the question
-                  would cut the replay off halfway. */}
-                {isTriviaLeadIn && <TriviaMark variant='stage' />}
-                {!isTriviaRow && (
-                  <PlayerTextOverlay
-                    queueItem={queueItem as QueueItem}
-                    nextQueueItem={nextQueueItem as QueueItem}
-                    comingUpQueueItems={comingUpQueueItems as QueueItem[]}
-                    comingUpSongTitles={comingUpSongTitles}
-                    songTitle={song?.title}
-                    songArtist={artist?.name}
-                    nextSongTitle={nextSong?.title}
-                    nextSongArtist={nextArtist?.name}
-                    queueDepth={Math.max(0, queue.result.length - nextIdx)}
-                    isSongEnding={player.duration > 0 && player.duration - player.position <= UP_NEXT_SECS}
-                    isAtQueueEnd={player.isAtQueueEnd}
-                    isQueueEmpty={!queue.result.length}
-                    intermissionEndsAt={intermissionEndsAt}
-                    isErrored={player.isErrored}
-                    width={props.width}
-                    height={props.height}
-                  />
-                )}
-              </>
-            )}
-      {roomPrefs?.qr?.isEnabled && (
-        <PlayerQR
-          height={props.height}
-          prefs={roomPrefs.qr}
-          queueItem={queueItem}
-        />
-      )}
+      <StageOverlay
+        trivia={trivia}
+        isTriviaOnStage={isTriviaOnStage}
+        isTriviaRow={isTriviaRow}
+        isTriviaLeadIn={isTriviaLeadIn}
+        isBattleRow={isBattleRow}
+        battleQueueId={player.queueId}
+        getAudioCtx={getAudioCtx}
+        width={props.width}
+        height={props.height}
+        overlay={{
+          queueItem: queueItem as QueueItem,
+          nextQueueItem: nextQueueItem as QueueItem,
+          comingUpQueueItems: comingUpQueueItems as QueueItem[],
+          comingUpSongTitles,
+          songTitle: song?.title,
+          songArtist: artist?.name,
+          nextSongTitle: nextSong?.title,
+          nextSongArtist: nextArtist?.name,
+          queueDepth: Math.max(0, queue.result.length - nextIdx),
+          isSongEnding: player.duration > 0 && player.duration - player.position <= UP_NEXT_SECS,
+          isAtQueueEnd: player.isAtQueueEnd,
+          isQueueEmpty: !queue.result.length,
+          intermissionEndsAt,
+          isErrored: player.isErrored,
+        }}
+      />
+      <RoomQR roomPrefs={roomPrefs} height={props.height} queueItem={queueItem} />
     </>
   )
 }

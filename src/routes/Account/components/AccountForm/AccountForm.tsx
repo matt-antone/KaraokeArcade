@@ -15,6 +15,93 @@ interface AccountFormProps {
   user?: UserWithRole
 }
 
+/** Only the fields that were actually filled in. Empty strings are left out
+ *  rather than sent as empties: the update route treats an absent field as
+ *  "unchanged" and a present one as "set to this". */
+const buildFormData = (fields: {
+  name?: string
+  username?: string
+  newPassword?: string
+  newPasswordConfirm?: string
+  image?: Blob
+  role?: string
+}): FormData => {
+  const data = new FormData()
+
+  if (fields.name?.trim()) data.append('name', fields.name.trim())
+  if (fields.username?.trim()) data.append('username', fields.username.trim())
+
+  if (fields.newPassword !== undefined) {
+    data.append('newPassword', fields.newPassword)
+    data.append('newPasswordConfirm', fields.newPasswordConfirm ?? '')
+  }
+
+  if (fields.image !== undefined) data.append('image', fields.image)
+  if (fields.role !== undefined) data.append('role', fields.role)
+
+  return data
+}
+
+/** Whether anything on the form differs from the account behind it. A new
+ *  username or password counts by existing at all; the name and the role count
+ *  only when they have moved. */
+const isFormDirty = (
+  user: { name: string, isAdmin: boolean },
+  values: { username?: string, newPassword?: string, name?: string, role?: string },
+): boolean => !!values.username
+  || !!values.newPassword
+  || values.name !== user.name
+  || (values.role !== undefined && values.role !== (user.isAdmin ? '1' : '0'))
+
+/** The password pair. The confirm only appears once something has been typed
+ *  into the first, so a form nobody is changing the password on stays short. */
+const PasswordFields = ({ isExisting, isChangingPassword, show, onChange, newPasswordRef, confirmRef }: {
+  isExisting: boolean
+  isChangingPassword: boolean
+  show: boolean
+  onChange: () => void
+  newPasswordRef: React.RefObject<HTMLInputElement | null>
+  confirmRef: React.RefObject<HTMLInputElement | null>
+}) => {
+  if (!show) return null
+
+  return (
+    <>
+      <input
+        type='password'
+        autoComplete='new-password'
+        onChange={onChange}
+        placeholder={isExisting ? 'change password (optional)' : 'password'}
+        ref={newPasswordRef}
+      />
+
+      {isChangingPassword && (
+        <input
+          type='password'
+          autoComplete='new-password'
+          placeholder={isExisting ? 'confirm new password' : 'confirm password'}
+          ref={confirmRef}
+        />
+      )}
+    </>
+  )
+}
+
+/** Admin-only. Guest is offered only to an account that already is one:
+ *  it is a role you can keep, not one you can be promoted into. */
+const RoleSelect = ({ user, onChange, selectRef }: {
+  user?: { role?: string }
+  onChange: () => void
+  selectRef: React.RefObject<HTMLSelectElement | null>
+}) => (
+  <select defaultValue={user?.role} onChange={onChange} ref={selectRef}>
+    <option key='choose' value='' disabled>select role...</option>
+    {user?.role === 'guest' && <option key='guest' value='guest'>Guest</option>}
+    <option key='standard' value='standard'>Standard</option>
+    <option key='admin' value='admin'>Administrator</option>
+  </select>
+)
+
 const AccountForm = ({
   autoFocus,
   children,
@@ -40,6 +127,11 @@ const AccountForm = ({
 
   const prevIsDirty = useRef(state.isDirty)
 
+  // An account that already exists is being *changed*, so every field reads as
+  // optional; a new one is being filled in. The only difference between the two
+  // sets of placeholders.
+  const isExisting = !!user && user.userId !== null
+
   if (user && user.dateUpdated !== prevDateUpdated) {
     setPrevDateUpdated(user.dateUpdated)
     setState(prev => ({ ...prev, isDirty: false }))
@@ -58,9 +150,12 @@ const AccountForm = ({
 
     setState(prev => ({
       ...prev,
-      isDirty: !!username.current?.value || !!newPassword.current?.value
-        || (name.current?.value !== user.name)
-        || (role.current && role.current.value !== (user.isAdmin ? '1' : '0')),
+      isDirty: isFormDirty(user, {
+        username: username.current?.value,
+        newPassword: newPassword.current?.value,
+        name: name.current?.value,
+        role: role.current?.value,
+      }),
       isChangingPassword: !!newPassword.current?.value,
     }))
   }
@@ -75,30 +170,15 @@ const AccountForm = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const data = new FormData()
 
-    if (name.current?.value.trim()) {
-      data.append('name', name.current.value.trim())
-    }
-
-    if (username.current?.value.trim()) {
-      data.append('username', username.current.value.trim())
-    }
-
-    if (state.isChangingPassword) {
-      data.append('newPassword', newPassword.current?.value || '')
-      data.append('newPasswordConfirm', newPasswordConfirm.current?.value || '')
-    }
-
-    if (typeof state.userImage !== 'undefined') {
-      data.append('image', state.userImage)
-    }
-
-    if (role.current) {
-      data.append('role', role.current.value)
-    }
-
-    onSubmit(data)
+    onSubmit(buildFormData({
+      name: name.current?.value,
+      username: username.current?.value,
+      newPassword: state.isChangingPassword ? newPassword.current?.value ?? '' : undefined,
+      newPasswordConfirm: state.isChangingPassword ? newPasswordConfirm.current?.value ?? '' : undefined,
+      image: state.userImage,
+      role: role.current?.value,
+    }))
   }
 
   return (
@@ -131,7 +211,7 @@ const AccountForm = ({
           autoComplete='off'
           autoFocus={autoFocus}
           onChange={updateDirty}
-          placeholder={user && user.userId !== null ? 'change username (optional)' : 'username or email'}
+          placeholder={isExisting ? 'change username (optional)' : 'username or email'}
           // https://github.com/facebook/react/issues/23301
           ref={(r) => {
             if (r) username.current = r
@@ -141,37 +221,16 @@ const AccountForm = ({
         />
       )}
 
-      {showPassword && (
-        <input
-          type='password'
-          autoComplete='new-password'
-          onChange={updateDirty}
-          placeholder={user && user.userId !== null ? 'change password (optional)' : 'password'}
-          ref={newPassword}
-        />
-      )}
+      <PasswordFields
+        isExisting={isExisting}
+        isChangingPassword={state.isChangingPassword}
+        show={showPassword}
+        onChange={updateDirty}
+        newPasswordRef={newPassword}
+        confirmRef={newPasswordConfirm}
+      />
 
-      {state.isChangingPassword && showPassword && (
-        <input
-          type='password'
-          autoComplete='new-password'
-          placeholder={user && user.userId !== null ? 'confirm new password' : 'confirm password'}
-          ref={newPasswordConfirm}
-        />
-      )}
-
-      {showRole && (
-        <select
-          defaultValue={user?.role}
-          onChange={updateDirty}
-          ref={role}
-        >
-          <option key='choose' value='' disabled>select role...</option>
-          {user?.role === 'guest' && <option key='guest' value='guest'>Guest</option>}
-          <option key='standard' value='standard'>Standard</option>
-          <option key='admin' value='admin'>Administrator</option>
-        </select>
-      )}
+      {showRole && <RoleSelect user={user} onChange={updateDirty} selectRef={role} />}
 
       {children}
     </form>

@@ -10,15 +10,19 @@ import Queue from '../Queue/Queue.js'
 import Rooms from '../Rooms/Rooms.js'
 import User from '../User/User.js'
 import mountDevLogin from './devLogin.js'
-import { QUEUE_PUSH } from '../../shared/actionTypes.js'
 import {
-  USERNAME_MIN_LENGTH,
-  USERNAME_MAX_LENGTH,
-  PASSWORD_MIN_LENGTH,
-  NAME_MIN_LENGTH,
-  NAME_MAX_LENGTH,
-  IMG_MAX_LENGTH,
-} from './User.js'
+  type Fail,
+  assertCurrentPassword,
+  assertImageSize,
+  assertMayUpdate,
+  assertSelfSignupRole,
+  nextName,
+  nextPassword,
+  nextRole,
+  nextUsername,
+} from './accountFields.js'
+import { QUEUE_PUSH } from '../../shared/actionTypes.js'
+import { IMG_MAX_LENGTH } from './User.js'
 
 interface File {
   filepath: string
@@ -242,88 +246,40 @@ router.delete('/user/:userId', async (ctx) => {
   ctx.body = {}
 })
 
-// update a user account
-router.put('/user/:userId', async (ctx) => {
-  const targetId = parseInt(ctx.params.userId, 10)
-  const user = User.getById(ctx.user.userId, true)
-
-  // must be admin if updating another user
-  if (!user) {
-    ctx.throw(401)
-    return
-  }
-
-  if (targetId !== user.userId && user.role !== 'admin') {
-    ctx.throw(401)
-    return
-  }
-
-  const req = ctx.request as unknown as RequestWithBody
-  let { name, username } = req.body
-  const { password, newPassword, newPasswordConfirm } = req.body
-
-  // validate current password if updating own account
-  if (targetId === user.userId && !ctx.user.isGuest) {
-    if (!password) {
-      ctx.throw(422, 'Current password is required')
-    }
-
-    if (!(await crypto.compare(password, user.password))) {
-      ctx.throw(401, 'Incorrect current password')
-    }
-  }
-
-  // validated
+/**
+ * Every column the UPDATE will set, and the two values the re-issued token
+ * needs afterwards.
+ *
+ * Separate from the route because it is six independent field rules that each
+ * decide whether they have anything to say at all — an empty field means
+ * "leave it alone", never "clear it" — and because none of them are about the
+ * request or the response around them. The order they run in is the order
+ * their refusals reach the singer, so it is the order they were in before.
+ */
+async function buildUpdateFields (fail: Fail, ctx, req: RequestWithBody, user, targetId: number) {
+  const isGuest = !!ctx.user.isGuest
   const fields = new Map()
 
-  // changing username?
-  if (username && !ctx.user.isGuest) {
-    username = username.trim()
+  const username = nextUsername(fail, req.body.username, isGuest)
+  const name = nextName(fail, req.body.name)
+  const hashed = await nextPassword(fail, {
+    newPassword: req.body.newPassword,
+    newPasswordConfirm: req.body.newPasswordConfirm,
+    isGuest,
+  })
 
-    if (username.length < USERNAME_MIN_LENGTH || username.length > USERNAME_MAX_LENGTH) {
-      ctx.throw(400, `Username or email must have ${USERNAME_MIN_LENGTH}-${USERNAME_MAX_LENGTH} characters`)
-    }
-
-    // check for duplicate
-    if (User.getByUsername(username)) {
-      ctx.throw(409, 'Username or email is not available')
-    }
-
-    fields.set('username', username)
-  }
-
-  // changing display name?
-  if (name) {
-    name = name.trim()
-
-    if (name.length < NAME_MIN_LENGTH || name.length > NAME_MAX_LENGTH) {
-      ctx.throw(400, `Display name must have ${NAME_MIN_LENGTH}-${NAME_MAX_LENGTH} characters`)
-    }
-
-    fields.set('name', name)
-  }
-
-  // changing password?
-  if (newPassword && !ctx.user.isGuest) {
-    if (newPassword.length < PASSWORD_MIN_LENGTH) {
-      ctx.throw(400, `Password must have at least ${PASSWORD_MIN_LENGTH} characters`)
-    }
-
-    if (newPassword !== newPasswordConfirm) {
-      ctx.throw(422, 'New passwords do not match')
-    }
-
-    fields.set('password', await crypto.hash(newPassword))
-  }
+  if (username !== undefined) fields.set('username', username)
+  if (name !== undefined) fields.set('name', name)
+  if (hashed !== undefined) fields.set('password', hashed)
 
   // changing user image?
   if (req.files && req.files.image) {
     const imageFile = Array.isArray(req.files.image) ? req.files.image[0] : req.files.image
 
-    if (imageFile.size > IMG_MAX_LENGTH) {
-      await deleteFile(imageFile.filepath)
-      ctx.throw(413, `Image must not exceed ${Math.floor(IMG_MAX_LENGTH / 1024)}KB`)
-    }
+    // the upload is removed either way: refused, it is not wanted; accepted, it
+    // has been read into the row
+    if (imageFile.size > IMG_MAX_LENGTH) await deleteFile(imageFile.filepath)
+    assertImageSize(fail, imageFile.size)
 
     fields.set('image', await readFile(imageFile.filepath))
     await deleteFile(imageFile.filepath)
@@ -332,15 +288,70 @@ router.put('/user/:userId', async (ctx) => {
   }
 
   // changing role?
-  if (req.body.role) {
-    // @todo since we're not ensuring there'd be at least one admin
-    // remaining, changing one's own role is currently disallowed
-    if (user.role !== 'admin' || targetId === user.userId) {
-      ctx.throw(403)
-    }
+  const role = nextRole(fail, req.body.role, user, targetId)
+  if (role !== undefined) fields.set('roleId', role)
 
-    fields.set('roleId', sql`(SELECT roleId FROM roles WHERE name = ${req.body.role})`)
+  return { fields, username, name }
+}
+
+/** A changed display name shows on every queue row that singer owns, in every
+ *  room. @todo: only update rooms the user is in */
+function pushQueues (ctx): void {
+  for (const { room, roomId } of Rooms.getActive(ctx.io)) {
+    ctx.io.to(room).emit('action', {
+      type: QUEUE_PUSH,
+      payload: Queue.get(roomId),
+    })
   }
+}
+
+/**
+ * The account as it now stands, for the token that goes back.
+ *
+ * A guest has no credentials to re-validate, so their updated name is simply
+ * taken; everybody else is looked up again by whatever username and password
+ * they now have, which is also the check that the UPDATE above did what it
+ * said it did.
+ */
+async function reissuedUser (
+  fail: Fail,
+  user: { role: string, name: string, username: string },
+  { username, name, password, newPassword }: {
+    username?: string
+    name?: string
+    password?: string
+    newPassword?: string
+  },
+) {
+  if (user.role === 'guest') return { ...user, name: name || user.name }
+
+  try {
+    return await User.validate({
+      username: username || user.username,
+      password: newPassword || password,
+    })
+  } catch (err) {
+    return fail(401, err.message)
+  }
+}
+
+// update a user account
+router.put('/user/:userId', async (ctx) => {
+  const targetId = parseInt(ctx.params.userId, 10)
+  const user = User.getById(ctx.user.userId, true)
+  const fail = (status: number, message?: string) => ctx.throw(status, message)
+
+  // must be admin if updating another user
+  assertMayUpdate(fail, user, targetId)
+  if (!user) return
+
+  const req = ctx.request as unknown as RequestWithBody
+  const { password, newPassword } = req.body
+
+  await assertCurrentPassword(fail, { actor: user, targetId, isGuest: !!ctx.user.isGuest, given: password })
+
+  // validated
+  const { fields, username, name } = await buildUpdateFields(fail, ctx, req, user, targetId)
 
   fields.set('dateUpdated', Math.floor(Date.now() / 1000))
 
@@ -355,14 +366,7 @@ router.put('/user/:userId', async (ctx) => {
     ctx.throw(404, `userId ${targetId} not found`)
   }
 
-  // emit (potentially) updated queues to each room
-  // @todo: only update rooms the user is in
-  for (const { room, roomId } of Rooms.getActive(ctx.io)) {
-    ctx.io.to(room).emit('action', {
-      type: QUEUE_PUSH,
-      payload: Queue.get(roomId),
-    })
-  }
+  pushQueues(ctx)
 
   // updating another account? we're done
   if (targetId !== user.userId) {
@@ -371,26 +375,10 @@ router.put('/user/:userId', async (ctx) => {
     return
   }
 
-  // updating own account: send updated token
-  let updatedUser
-
-  if (user.role !== 'guest') {
-    try {
-      updatedUser = await User.validate({
-        username: username || user.username,
-        password: newPassword || password,
-      })
-    } catch (err) {
-      ctx.throw(401, err.message)
-    }
-  } else {
-    updatedUser = {
-      ...user,
-      name: name || user.name,
-    }
-  }
-
-  const userCtx = createUserCtx(updatedUser, ctx.user.roomId || null)
+  const userCtx = createUserCtx(
+    await reissuedUser(fail, user, { username, name, password, newPassword }),
+    ctx.user.roomId || null,
+  )
 
   // @todo: this should not extend the JWT expiry date
   setSessionCookie(ctx, userCtx)
@@ -398,41 +386,50 @@ router.put('/user/:userId', async (ctx) => {
   ctx.body = userCtx
 })
 
+/**
+ * Whether a stranger may create the account they are asking for.
+ *
+ * Only reached when the requester is not an admin — an admin creating accounts
+ * for other people is doing something else and skips all three. A new account
+ * has to be nobody yet, has to be a role somebody is allowed to give
+ * themselves, and has to name the room it is joining, since a room decides
+ * which kinds of new account it admits.
+ */
+async function assertMaySignUp (
+  fail: Fail,
+  actor: { userId: number | null },
+  body: { role: string, roomId: number, roomPassword?: string },
+) {
+  // already signed in?
+  if (actor.userId !== null) fail(401, 'You are already signed in')
+
+  // only possible roles; further validated per-room below
+  assertSelfSignupRole(fail, body.role)
+
+  // new users must choose a room at the same time
+  try {
+    await Rooms.validate(body.roomId, body.roomPassword, { role: body.role })
+  } catch (err) {
+    fail(401, err.message)
+  }
+}
+
 // create account
 router.post('/user', async (ctx) => {
   const req = ctx.request as unknown as RequestWithBody
   let image
 
-  if (!ctx.user.isAdmin) {
-    // already signed in?
-    if (ctx.user.userId !== null) {
-      ctx.throw(401, 'You are already signed in')
-    }
+  const fail = (status: number, message?: string) => ctx.throw(status, message)
 
-    // only possible roles; further validated per-room below
-    if (!['guest', 'standard'].includes(req.body.role)) {
-      ctx.throw(401, 'Invalid role')
-    }
-
-    // new users must choose a room at the same time
-    try {
-      await Rooms.validate(
-        req.body.roomId,
-        req.body.roomPassword,
-        { role: req.body.role },
-      )
-    } catch (err) {
-      ctx.throw(401, err.message)
-    }
-  }
+  if (!ctx.user.isAdmin) await assertMaySignUp(fail, ctx.user, req.body)
 
   if (req.files && req.files.image) {
     const imageFile = Array.isArray(req.files.image) ? req.files.image[0] : req.files.image
 
-    if (imageFile.size > IMG_MAX_LENGTH) {
-      await deleteFile(imageFile.filepath)
-      ctx.throw(413, `Image must not exceed ${Math.floor(IMG_MAX_LENGTH / 1024)}KB`)
-    }
+    // the upload is removed either way: refused, it is not wanted; accepted, it
+    // has been read into the row
+    if (imageFile.size > IMG_MAX_LENGTH) await deleteFile(imageFile.filepath)
+    assertImageSize(fail, imageFile.size)
 
     image = await readFile(imageFile.filepath)
     await deleteFile(imageFile.filepath)

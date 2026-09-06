@@ -19,6 +19,73 @@ export const PASSWORD_MIN_LENGTH = 6
 export const NAME_MIN_LENGTH = 2
 export const NAME_MAX_LENGTH = 50
 
+/**
+ * Every rule a username and password have to pass before an account exists.
+ *
+ * Separate from create because it is the gate a stranger meets on their first
+ * screen and the wording of each refusal is the whole of what they are told —
+ * seven rules that deserve to be readable as a list rather than as the first
+ * half of a long method.
+ */
+function assertCredentials (username: string, newPassword: string, newPasswordConfirm: string): void {
+  if (!username) {
+    throw new Error('Username or email is required')
+  }
+
+  if (username.length < USERNAME_MIN_LENGTH || username.length > USERNAME_MAX_LENGTH) {
+    throw new Error(`Username or email must have ${USERNAME_MIN_LENGTH}-${USERNAME_MAX_LENGTH} characters`)
+  }
+
+  if (!newPassword) {
+    throw new Error('Password is required')
+  }
+
+  if (newPassword.length < PASSWORD_MIN_LENGTH) {
+    throw new Error(`Password must have at least ${PASSWORD_MIN_LENGTH} characters`)
+  }
+
+  if (!newPasswordConfirm) {
+    throw new Error('Password confirmation is required')
+  }
+
+  if (newPassword !== newPasswordConfirm) {
+    throw new Error('New passwords do not match')
+  }
+
+  if (User.getByUsername(username)) {
+    throw new Error('Username or email is not available')
+  }
+}
+
+/** Asked of everyone, guests included: it is the name the room reads off the
+ *  queue and the player. */
+function assertDisplayName (name: string): void {
+  if (!name) {
+    throw new Error('Display name is required')
+  }
+
+  if (name.length < NAME_MIN_LENGTH || name.length > NAME_MAX_LENGTH) {
+    throw new Error(`Display name must have ${NAME_MIN_LENGTH}-${NAME_MAX_LENGTH} characters`)
+  }
+}
+
+/** A guest-NNNNN nobody else has. Rolled rather than derived from anything, so
+ *  it is asked of the database until one comes back free. */
+function uniqueGuestUsername (): string {
+  for (;;) {
+    const username = `guest-${randomChars(5)}`
+    const query = sql`
+      SELECT COUNT(*) AS count
+      FROM users
+      WHERE username = ${username}
+    `
+
+    if ((db.get(String(query), query.parameters) as { count: number }).count === 0) {
+      return username
+    }
+  }
+}
+
 class User {
   /**
    * Get user by userId
@@ -83,63 +150,20 @@ class User {
 
     const fields = new Map()
 
-    if (role !== 'guest') {
-      if (!username) {
-        throw new Error('Username or email is required')
-      }
-
-      if (username.length < USERNAME_MIN_LENGTH || username.length > USERNAME_MAX_LENGTH) {
-        throw new Error(`Username or email must have ${USERNAME_MIN_LENGTH}-${USERNAME_MAX_LENGTH} characters`)
-      }
-
-      if (!newPassword) {
-        throw new Error('Password is required')
-      }
-
-      if (newPassword.length < PASSWORD_MIN_LENGTH) {
-        throw new Error(`Password must have at least ${PASSWORD_MIN_LENGTH} characters`)
-      }
-
-      if (!newPasswordConfirm) {
-        throw new Error('Password confirmation is required')
-      }
-
-      if (newPassword !== newPasswordConfirm) {
-        throw new Error('New passwords do not match')
-      }
-
-      if (User.getByUsername(username)) {
-        throw new Error('Username or email is not available')
-      }
-
+    // A guest types neither a username nor a password, so none of the
+    // credential rules apply to one — but the database still wants both
+    // columns, and they still have to be unique.
+    if (role === 'guest') {
+      fields.set('username', uniqueGuestUsername())
+      fields.set('password', 'guest')
+    } else {
+      assertCredentials(username, newPassword, newPasswordConfirm)
       fields.set('username', username)
       fields.set('password', await crypto.hash(newPassword))
-    } else {
-      let res: { count?: number } = {}
-
-      // ensure unique guest username
-      do {
-        fields.set('username', `guest-${randomChars(5)}`)
-
-        const query = sql`
-        SELECT COUNT(*) AS count
-        FROM users
-        WHERE username = ${fields.get('username')}
-        `
-        res = db.get(String(query), query.parameters) as { count: number }
-      } while (res.count > 0)
-
-      fields.set('password', 'guest')
     }
 
-    if (!name) {
-      throw new Error('Display name is required')
-    }
-
-    if (name.length < NAME_MIN_LENGTH || name.length > NAME_MAX_LENGTH) {
-      throw new Error(`Display name must have ${NAME_MIN_LENGTH}-${NAME_MAX_LENGTH} characters`)
-    }
-
+    // asked of everyone, guests included: it is the name the room reads
+    assertDisplayName(name)
     fields.set('name', name)
     fields.set('dateCreated', Math.floor(Date.now() / 1000))
     fields.set('roleId', sql`(SELECT roleId FROM roles WHERE name = ${role})`)

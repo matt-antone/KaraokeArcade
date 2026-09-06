@@ -31,5 +31,10 @@
     "unresolved-imports": "off",
     "duplicate-exports": "off",
     "circular-dependencies": "warn"
+  },
+  "health": {
+    "ignore": [
+      "**/*.test.*"
+    ]
   }
 }

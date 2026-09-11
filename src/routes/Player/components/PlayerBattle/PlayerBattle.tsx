@@ -118,7 +118,11 @@ const PlayerBattle = ({ queueId, getAudioCtx, width, height }: PlayerBattleProps
   const beat = live ? phase : null
   const side = beat ? SIDE_OF[beat] ?? null : null
 
-  const meterSide = beat === 'meter1' || beat === 'meter2' ? side : null
+  // Only ever set on a crowd-judged fight — the server does not send a
+  // metering beat to any other kind — but said in both places, because the one
+  // thing that must never happen by accident is a microphone opening in a room
+  // that asked for a silent ballot.
+  const meterSide = live?.judging === 'crowd' && (beat === 'meter1' || beat === 'meter2') ? side : null
   const level = useCrowdMic(queueId, meterSide, getAudioCtx)
 
   // The verdict lands with a noise, on the one machine in the room with
@@ -199,6 +203,24 @@ const PlayerBattle = ({ queueId, getAudioCtx, width, height }: PlayerBattleProps
     )
   }
 
+  // The room votes on its phones. The TV's whole job here is to say that it is
+  // happening, to whom, and for how much longer — the count is deliberately
+  // not on screen, because a tally the room can watch collects the undecided
+  // behind whoever is ahead. See Battle.vote.
+  if (beat === 'ballot') {
+    return stage(
+      <>
+        <div className={styles.silk}>vote on your phone</div>
+        <div className={styles.headline}>Who wins</div>
+        <div className={styles.fighters}>
+          {fighter(live, 1)}
+          {fighter(live, 2)}
+        </div>
+        <div className={styles.subhead}>{Math.ceil(msLeft / 1000)}</div>
+      </>,
+    )
+  }
+
   if (beat === 'meter1' || beat === 'meter2') {
     const at = side ?? 1
 
@@ -238,7 +260,8 @@ const PlayerBattle = ({ queueId, getAudioCtx, width, height }: PlayerBattleProps
             </div>
           ))}
         </div>
-        {!live.isJudgedByCrowd && (
+        {live.judging === 'ballot' && <div className={styles.silk}>votes</div>}
+        {live.judging === 'none' && (
           <div className={styles.silk}>this player cannot hear the room</div>
         )}
       </>,

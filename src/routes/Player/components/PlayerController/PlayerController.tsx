@@ -349,8 +349,10 @@ const PlayerController = (props: PlayerControllerProps) => {
 
   // Reached a battle row: ask the server to run it, and tell it whether this
   // player can hear the room. The server owns every beat boundary — two players
-  // in a room cannot disagree about who is singing — and it skips both metering
-  // beats when the answer is no, rather than showing the room two dead meters.
+  // in a room cannot disagree about who is singing — and it owns the choice of
+  // how the fight is judged, which is a room pref. The answer here only bears
+  // on a room set to crowd scoring: a no there skips both metering beats rather
+  // than showing the room two dead meters.
   useEffect(() => {
     if (!isBattleRow || !player.isPlaying) return
     if (battle.resolvedQueueId === player.queueId) return

@@ -4,14 +4,18 @@ import getLogger from '../lib/Log.js'
 import Rooms, { STATUSES } from '../Rooms/Rooms.js'
 import Queue from '../Queue/Queue.js'
 import {
+  BATTLE_BALLOT_MS,
   BATTLE_INTRO_MS,
   BATTLE_JUDGE_MS,
+  BATTLE_JUDGING_DEFAULT,
   BATTLE_METER_MS,
   BATTLE_SING_MS,
   BATTLE_VERSUS_MS,
   BATTLE_WINNER_MS,
   clampBattleScore,
   type BattleInvite,
+  type BattleJudging,
+  type BattleJudgingPref,
   type BattlePhase,
   type BattleSide,
   type BattleSinger,
@@ -36,19 +40,29 @@ const BEAT_MS: Record<BattlePhase, number> = {
   intro2: BATTLE_INTRO_MS,
   sing2: BATTLE_SING_MS,
   judge: BATTLE_JUDGE_MS,
+  ballot: BATTLE_BALLOT_MS,
   meter1: BATTLE_METER_MS,
   meter2: BATTLE_METER_MS,
   winner: BATTLE_WINNER_MS,
 }
 
-/** The beats a battle always runs, in order. */
+/** The beats a battle always runs, in order. The judging beats are spliced in
+ *  before the last one — see JUDGING_BEATS. */
 const BEATS: BattlePhase[] = ['versus', 'intro1', 'sing1', 'intro2', 'sing2', 'judge', 'winner']
 
-/** The two that only happen when the player can hear the room, spliced in
- *  before the verdict. A player opened at a LAN address has no microphone
- *  permission and no room to hear, and metering a silent input would hand
- *  every battle to whoever the rounding favoured. */
-const CROWD_BEATS: BattlePhase[] = ['meter1', 'meter2']
+/** What each way of deciding a fight costs in beats.
+ *
+ *  `crowd` is two, one fighter at a time, because a room cannot shout for two
+ *  people at once and a microphone cannot tell them apart if it does. `ballot`
+ *  is one: every phone holds both names and answers whenever it is ready.
+ *  `none` is the room having asked for a microphone the player has not got —
+ *  metering a silent input would hand every battle to whoever the rounding
+ *  favoured, so nothing is metered and the verdict is a draw. */
+const JUDGING_BEATS: Record<BattleJudging, BattlePhase[]> = {
+  ballot: ['ballot'],
+  crowd: ['meter1', 'meter2'],
+  none: [],
+}
 
 /** Everything about a fight that is settled before the first beat and does not
  *  change during it. The per-beat payload is built by spreading this, which is
@@ -63,6 +77,11 @@ interface ActiveBattle {
   fighters: BattleFighters
   challengerScore: number
   opponentScore: number
+  /** userId to the side they voted for, during a ballot. Keyed by person
+   *  rather than by socket so the singer with a phone and a tablet gets one
+   *  vote, and so changing your mind replaces your vote instead of adding
+   *  one. Discarded with the battle: a ballot is about one fight. */
+  votes: Map<number, BattleSide>
   /** The payload the room is currently looking at, for a client that joins
    *  part-way through and for matching an early end to the right beat. */
   turn: BattleTurn | null
@@ -207,7 +226,9 @@ function getFighters (roomId: number, queueId: number): BattleFighters | null {
       artist: row.opponentArtist,
       title: row.opponentTitle,
     },
-    isJudgedByCrowd: false,
+    // settled by startTurn, which is the only caller and the only one that
+    // knows both what the room asked for and what the player can do
+    judging: 'none',
   }
 }
 
@@ -215,10 +236,15 @@ class Battle {
   /** A room's battle prefs, defaulted. Rooms created before battles existed
    *  carry no key at all, which reads as off — the right default, the same way
    *  Trivia.getPrefs treats its own. */
-  static getPrefs (roomId: number): { isEnabled: boolean } {
+  static getPrefs (roomId: number): { isEnabled: boolean, judging: BattleJudgingPref } {
     const prefs = Rooms.get(roomId, { status: STATUSES }).entities[roomId]?.prefs?.battle
 
-    return { isEnabled: !!prefs?.isEnabled }
+    return {
+      isEnabled: !!prefs?.isEnabled,
+      // anything but the one other legal value reads as the default, which
+      // covers every room made before there was a choice to make
+      judging: prefs?.judging === 'crowd' ? 'crowd' : BATTLE_JUDGING_DEFAULT,
+    }
   }
 
   /**
@@ -434,10 +460,11 @@ class Battle {
   /**
    * The player has reached a battle row: run it.
    *
-   * isJudgedByCrowd is the player's own answer to "can you hear this room" —
-   * it is the machine with the microphone, so it is the only one that knows.
-   * A no drops the two metering beats entirely rather than running them
-   * against silence.
+   * canHearRoom is the player's own answer to "can you hear this room" — it is
+   * the machine with the microphone, so it is the only one that knows. It only
+   * matters to a room set to crowd scoring, and a no there drops both metering
+   * beats rather than running them against silence. A room on the default
+   * silent ballot never asks the player for anything.
    *
    * Idempotent: a second call while a battle is running is a no-op, so two
    * players in one room cannot start two. There is deliberately no in-flight
@@ -448,7 +475,7 @@ class Battle {
    * Failure is silence. A row that is not a runnable battle logs and returns
    * null, the player moves on, and the room never sees an error mid-party.
    */
-  static startTurn (io, roomId: number, queueId: number, isJudgedByCrowd: boolean): BattleTurn | null {
+  static startTurn (io, roomId: number, queueId: number, canHearRoom: boolean): BattleTurn | null {
     if (battles.has(roomId)) return null
 
     const fighters = getFighters(roomId, queueId)
@@ -458,17 +485,17 @@ class Battle {
       return null
     }
 
-    const beats = isJudgedByCrowd
-      ? [...BEATS.slice(0, -1), ...CROWD_BEATS, 'winner' as BattlePhase]
-      : [...BEATS]
+    const pref = this.getPrefs(roomId).judging
+    const judging: BattleJudging = pref === 'crowd' && !canHearRoom ? 'none' : pref
 
     battles.set(roomId, {
       queueId,
-      beats,
+      beats: [...BEATS.slice(0, -1), ...JUDGING_BEATS[judging], 'winner'],
       index: -1,
-      fighters: { ...fighters, isJudgedByCrowd },
+      fighters: { ...fighters, judging },
       challengerScore: 0,
       opponentScore: 0,
+      votes: new Map(),
       turn: null,
       timer: null,
     })
@@ -540,6 +567,45 @@ class Battle {
     if (active.turn?.phase !== (side === 1 ? 'sing1' : 'sing2')) return
 
     this.advance(io, roomId)
+  }
+
+  /**
+   * One phone's vote, during the ballot beat.
+   *
+   * Nothing is emitted. A ballot the room can watch filling is not a ballot —
+   * the fighter three votes ahead on the screen collects the undecided, and
+   * the room ends up voting for whoever was quickest rather than for whoever
+   * sang. The tally rides out on the verdict beat like any other grade, which
+   * is also why this needs no re-send race the way score does: the counting is
+   * finished before the beat that shows it is built.
+   *
+   * Silent on a refusal for the same reason score is: this is a tap on a phone
+   * in a dark room, and a red banner for a vote that landed a half-second
+   * after the beat closed is worse than the vote quietly not counting.
+   */
+  static vote (roomId: number, queueId: number, userId: number, side: BattleSide): void {
+    const active = battles.get(roomId)
+    if (!active || active.queueId !== queueId) return
+    if (active.turn?.phase !== 'ballot') return
+
+    // Neither fighter votes. They are in the room holding phones like everyone
+    // else, and a ballot nobody can see is exactly where voting for yourself
+    // would never be caught.
+    const { challengerUserId, opponentUserId } = active.fighters
+    if (userId === challengerUserId || userId === opponentUserId) return
+
+    active.votes.set(userId, side)
+
+    let challenger = 0
+    let opponent = 0
+
+    for (const v of active.votes.values()) {
+      if (v === 1) challenger++
+      else opponent++
+    }
+
+    active.challengerScore = clampBattleScore(challenger)
+    active.opponentScore = clampBattleScore(opponent)
   }
 
   /**

@@ -168,12 +168,12 @@ describe('a player that cannot hear the room', () => {
     for (const [i, phase] of silent.entries()) {
       const from = i * 10_000
       at(from)
-      expect(screen(beat(phase, from, 5_000, { isJudgedByCrowd: false })))
+      expect(screen(beat(phase, from, 5_000, { judging: 'none' })))
         .not.toContain('role="meter"')
     }
 
     at(0)
-    const verdict = screen(beat('winner', 0, BATTLE_WINNER_MS, { isJudgedByCrowd: false }))
+    const verdict = screen(beat('winner', 0, BATTLE_WINNER_MS, { judging: 'none' }))
     expect(verdict).toContain('Draw')
     expect(verdict).toContain('cannot hear the room')
   })

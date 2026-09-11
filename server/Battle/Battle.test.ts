@@ -115,6 +115,12 @@ function setupRoom () {
   media(MISSIONARY, 300, 301, 'mp4')
 }
 
+/** Switch the room to one of the two ways of deciding a fight. Absent by
+ *  default, the way a room made before the choice existed carries it. */
+const setJudging = (judging: 'ballot' | 'crowd') =>
+  db.run('UPDATE rooms SET data = ? WHERE roomId = ?',
+    [JSON.stringify({ prefs: { battle: { isEnabled: true, judging } } }), ROOM_ID])
+
 function teardownRoom () {
   Battle.stopRoom(ROOM_ID)
   close()
@@ -318,12 +324,12 @@ describe('the beats', () => {
   })
 
   /** Start a battle and let every timer run out, collecting the phases. */
-  async function runBattle (io, isJudgedByCrowd: boolean) {
+  async function runBattle (io, canHearRoom: boolean) {
     queueSong(ALICE)
     await negotiate(io, { queueId: 1 })
 
     io.emitted.length = 0
-    Battle.startTurn(io, ROOM_ID, 1, isJudgedByCrowd)
+    Battle.startTurn(io, ROOM_ID, 1, canHearRoom)
 
     // longer than the whole sequence; nested timers are advanced too
     await vi.advanceTimersByTimeAsync(600000)
@@ -333,8 +339,20 @@ describe('the beats', () => {
       .map(e => (e.payload as BattleTurn).phase as BattlePhase)
   }
 
-  it('runs all nine beats when the player can hear the room', async () => {
+  it('runs the ballot beat by default, and no metering beat', async () => {
     const io = fakeIo()
+
+    // The room pref is absent, which is every room made before there was a
+    // choice — and the answer has to be the one that works on a player opened
+    // anywhere, not the one that needs the host's own microphone.
+    expect(await runBattle(io, true)).toEqual([
+      'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'judge', 'ballot', 'winner',
+    ])
+  })
+
+  it('runs all nine beats when the room asked for crowd noise and the player can hear it', async () => {
+    const io = fakeIo()
+    setJudging('crowd')
 
     expect(await runBattle(io, true)).toEqual([
       'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'judge', 'meter1', 'meter2', 'winner',
@@ -345,6 +363,7 @@ describe('the beats', () => {
 
   it('skips both metering beats when it cannot', async () => {
     const io = fakeIo()
+    setJudging('crowd')
 
     // grading a room the player cannot hear hands the fight to whoever the
     // rounding favoured, so the beats simply do not happen
@@ -384,8 +403,42 @@ describe('the beats', () => {
     expect(Battle.getTurn(ROOM_ID)?.phase).toBe('intro2')
   })
 
+  it('counts the ballot silently and hands the tally to the verdict', async () => {
+    const io = fakeIo()
+    queueSong(ALICE)
+    await negotiate(io, { queueId: 1 })
+
+    Battle.startTurn(io, ROOM_ID, 1, false)
+    await vi.advanceTimersByTimeAsync(265000) // through judge, into the ballot
+    expect(Battle.getTurn(ROOM_ID)?.phase).toBe('ballot')
+
+    io.emitted.length = 0
+
+    Battle.vote(ROOM_ID, 1, CAROL, 2)
+    Battle.vote(ROOM_ID, 1, CAROL, 1) // changed their mind; still one vote
+    Battle.vote(ROOM_ID, 1, ALICE, 1) // a fighter voting for herself: ignored
+    Battle.vote(ROOM_ID, 1, BOB, 2) // and the other one
+
+    // nothing goes out while the ballot is open — a count the room can watch
+    // fill collects the undecided behind whoever is ahead
+    expect(io.emitted).toEqual([])
+
+    // out of the ballot and into the verdict, which is shorter than it is
+    await vi.advanceTimersByTimeAsync(20000)
+
+    const turn = Battle.getTurn(ROOM_ID)
+    expect(turn?.phase).toBe('winner')
+    expect(turn?.challengerScore).toBe(1)
+    expect(turn?.opponentScore).toBe(0)
+
+    // and a vote after the beat has closed is not a vote
+    Battle.vote(ROOM_ID, 1, CAROL, 2)
+    expect(Battle.getTurn(ROOM_ID)?.opponentScore).toBe(0)
+  })
+
   it('carries both crowd grades into the verdict', async () => {
     const io = fakeIo()
+    setJudging('crowd')
     queueSong(ALICE)
     await negotiate(io, { queueId: 1 })
 

@@ -28,3 +28,21 @@
   line-height: 1.45;
   color: var(--ink-3);
 }
+
+/* Same field/legend pair TriviaPrefs uses, for the same reason: a Settings
+   group reads as one control, and two of them a panel apart must not look
+   like two different kinds of thing. */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-2);
+}
+
+.groupLabel {
+  font-family: var(--font-mono);
+  font-size: var(--silkscreen-size);
+  font-weight: var(--weight-regular);
+  letter-spacing: var(--silkscreen-tracking);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}

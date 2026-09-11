@@ -5,6 +5,7 @@ import useResizeObserver from 'use-resize-observer'
 // global stylesheets should be imported before any
 // components that will import their own modular css
 import '../../../styles/global.css'
+import BattleBallot from 'components/BattleBallot/BattleBallot'
 import BattleDialog from 'components/BattleDialog/BattleDialog'
 import Button from 'components/Button/Button'
 import Header from 'components/Header/Header'
@@ -85,6 +86,10 @@ const CoreLayout = () => {
           onCloseRoster={() => setIsBattleRosterOpen(false)}
         />
       )}
+
+      {/* and the ballot the same way again — the vote is cast on the phone,
+          and the television is showing the two people it is about */}
+      {!isPlayerRoute && <BattleBallot />}
 
       {ui.isErrored && (
         <Modal

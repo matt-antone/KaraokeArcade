@@ -46,8 +46,16 @@ describe('the battle room setting', () => {
     expect(checkbox.disabled).toBe(true)
   })
 
-  it('keeps the crowd-scoring note for a room that has them on', () => {
+  // the judging choice is a separate setting and stays reachable: a room that
+  // already has battles on can still say how they are decided
+  it('keeps the judging notes for a room that has them on', () => {
     render(<BattlePrefs prefs={{ battle: { isEnabled: true } }} onChange={vi.fn()} />)
+
+    // ballot is the default, so that is the note an enabled room opens on
+    expect(screen.getByText(/Everyone in the room votes on their own phone/)).toBeTruthy()
+
+    cleanup()
+    render(<BattlePrefs prefs={{ battle: { isEnabled: true, judging: 'crowd' } }} onChange={vi.fn()} />)
 
     expect(screen.getByText(/Crowd scoring listens through the microphone/)).toBeTruthy()
   })

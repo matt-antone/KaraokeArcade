@@ -23,6 +23,7 @@ import {
   BATTLE_SONG_ENDED,
   BATTLE_TURN,
   BATTLE_TURN_CLEAR,
+  BATTLE_VOTE,
   LOGOUT,
   _SUCCESS,
 } from 'shared/actionTypes'
@@ -57,6 +58,7 @@ const battleDecline = createAction(BATTLE_DECLINE)
 const battleCancel = createAction(BATTLE_CANCEL)
 const battlePickModeEnter = createAction<BattleSinger>(BATTLE_PICK_MODE_ENTER)
 const battlePickModeExit = createAction(BATTLE_PICK_MODE_EXIT)
+const battleVote = createAction<{ queueId: number, side: BattleSide }>(BATTLE_VOTE)
 
 /** Ask the server who else is in the room and could be fought. Answered to
  *  this socket alone, so the list is never stale for somebody else. */
@@ -106,11 +108,19 @@ export function cancelBattle () {
 }
 
 /** Ask the server to run this row's battle. Only the player sends this, on
- *  reaching the row, and it reports whether it can hear the room — a player
- *  opened at a LAN address has no microphone on the crowd, so the two metering
- *  beats would sit there in silence and the verdict would be noise. */
-export function requestBattleTurn (queueId: number, isJudgedByCrowd: boolean) {
-  return { type: BATTLE_REQ_TURN, payload: { queueId, isJudgedByCrowd } }
+ *  reaching the row, and it reports whether it can hear the room. That only
+ *  matters to a room set to crowd scoring: a player opened at a LAN address
+ *  has no microphone on the crowd, so the two metering beats would sit there
+ *  in silence and the verdict would be noise. The room decides the rest. */
+export function requestBattleTurn (queueId: number, canHearRoom: boolean) {
+  return { type: BATTLE_REQ_TURN, payload: { queueId, canHearRoom } }
+}
+
+/** This phone's vote, during the ballot beat. Applied locally on the tap as
+ *  well as sent: the ballot is silent, so the server says nothing back, and
+ *  the only confirmation the voter gets is their own key lighting up. */
+export function castBattleVote (queueId: number, side: BattleSide) {
+  return battleVote({ queueId, side })
 }
 
 /** The song ran out before its two-minute cut. Ends that singing beat early
@@ -140,6 +150,10 @@ interface BattleState {
   invite: BattleInvite | null
   /** The beat on stage right now. One of these per beat, not one per battle. */
   turn: BattleTurn | null
+  /** This phone's vote in the battle on stage, and the row it was cast in.
+   *  Local only: nobody is told who voted for whom, and the tally reaches this
+   *  phone the same way it reaches the room, on the verdict beat. */
+  vote: { queueId: number, side: BattleSide } | null
   /** A battle row the server has finished with, or declined to run at all. The
    *  player waits for this before advancing, so it neither skips a battle that
    *  is about to start nor sits for ever on one that is not coming. -1 rather
@@ -153,6 +167,7 @@ const initialState: BattleState = {
   pending: null,
   invite: null,
   turn: null,
+  vote: null,
   resolvedQueueId: -1,
 }
 
@@ -202,11 +217,20 @@ const battleReducer = createReducer(initialState, (builder) => {
     // invite that no longer exists. Declining can only ever end in nothing, so
     // it is safe to assume; accepting cannot, so it waits for the server's
     // BATTLE_INVITE with isAccepted set.
+    .addCase(battleVote, (state, { payload }) => {
+      state.vote = payload
+    })
     .addCase(battleTurn, (state, { payload }) => {
       state.turn = payload
+      // A beat for another row means the fight this phone voted in is over.
+      // Cleared here rather than only on TURN_CLEAR because two battles can
+      // run back to back with no idle beat between them, and a stale vote
+      // would show the next room's ballot already answered.
+      if (state.vote && state.vote.queueId !== payload.queueId) state.vote = null
     })
     .addCase(battleTurnClear, (state) => {
       state.turn = null
+      state.vote = null
     })
     .addCase(battleTurnRequested, (state, { payload }) => {
       // Only "there is nothing to run here" frees the player. 'inProgress'

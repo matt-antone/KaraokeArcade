@@ -115,6 +115,9 @@ export interface IRoomPrefs {
   }
   battle?: {
     isEnabled?: boolean
+    /** How a fight is decided. Absent on every room made before there was a
+     *  choice, which reads as the default — see BATTLE_JUDGING_DEFAULT. */
+    judging?: BattleJudgingPref
   }
   user?: {
     isNewAllowed?: boolean
@@ -323,6 +326,11 @@ export const BATTLE_JUDGE_MS = 5000
 export const BATTLE_METER_MS = 15000
 export const BATTLE_WINNER_MS = 15000
 
+/** How long the room has to vote. Longer than a metering beat because a phone
+ *  has to be got out of a pocket, woken and read before it can be tapped,
+ *  where shouting takes as long as drawing breath. */
+export const BATTLE_BALLOT_MS = 20000
+
 /** How much of each song gets sung. Two minutes is about a verse, a chorus and
  *  out — long enough to be a performance, short enough that the other fighter
  *  is still in the room for it. A song shorter than this simply ends and the
@@ -338,13 +346,14 @@ export const BATTLE_SING_MS = 120000
  *  - `intro2`   the opponent alone
  *  - `sing2`    the opponent sings the song the challenger chose
  *  - `judge`    the ask: who wins
+ *  - `ballot`   the room votes on its phones
  *  - `meter1`   the room is heard for the challenger
  *  - `meter2`   the room is heard for the opponent
  *  - `winner`   the verdict, with both grades
  *
- *  `meter1`/`meter2` are skipped when the player cannot hear the room, which
- *  is the ordinary case for a player opened at a LAN address rather than on
- *  the machine running the server. See BattleTurn.isJudgedByCrowd. */
+ *  Exactly one judging beat happens, and which one is BattleTurn.judging:
+ *  `ballot` for a silent vote, `meter1`/`meter2` for the microphone, and
+ *  neither when the room asked for the microphone and the player has none. */
 export type BattlePhase
   = | 'versus'
     | 'intro1'
@@ -352,9 +361,28 @@ export type BattlePhase
     | 'intro2'
     | 'sing2'
     | 'judge'
+    | 'ballot'
     | 'meter1'
     | 'meter2'
     | 'winner'
+
+/** How a room settles a fight.
+ *
+ *  - `ballot`  every phone in the room votes, and nobody sees the count until
+ *              the verdict. The default, because it is the only one that works
+ *              on a player opened anywhere but the server's own machine
+ *  - `crowd`   the player's microphone grades how loud the room was for each
+ *              fighter in turn
+ *  - `none`    the room asked for `crowd` and this player cannot hear it. Both
+ *              metering beats are skipped and the verdict is a draw
+ *
+ *  `none` is a fact about one fight rather than a setting, which is why the
+ *  room's pref is the narrower BattleJudgingPref. */
+export type BattleJudging = 'ballot' | 'crowd' | 'none'
+
+export type BattleJudgingPref = Exclude<BattleJudging, 'none'>
+
+export const BATTLE_JUDGING_DEFAULT: BattleJudgingPref = 'ballot'
 
 /** Which fighter a beat or a score belongs to. 1 is always the challenger. */
 export type BattleSide = 1 | 2
@@ -384,10 +412,11 @@ export interface BattleTurn {
    *  splash does not have to reach into the library. */
   challengerSong: BattleSong
   opponentSong: BattleSong
-  /** False when the player told us it cannot hear the room. The two metering
-   *  beats never happen, and `winner` is a draw. */
-  isJudgedByCrowd: boolean
-  /** 0 until that fighter's metering beat has finished. */
+  /** How this fight is being decided, settled before the first beat. */
+  judging: BattleJudging
+  /** That fighter's grade: votes cast for them under `ballot`, how loud the
+   *  room was for them under `crowd`. 0 until the judging beat has finished —
+   *  a ballot in progress is silent, or it is not a ballot. */
   challengerScore: number
   opponentScore: number
 }
@@ -439,8 +468,9 @@ export interface BattleInvite {
  *  React's double-invoked effects. */
 export type BattleTurnRequestStatus = 'started' | 'inProgress' | 'unavailable'
 
-/** Bounds on a crowd grade. Out of 100 because that is how a room reads a
- *  score without being told how to. */
+/** Bounds on a fighter's grade. Out of 100 because that is how a room reads a
+ *  score without being told how to — and a ceiling a ballot never reaches
+ *  either, there being no room with a hundred phones in it. */
 export const BATTLE_SCORE_MAX = 100
 
 export const clampBattleScore = (n: number): number => (

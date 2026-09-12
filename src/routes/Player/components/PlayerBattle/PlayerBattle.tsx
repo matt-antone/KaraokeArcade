@@ -211,7 +211,8 @@ const Winner = ({ turn }: { turn: BattleTurn }) => {
           </div>
         ))}
       </div>
-      {!turn.isJudgedByCrowd && (
+      {turn.judging === 'ballot' && <div className={styles.silk}>votes</div>}
+      {turn.judging === 'none' && (
         <div className={styles.silk}>this player cannot hear the room</div>
       )}
     </>
@@ -219,6 +220,22 @@ const Winner = ({ turn }: { turn: BattleTurn }) => {
 }
 
 /** Both fighters and both songs, before a note is played. */
+/** The room votes on its phones. The TV's whole job here is to say that it is
+ *  happening, to whom, and for how much longer — the count is deliberately not
+ *  on screen, because a tally the room can watch collects the undecided behind
+ *  whoever is ahead. See Battle.vote. */
+const Ballot = ({ turn, msLeft }: { turn: BattleTurn, msLeft: number }) => (
+  <>
+    <div className={styles.silk}>vote on your phone</div>
+    <div className={styles.headline}>Who wins</div>
+    <div className={styles.fighters}>
+      {fighter(turn, 1)}
+      {fighter(turn, 2)}
+    </div>
+    <div className={styles.subhead}>{Math.ceil(msLeft / 1000)}</div>
+  </>
+)
+
 const Versus = ({ turn }: { turn: BattleTurn }) => (
   <>
     <VersusSting />
@@ -237,6 +254,7 @@ const beatContent = (
   turn: BattleTurn,
   at: BattleSide,
   crowd: { level: number, grade: number },
+  msLeft: number,
 ): React.ReactNode => {
   switch (beat) {
     case 'versus':
@@ -246,6 +264,8 @@ const beatContent = (
       return <Intro turn={turn} at={at} />
     case 'judge':
       return <Judge turn={turn} />
+    case 'ballot':
+      return <Ballot turn={turn} msLeft={msLeft} />
     case 'meter1':
     case 'meter2':
       return <Meter turn={turn} at={at} level={crowd.level} grade={crowd.grade} />
@@ -286,7 +306,11 @@ const PlayerBattle = ({ queueId, getAudioCtx, width, height }: PlayerBattleProps
   const side = sideOfPhase(beat)
   const at = side ?? 1
 
-  const meterSide = beat === 'meter1' || beat === 'meter2' ? side : null
+  // Only ever set on a crowd-judged fight — the server does not send a
+  // metering beat to any other kind — but said in both places, because the one
+  // thing that must never happen by accident is a microphone opening in a room
+  // that asked for a silent ballot.
+  const meterSide = live?.judging === 'crowd' && (beat === 'meter1' || beat === 'meter2') ? side : null
   const crowd = useCrowdMic(queueId, meterSide, getAudioCtx)
 
   // The verdict lands with a noise, on the one machine in the room with
@@ -328,7 +352,7 @@ const PlayerBattle = ({ queueId, getAudioCtx, width, height }: PlayerBattleProps
       // rest carry it on the parts that are about one fighter.
       className={meterSide ? sideClass(at) : undefined}
     >
-      {beatContent(beat, live, at, crowd)}
+      {beatContent(beat, live, at, crowd, msLeft)}
     </Stage>
   )
 }

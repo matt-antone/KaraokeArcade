@@ -1,0 +1,109 @@
+/* Same sheet as the negotiation panel and the answer pad: one object arriving
+   again, not a third kind of screen. */
+.modal {
+  width: min(92vw, 26rem);
+}
+
+/* The one number on the panel. Not the tally — see the component — just how
+   long is left to answer, which is the thing a phone in a pocket needs most. */
+.clock {
+  margin-bottom: var(--gap-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-2xl);
+  color: var(--ink-3);
+  text-align: center;
+}
+
+.keys {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-2);
+}
+
+/* Deliberately the roster key from BattleDialog, one size up: this is the same
+   gesture — a person picked off a list by thumb, in a dark room — and the two
+   channel colours carry over from the TV so the room agrees about who is who. */
+.key {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-3);
+  width: 100%;
+  min-height: calc(var(--target) * 1.4);
+  padding: var(--gap-2) var(--gap-3);
+  font: inherit;
+  text-align: left;
+  color: var(--ink);
+  border: none;
+  border-left: 2px solid transparent;
+  border-radius: var(--radius-key);
+  background-color: var(--key);
+  background-image: var(--key-face);
+  box-shadow: var(--bevel);
+  cursor: pointer;
+  transition: transform var(--dur-key) var(--ease-key);
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+  }
+}
+
+.sideOne {
+  border-left-color: var(--ans-1-hi);
+}
+
+.sideTwo {
+  border-left-color: var(--ans-2-hi);
+}
+
+/* The vote you cast, told by depth rather than by colour: the two channel
+   colours are already spoken for naming the fighters, and a third colour on
+   top of them is a puzzle. A pressed key stays pressed. */
+.chosen {
+  transform: translateY(1px);
+  box-shadow: var(--well);
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+.avatar {
+  flex: none;
+  width: 42px;
+  margin: 0;
+}
+
+.who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+}
+
+.song {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--text-s);
+  color: var(--ink-3);
+}
+
+.fine {
+  margin: var(--gap-4) 0 0;
+  font-size: var(--text-m);
+  line-height: 1.4;
+  color: var(--ink-3);
+}

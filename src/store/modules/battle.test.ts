@@ -62,6 +62,7 @@ describe('battle reducer', () => {
     expect(battle).toEqual({
       singers: [],
       pending: null,
+      vote: null,
       invite: null,
       turn: null,
       // -1, not 0: 0 is a real "no queue row" on the wire and would read as a

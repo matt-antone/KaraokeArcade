@@ -10,6 +10,7 @@ import {
   BATTLE_SCORE,
   BATTLE_SINGERS,
   BATTLE_SONG_ENDED,
+  BATTLE_VOTE,
   _ERROR,
   _SUCCESS,
 } from '../../shared/actionTypes.js'
@@ -185,7 +186,7 @@ const ACTION_HANDLERS = {
 
     const status = Battle.isTurnInProgress(roomId, queueId)
       ? 'inProgress'
-      : Battle.startTurn(sock.server, roomId, queueId, !!payload.isJudgedByCrowd)
+      : Battle.startTurn(sock.server, roomId, queueId, !!payload.canHearRoom)
         ? 'started'
         : 'unavailable'
 
@@ -209,6 +210,25 @@ const ACTION_HANDLERS = {
 
     Battle.songEnded(sock.server, roomId, payload.queueId, toSide(payload.side))
     acknowledge({ type: BATTLE_SONG_ENDED + _SUCCESS })
+  },
+  // One phone's vote in a silent ballot. Battle.vote ignores anything that is
+  // not the ballot beat of the battle actually running, so a tap that lands
+  // after the beat closed costs nothing and says nothing.
+  //
+  // userId rather than socket id: one person with a phone and a tablet is the
+  // ordinary case in this codebase, and it is one person's vote.
+  [BATTLE_VOTE]: (sock, { payload }, acknowledge) => {
+    const { roomId, userId } = sock.user
+
+    if (typeof roomId !== 'number') {
+      return acknowledge({
+        type: BATTLE_VOTE + _ERROR,
+        error: 'You\'re not in a room',
+      })
+    }
+
+    Battle.vote(roomId, payload.queueId, userId, toSide(payload.side))
+    acknowledge({ type: BATTLE_VOTE + _SUCCESS })
   },
   // How loud the room was for one fighter, measured by the machine with the
   // microphone.

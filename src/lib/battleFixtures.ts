@@ -27,8 +27,8 @@ export const battleTurn = (over: Partial<BattleTurn> = {}): BattleTurn => ({
   // each fighter sings what the other picked, which is the whole point
   challengerSong: { songId: 10, artist: 'Heart', title: 'Barracuda' },
   opponentSong: { songId: 11, artist: 'Toto', title: 'Africa' },
-  isJudgedByCrowd: true,
-  // 0 until that fighter's metering beat has finished
+  judging: 'crowd',
+  // 0 until the judging beat has finished
   challengerScore: 0,
   opponentScore: 0,
   ...over,

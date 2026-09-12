@@ -398,7 +398,8 @@ router.put('/user/:userId', async (ctx) => {
 async function assertMaySignUp (
   fail: Fail,
   actor: { userId: number | null },
-  body: { role: string, roomId: number, roomPassword?: string },
+  body: { role: string, roomPassword?: string },
+  roomId: number | null,
 ) {
   // already signed in?
   if (actor.userId !== null) fail(401, 'You are already signed in')
@@ -408,7 +409,7 @@ async function assertMaySignUp (
 
   // new users must choose a room at the same time
   try {
-    await Rooms.validate(body.roomId, body.roomPassword, { role: body.role })
+    await Rooms.validate(roomId, body.roomPassword, { role: body.role })
   } catch (err) {
     fail(401, err.message)
   }
@@ -421,7 +422,17 @@ router.post('/user', async (ctx) => {
 
   const fail = (status: number, message?: string) => ctx.throw(status, message)
 
-  if (!ctx.user.isAdmin) await assertMaySignUp(fail, ctx.user, req.body)
+  // Parsed once, here, and never read off the body again below. This arrives as
+  // multipart form data — the account form sends an image alongside it — so
+  // every field is a string, and Rooms.validate deliberately refuses anything
+  // that is not a real number so that an admin with no room gets told that
+  // rather than being silently matched against every playing room. Handing it
+  // "11" therefore failed every signup with "You're not in a room", which names
+  // the one thing the person was in the middle of choosing. /user/room already
+  // parses the same field the same way.
+  const roomId = parseInt(req.body.roomId, 10) || null
+
+  if (!ctx.user.isAdmin) await assertMaySignUp(fail, ctx.user, req.body, roomId)
 
   if (req.files && req.files.image) {
     const imageFile = Array.isArray(req.files.image) ? req.files.image[0] : req.files.image
@@ -452,7 +463,9 @@ router.post('/user', async (ctx) => {
       throw new Error('User not found')
     }
 
-    const userCtx = createUserCtx(user, req.body.roomId || null)
+    // the parsed one, not the body's string: this goes into the session cookie,
+    // and every later `typeof roomId === 'number'` check reads it back out
+    const userCtx = createUserCtx(user, roomId)
 
     setSessionCookie(ctx, userCtx)
 

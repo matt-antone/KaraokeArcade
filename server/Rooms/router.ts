@@ -17,6 +17,7 @@ const log = getLogger('Rooms')
 const router = new KoaRouter({ prefix: '/api/rooms' })
 
 import { ROOM_PREFS_PUSH } from '../../shared/actionTypes.js'
+import publicRoomPrefs from './publicPrefs.js'
 
 // list rooms
 router.get(['/', '/:roomId'], (ctx) => {
@@ -35,8 +36,7 @@ router.get(['/', '/:roomId'], (ctx) => {
       const room = ctx.io.sockets.adapter.rooms.get(Rooms.prefix(roomId))
       res.entities[roomId].numUsers = room ? room.size : 0
     } else {
-      // only pass the 'roles' prefs key
-      res.entities[roomId].prefs = res.entities[roomId].prefs?.roles ? { roles: res.entities[roomId].prefs.roles } : {}
+      res.entities[roomId].prefs = publicRoomPrefs(res.entities[roomId].prefs)
     }
   })
 

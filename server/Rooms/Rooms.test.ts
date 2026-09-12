@@ -128,6 +128,25 @@ describe('validating a room', () => {
       .rejects.toThrow('Room not found')
   })
 
+  it('refuses a roomId that is still the string a form sent', async () => {
+    const roomId = roomWith('Playing Room', 'play')
+
+    // This is the contract every caller has to parse for, and the one that was
+    // missed: the account form posts multipart, so its roomId arrives as "11",
+    // and the guard above is a typeof check rather than a truthiness one on
+    // purpose — a real null means an admin who chose no room. The cost of
+    // getting it wrong is not a type error anywhere; it is every signup in the
+    // product failing with "You're not in a room", which names the very thing
+    // the person was choosing. Both callers (POST /user and POST /user/room)
+    // parseInt before they get here.
+    await expect(Rooms.validate(String(roomId) as unknown as number, undefined, { validatePassword: false }))
+      .rejects.toThrow('You\'re not in a room')
+
+    // and the same room, parsed, goes straight through
+    await expect(Rooms.validate(roomId, undefined, { validatePassword: false }))
+      .resolves.toBe(true)
+  })
+
   it('names a paused room as paused rather than missing', async () => {
     const roomId = roomWith('Paused Room', 'paused')
 

@@ -61,6 +61,54 @@ interface QueueItemProps {
  * rest of the party. There is no info action anywhere: the row already shows
  * the title, artist and singer, which is everything anyone acts on.
  */
+/**
+ * The swipe keys a row offers, which is entirely a question of permissions.
+ * Amber for constructive, red for destructive, and a played row is locked so
+ * it gets none.
+ *
+ * Its own function because it is five independent permission checks that have
+ * nothing to do with how the row draws, and they were the bulk of what made
+ * the component read as complicated.
+ */
+const rowActions = (
+  can: Pick<QueueItemProps, 'isPlayed' | 'isTunable' | 'isMovable' | 'isReplayable' | 'isSkippable' | 'isRemovable'>,
+  on: {
+    settings: () => void
+    move: () => void
+    replay: () => void
+    skip: () => void
+    remove: () => void
+  },
+): SwipeAction[] => {
+  if (can.isPlayed) return []
+
+  return [
+    can.isTunable && { icon: 'COG', label: 'Settings', tone: 'panel', onClick: on.settings },
+    can.isMovable && { icon: 'MOVE_TOP', label: 'Top', tone: 'vu', onClick: on.move },
+    can.isReplayable && { icon: 'REPLAY', label: 'Replay', tone: 'alert', onClick: on.replay },
+    can.isSkippable && { icon: 'PLAY_NEXT', label: 'Skip', tone: 'alert', onClick: on.skip },
+    can.isRemovable && { icon: 'DELETE', label: 'Remove', tone: 'alert', onClick: on.remove },
+  ].filter(Boolean) as SwipeAction[]
+}
+
+/** The chip over the avatar: how long until this row, or that it is on now.
+ *  The current row reads NOW — without it the amber state is unreachable,
+ *  since isUpcoming and isCurrent are exclusive. */
+const WaitChip = ({ isCurrent, isUpcoming, isPaused, wait }: {
+  isCurrent: boolean
+  isUpcoming: boolean
+  isPaused: boolean
+  wait?: string
+}) => {
+  if (!isCurrent && !(isUpcoming && (wait || isPaused))) return null
+
+  return (
+    <div className={clsx(styles.wait, isCurrent && styles.waitIsCurrent)}>
+      {isPaused ? <Icon icon='PAUSE' size={12} /> : isCurrent ? 'NOW' : wait}
+    </div>
+  )
+}
+
 const QueueItem = ({
   artist,
   dragHandleProps,
@@ -95,17 +143,16 @@ const QueueItem = ({
   const [isSettingsOpen, setSettingsOpen] = useState(false)
   const dispatch = useAppDispatch()
 
-  // Which keys appear is permission-driven: amber for constructive, red for
-  // destructive. A played row is locked, so it gets none.
-  const actions: SwipeAction[] = isPlayed
-    ? []
-    : [
-        isTunable && { icon: 'COG', label: 'Settings', tone: 'panel', onClick: () => setSettingsOpen(true) },
-        isMovable && { icon: 'MOVE_TOP', label: 'Top', tone: 'vu', onClick: () => onMoveClick(queueId) },
-        isReplayable && { icon: 'REPLAY', label: 'Replay', tone: 'alert', onClick: () => dispatch(requestReplay(queueId)) },
-        isSkippable && { icon: 'PLAY_NEXT', label: 'Skip', tone: 'alert', onClick: () => dispatch(requestPlayNext()) },
-        isRemovable && { icon: 'DELETE', label: 'Remove', tone: 'alert', onClick: () => dispatch(removeItem({ queueId })) },
-      ].filter(Boolean) as SwipeAction[]
+  const actions = rowActions(
+    { isPlayed, isTunable, isMovable, isReplayable, isSkippable, isRemovable },
+    {
+      settings: () => setSettingsOpen(true),
+      move: () => onMoveClick(queueId),
+      replay: () => dispatch(requestReplay(queueId)),
+      skip: () => dispatch(requestPlayNext()),
+      remove: () => dispatch(removeItem({ queueId })),
+    },
+  )
 
   const isSpent = isPlayed || isPaused
 
@@ -147,14 +194,8 @@ const QueueItem = ({
 
           <div className={styles.imageContainer}>
             <UserImage userId={userId} dateUpdated={userDateUpdated} className={styles.avatar} />
-            {/* the chip marks the playing row and the waits ahead of it. The
-                current row reads NOW — without it the amber state is
-                unreachable, since isUpcoming and isCurrent are exclusive. */}
-            {(isCurrent || (isUpcoming && (wait || isPaused))) && (
-              <div className={clsx(styles.wait, isCurrent && styles.waitIsCurrent)}>
-                {isPaused ? <Icon icon='PAUSE' size={12} /> : isCurrent ? 'NOW' : wait}
-              </div>
-            )}
+            {/* the chip marks the playing row and the waits ahead of it */}
+            <WaitChip isCurrent={isCurrent} isUpcoming={isUpcoming} isPaused={isPaused} wait={wait} />
           </div>
 
           <div className={styles.primary} translate='no'>

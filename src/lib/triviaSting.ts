@@ -194,7 +194,7 @@ function peakHold (i: number, t: number) {
   return lerp(top, LOW[i] * at, outCubic(span(since, ATTACK + PEAK_HOLD, BEAT)))
 }
 
-export interface TriviaStingOptions {
+interface TriviaStingOptions {
   /** 'still' draws the resting frame once and never animates — what every
    *  small placement wants. */
   mode?: 'sting' | 'still'
@@ -210,7 +210,7 @@ export interface TriviaStingOptions {
   isDim?: boolean
 }
 
-export interface TriviaSting {
+interface TriviaSting {
   play (): void
   replay (): void
   /** Jump to an authored millisecond and hold there. */
@@ -246,6 +246,103 @@ export default function createTriviaSting (
   let t: number | null = isStill ? null : 0
   let startedAt = 0
 
+  /** Where the mark sits and how big each part of it is, for one canvas size.
+   *  Everything below draws against this rather than recomputing it. */
+  function geometry () {
+    const markW = isGlyph ? W : Math.min(W * 0.6, H * 1.16)
+    const markH = isGlyph ? H : markW / 1.42
+    const cx = W / 2
+    const barW = markW / (4 + 3 * 0.26)
+    const seam = Math.max(isGlyph ? 1 : 2, Math.round((isGlyph ? 1 : 2.5) * DPR))
+
+    return {
+      markW,
+      markH,
+      cx,
+      x0: cx - markW / 2,
+      y0: H / 2 - markH / 2,
+      barW,
+      gapX: barW * 0.26,
+      seam,
+      segH: (markH - (SEG - 1) * seam) / SEG,
+    }
+  }
+
+  /** One register's column of segments, lit up to its level. */
+  function drawSegments (g: ReturnType<typeof geometry>, i: number, bx: number, raw: number) {
+    const lit = Math.floor(raw)
+    const partial = raw - lit
+
+    for (let s = 0; s < SEG; s++) {
+      const sy = g.y0 + g.markH - (s + 1) * g.segH - s * g.seam
+      const isLit = s < lit
+      const stop = s / SEG >= HOT_FROM ? 1 : 0
+      const on = opts.isDim ? P.off : P.ans[i][stop]
+
+      face(ctx, bx, sy, g.barW, g.segH, isLit ? on : P.well, isLit)
+
+      // The segment the bar is standing in, lit by how far into it the level
+      // has actually travelled. Without it the bar can only be at one of SEG
+      // heights, so every rise is a ladder of pops rather than a movement.
+      if (s === lit && partial > 0.02) {
+        ctx.globalAlpha = partial
+        face(ctx, bx, sy, g.barW, g.segH, on, true)
+        ctx.globalAlpha = 1
+      }
+    }
+  }
+
+  /** The hairline sitting at a register's recent maximum. No marker on the
+   *  still: a peak hold is a reading, and a still is not reading anything. */
+  function drawPeak (g: ReturnType<typeof geometry>, i: number, bx: number, a: number, isRest: boolean) {
+    const pk = isRest || opts.isDim ? null : peakHold(i, a)
+    if (pk === null || pk <= 0.02) return
+
+    ctx.fillStyle = P.vu
+    ctx.fillRect(
+      Math.round(bx),
+      Math.round(g.y0 + g.markH - pk * g.markH),
+      Math.round(g.barW),
+      Math.max(1, Math.round(2 * DPR)),
+    )
+  }
+
+  /** The four registers, each drawn as segments plus its peak marker. */
+  function drawRegisters (g: ReturnType<typeof geometry>, a: number, isRest: boolean) {
+    for (let i = 0; i < 4; i++) {
+      const bx = g.x0 + i * (g.barW + g.gapX)
+
+      drawSegments(g, i, bx, (isRest ? REST[i] : level(i, a)) * SEG)
+      drawPeak(g, i, bx, a, isRest)
+    }
+  }
+
+  /** The nameplate: a graphite band engraved across the registers, low enough
+   *  that all four tops stay above it, with the word wiping on across it. */
+  function drawPlate (g: ReturnType<typeof geometry>, a: number, isRest: boolean) {
+    const wipe = isRest ? 1 : outCubic(span(a, PLATE[0], PLATE[1]))
+    if (wipe <= 0) return
+
+    const plateH = g.markH * 0.26
+    const plateCy = g.y0 + g.markH * 0.74
+    const plateY = Math.round(plateCy - plateH / 2)
+    const plateX = Math.round(g.cx - (g.markW * 1.1) / 2)
+
+    ctx.fillStyle = P.bg
+    ctx.fillRect(plateX, plateY, Math.round(g.markW * 1.1 * wipe), Math.round(plateH))
+    ctx.fillStyle = 'rgba(74,78,84,.5)'
+    ctx.fillRect(plateX, plateY, Math.round(g.markW * 1.1 * wipe), 1)
+    ctx.fillRect(plateX, plateY + Math.round(plateH) - 1, Math.round(g.markW * 1.1 * wipe), 1)
+
+    const shown = isRest ? 6 : Math.max(0, Math.min(6, Math.floor((a - WORD_FROM) / WORD_STEP)))
+    if (!shown) return
+
+    const size = plateH * 0.42
+    setFace(ctx, size)
+    ctx.fillStyle = opts.isDim ? P.off : P.ink
+    drawTracked(ctx, 'TRIVIA', g.cx - trackedWidth(ctx, 'TRIVIA', size, 0.13) / 2, plateCy, size, 0.13, shown)
+  }
+
   function frame (at: number | null) {
     if (isGlyph) ctx.clearRect(0, 0, W, H)
     else {
@@ -256,81 +353,14 @@ export default function createTriviaSting (
     // authored time: a caller's duration stretches the timeline, never trims it
     const isRest = at === null
     const a = (at ?? 0) * (REFERENCE_MS / DUR)
+    const g = geometry()
 
-    const markW = isGlyph ? W : Math.min(W * 0.6, H * 1.16)
-    const markH = isGlyph ? H : markW / 1.42
-    const cx = W / 2
-    const x0 = cx - markW / 2
-    const y0 = H / 2 - markH / 2
+    drawRegisters(g, a, isRest)
 
-    const barW = markW / (4 + 3 * 0.26)
-    const gapX = barW * 0.26
-    const seam = Math.max(isGlyph ? 1 : 2, Math.round((isGlyph ? 1 : 2.5) * DPR))
-    const segH = (markH - (SEG - 1) * seam) / SEG
-
-    for (let i = 0; i < 4; i++) {
-      const bx = x0 + i * (barW + gapX)
-      const raw = (isRest ? REST[i] : level(i, a)) * SEG
-      const lit = Math.floor(raw)
-      const partial = raw - lit
-
-      for (let s = 0; s < SEG; s++) {
-        const sy = y0 + markH - (s + 1) * segH - s * seam
-        const isLit = s < lit
-        const stop = s / SEG >= HOT_FROM ? 1 : 0
-        const on = opts.isDim ? P.off : P.ans[i][stop]
-
-        face(ctx, bx, sy, barW, segH, isLit ? on : P.well, isLit)
-
-        // The segment the bar is standing in, lit by how far into it the level
-        // has actually travelled. Without it the bar can only be at one of SEG
-        // heights, so every rise is a ladder of pops rather than a movement.
-        if (s === lit && partial > 0.02) {
-          ctx.globalAlpha = partial
-          face(ctx, bx, sy, barW, segH, on, true)
-          ctx.globalAlpha = 1
-        }
-      }
-
-      // no marker on the still: a peak hold is a reading, and a still is not
-      // reading anything
-      const pk = isRest || opts.isDim ? null : peakHold(i, a)
-      if (pk !== null && pk > 0.02) {
-        ctx.fillStyle = P.vu
-        ctx.fillRect(
-          Math.round(bx),
-          Math.round(y0 + markH - pk * markH),
-          Math.round(barW),
-          Math.max(1, Math.round(2 * DPR)),
-        )
-      }
-    }
-
+    // a glyph is the registers alone: no plate, no word
     if (isGlyph) return
 
-    // the nameplate: a graphite band engraved across the registers, low enough
-    // that all four tops stay above it
-    const wipe = isRest ? 1 : outCubic(span(a, PLATE[0], PLATE[1]))
-    if (wipe <= 0) return
-
-    const plateH = markH * 0.26
-    const plateCy = y0 + markH * 0.74
-    const plateY = Math.round(plateCy - plateH / 2)
-    const plateX = Math.round(cx - (markW * 1.1) / 2)
-
-    ctx.fillStyle = P.bg
-    ctx.fillRect(plateX, plateY, Math.round(markW * 1.1 * wipe), Math.round(plateH))
-    ctx.fillStyle = 'rgba(74,78,84,.5)'
-    ctx.fillRect(plateX, plateY, Math.round(markW * 1.1 * wipe), 1)
-    ctx.fillRect(plateX, plateY + Math.round(plateH) - 1, Math.round(markW * 1.1 * wipe), 1)
-
-    const shown = isRest ? 6 : Math.max(0, Math.min(6, Math.floor((a - WORD_FROM) / WORD_STEP)))
-    if (!shown) return
-
-    const size = plateH * 0.42
-    setFace(ctx, size)
-    ctx.fillStyle = opts.isDim ? P.off : P.ink
-    drawTracked(ctx, 'TRIVIA', cx - trackedWidth(ctx, 'TRIVIA', size, 0.13) / 2, plateCy, size, 0.13, shown)
+    drawPlate(g, a, isRest)
   }
 
   function size () {

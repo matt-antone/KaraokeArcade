@@ -135,6 +135,30 @@ const handleFullscreen = () => {
   if (screenfull.isEnabled) screenfull.request(document.getElementById('player-fs-container'))
 }
 
+/**
+ * Which of the six states the stage is in. Its own function because it is a
+ * priority ladder — the earlier tests win — and a ladder is much easier to
+ * check for holes when it is not interleaved with the markup for its own
+ * outcomes.
+ */
+const overlayState = ({ isQueueEmpty, isAtQueueEnd, nextQueueItem, queueItem, isErrored, intermissionEndsAt, isSongEnding }: {
+  isQueueEmpty: boolean
+  isAtQueueEnd: boolean
+  nextQueueItem?: QueueItem
+  queueItem?: QueueItem
+  isErrored: boolean
+  intermissionEndsAt?: number
+  isSongEnding: boolean
+}): OverlayState => {
+  if (isQueueEmpty || (isAtQueueEnd && !nextQueueItem)) return 'empty'
+  if (!queueItem || (isAtQueueEnd && nextQueueItem)) return 'idle'
+  if (isErrored) return 'errored'
+  if (intermissionEndsAt) return 'intermission'
+  if (isSongEnding && nextQueueItem) return 'upNextTease'
+
+  return 'upNow'
+}
+
 const PlayerTextOverlay = ({
   isQueueEmpty,
   isAtQueueEnd,
@@ -156,14 +180,9 @@ const PlayerTextOverlay = ({
   const dispatch = useAppDispatch()
   const handlePlay = () => dispatch(requestPlay())
 
-  let state: OverlayState
-
-  if (isQueueEmpty || (isAtQueueEnd && !nextQueueItem)) state = 'empty'
-  else if (!queueItem || (isAtQueueEnd && nextQueueItem)) state = 'idle'
-  else if (isErrored) state = 'errored'
-  else if (intermissionEndsAt) state = 'intermission'
-  else if (isSongEnding && nextQueueItem) state = 'upNextTease'
-  else state = 'upNow'
+  const state = overlayState({
+    isQueueEmpty, isAtQueueEnd, nextQueueItem, queueItem, isErrored, intermissionEndsAt, isSongEnding,
+  })
 
   // the fullscreen key only floats over the paused stage — nothing else
   // competes there. Playing states reach fullscreen via Settings' transport.

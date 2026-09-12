@@ -1,0 +1,11 @@
+/* Same shape as My Account above it: a silkscreen status line printed on the
+   faceplate, the control under it, and the key that acts last. */
+
+.rooms {
+  margin: var(--gap-3) 0;
+}
+
+.empty {
+  margin: var(--gap-3) 0 0;
+  color: var(--ink-2);
+}

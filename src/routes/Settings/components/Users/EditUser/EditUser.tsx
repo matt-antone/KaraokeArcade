@@ -3,6 +3,7 @@ import { useAppDispatch } from 'store/hooks'
 import { createUser, removeUser, updateUser } from '../../../modules/users'
 import Button from 'components/Button/Button'
 import Modal from 'components/Modal/Modal'
+import useConfirm from 'components/Modal/useConfirm'
 import AccountForm from 'routes/Account/components/AccountForm/AccountForm'
 import { UserWithRole } from 'shared/types'
 import styles from './EditUser.css'
@@ -20,8 +21,14 @@ const EditUser = ({ user, onClose }: EditUserProps) => {
     else dispatch(createUser(data))
   }
 
-  const handleRemoveClick = () => {
-    if (user && confirm(`Remove the user "${user.username}"?\n\nTheir account and every song they have queued are deleted. This cannot be undone.`)) {
+  const [confirm, confirmDialog] = useConfirm()
+
+  const handleRemoveClick = async () => {
+    if (user && await confirm({
+      title: 'Remove user',
+      confirmLabel: 'Remove User',
+      message: `Remove the user "${user.username}"?\n\nTheir account and every song they have queued are deleted. This cannot be undone.`,
+    })) {
       dispatch(removeUser(user.userId))
     }
   }
@@ -57,6 +64,8 @@ const EditUser = ({ user, onClose }: EditUserProps) => {
           </Button>
         </div>
       </AccountForm>
+
+      {confirmDialog}
     </Modal>
   )
 }

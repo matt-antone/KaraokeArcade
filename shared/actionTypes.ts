@@ -58,6 +58,7 @@ export const ACCOUNT_RECEIVE = 'user/ACCOUNT_RECEIVE'
 export const ACCOUNT_CREATE = 'user/ACCOUNT_CREATE'
 export const ACCOUNT_UPDATE = 'user/ACCOUNT_UPDATE'
 export const ACCOUNT_REQUEST = 'user/ACCOUNT_REQUEST'
+export const ACCOUNT_SET_ROOM = 'user/ACCOUNT_SET_ROOM'
 
 // Rooms
 export const ROOMS_RECEIVE = 'rooms/RECEIVE'
@@ -70,6 +71,7 @@ export const ROOM_EDITOR_OPEN = 'rooms/EDITOR_OPEN'
 export const ROOM_EDITOR_CLOSE = 'rooms/EDITOR_CLOSE'
 export const ROOM_FILTER_STATUS = 'rooms/TOGGLE_SHOW_ALL'
 export const ROOM_PREFS_PUSH = 'rooms/ROOM_PREFS_PUSH'
+export const ROOM_STATUS_PUSH = 'rooms/ROOM_STATUS_PUSH'
 export const ROOM_PREFS_PUSH_REQUEST = 'server/ROOM_PREFS_PUSH_REQUEST'
 
 // Trivia

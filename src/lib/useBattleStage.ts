@@ -1,7 +1,28 @@
 import { useAppSelector } from 'store/hooks'
 import serverNow from './serverNow'
 import useNow from './useNow'
-import type { BattlePhase, BattleTurn } from 'shared/types'
+import type { BattlePhase, BattleSide, BattleTurn } from 'shared/types'
+
+/** Which fighter a beat belongs to. `null` is a beat about both of them, or
+ *  about neither.
+ *
+ *  Lives beside the hook because the player and the phone draw the same nine
+ *  beats and both need this answer. One table rather than six ternaries
+ *  scattered down a render, and one table rather than two: the phase-to-side
+ *  mapping is the thing most likely to be got wrong in one place and right in
+ *  five, and a second copy is how the two screens end up disagreeing about who
+ *  is singing. */
+const SIDE_OF: Partial<Record<BattlePhase, BattleSide>> = {
+  intro1: 1,
+  sing1: 1,
+  meter1: 1,
+  intro2: 2,
+  sing2: 2,
+  meter2: 2,
+}
+
+export const sideOfPhase = (phase: BattlePhase | null): BattleSide | null =>
+  (phase ? SIDE_OF[phase] ?? null : null)
 
 /**
  * The battle beat on stage right now, or nothing.

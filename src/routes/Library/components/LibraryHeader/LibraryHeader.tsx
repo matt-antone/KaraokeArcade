@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from 'store/hooks'
 import { setFilterStr, resetFilterStr, setTab, toggleFilterStarred } from '../../modules/library'
 import { exitBattlePick, getBattlePick } from 'store/modules/battle'
 import getSearchResults from '../../selectors/getSearchResults'
+import getQueueBlocker from '../../selectors/getQueueBlocker'
 import Button from 'components/Button/Button'
 import Icon from 'components/Icon/Icon'
 import Tabs from 'components/Tabs/Tabs'
@@ -28,6 +29,12 @@ const LibraryHeader = () => {
   // returns: that object is rebuilt on every call, and a component subscribed
   // to it re-renders on every action in the app.
   const battleForName = useAppSelector(state => getBattlePick(state)?.forName ?? '')
+
+  // Said once, here, rather than on each of three hundred dimmed rows. A
+  // library that has gone quiet with no reason given reads as a broken list;
+  // this is the sentence that makes it a state. Not while picking for a
+  // battle — that tap never reaches the queue, so nothing is blocking it.
+  const queueBlocker = useAppSelector(getQueueBlocker)
 
   const searchInput = useRef<HTMLInputElement>(null)
   const [value, setValue] = useState(filterStr)
@@ -94,6 +101,16 @@ const LibraryHeader = () => {
           ★
         </button>
       </div>
+
+      {!battleForName && queueBlocker && (
+        <div className={styles.blockedNote}>
+          <Icon icon='INFO_OUTLINE' size={18} />
+          <span>
+            {queueBlocker}
+            {' — you can still search and star.'}
+          </span>
+        </div>
+      )}
 
       <div className={styles.tabRow}>
         <Tabs<'artists' | 'songs'>

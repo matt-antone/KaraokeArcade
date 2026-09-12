@@ -9,6 +9,20 @@
     outline: var(--focus-outline);
   }
 
+  /* A disabled key had no treatment at all: a full-brightness primary key with
+     a pointer cursor that quietly does nothing when pressed. Dimmed rather
+     than hidden, because it is telling you the action exists and what has to
+     change before it works. */
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  /* nothing travels on a press that does not happen */
+  &:disabled:active {
+    transform: none;
+  }
+
   svg {
     display: block;
   }

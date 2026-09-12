@@ -111,3 +111,24 @@
   min-height: var(--target);
   padding: var(--gap-2) var(--gap-3);
 }
+
+/* Why the list below has gone quiet, said once instead of on every row. Sits
+   between the search box and the tabs: above the tabs because it is about the
+   whole library rather than either of them, and below the search because
+   searching is the one thing that still works. */
+.blockedNote {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-2);
+  padding: var(--gap-2) var(--gap-3);
+  margin-top: var(--gap-2);
+  border-radius: var(--radius-panel);
+  background-color: var(--key-well);
+  box-shadow: var(--well);
+  color: var(--ink-2);
+  font-size: var(--text-s);
+
+  svg {
+    flex-shrink: 0;
+  }
+}

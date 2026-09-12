@@ -14,53 +14,35 @@
   outline: none;
 }
 
-.table th {
-  font-family: var(--font-mono);
-  font-size: var(--silkscreen-size);
-  font-weight: var(--weight-regular);
-  letter-spacing: var(--silkscreen-tracking);
-  text-transform: uppercase;
-  color: var(--ink-3);
-  text-align: left;
-}
-
-.table th:first-child {
-  width: 100%;
-}
-
-/* three square keys, seams included */
-.table th:nth-child(2) {
-  min-width: 140px;
-}
-
 .table td {
   height: 32px;
   overflow: hidden;
   white-space: nowrap;
 }
 
-/* meta columns are data printed on the panel, so they are mono. The transport
-   in column 2 is a control, not data, so it is skipped */
-.table td:nth-child(3),
-.table td:nth-child(4) {
+/* The name takes whatever the other two leave. width:100% with max-width:0 is
+   the pair that makes a table cell ellipsize at all — the widths used to sit
+   on the header row, which no longer exists. */
+.table td:first-child {
+  width: 100%;
+  max-width: 0;
+  text-overflow: ellipsis;
+}
+
+/* two square keys, seams included */
+.table td:nth-child(2) {
+  min-width: 100px;
+}
+
+/* the occupancy count is data printed on the panel, so it is mono. The
+   transport in column 2 is a control, not data, so it is skipped */
+.table td:nth-child(3) {
   font-family: var(--font-mono);
   font-size: var(--text-s);
   color: var(--ink-3);
-}
-
-/* the two meta columns are narrow enough to collide without this, and their
-   headings read as one word when they do */
-.table th:nth-child(3),
-.table th:nth-child(4),
-.table td:nth-child(3),
-.table td:nth-child(4) {
+  /* narrow enough to collide with the transport beside it without this */
   padding-left: var(--gap-3);
   text-align: right;
-}
-
-.table td:first-child  {
-  text-overflow: ellipsis;
-  max-width: 0;
 }
 
 .createBtn {

@@ -3,6 +3,7 @@ import { useAppDispatch } from 'store/hooks'
 import { createRoom, removeRoom, updateRoom, requestPrefsPush } from 'store/modules/rooms'
 import Button from 'components/Button/Button'
 import Modal from 'components/Modal/Modal'
+import useConfirm from 'components/Modal/useConfirm'
 import UserPrefs from './UserPrefs/UserPrefs'
 import QRPrefs from './QRPrefs/QRPrefs'
 import TriviaPrefs from './TriviaPrefs/TriviaPrefs'
@@ -45,8 +46,14 @@ const EditRoom = ({ onClose, room }: EditRoomProps) => {
     }
   }
 
-  const handleRemoveClick = () => {
-    if (room && confirm(`Remove the room "${room.name}"?\n\nIts queue is deleted and everyone in it is signed out. This cannot be undone.`)) {
+  const [confirm, confirmDialog] = useConfirm()
+
+  const handleRemoveClick = async () => {
+    if (room && await confirm({
+      title: 'Remove room',
+      confirmLabel: 'Remove Room',
+      message: `Remove the room "${room.name}"?\n\nIts queue is deleted and everyone in it is signed out. This cannot be undone.`,
+    })) {
       dispatch(removeRoom(room.roomId))
     }
   }
@@ -121,6 +128,8 @@ const EditRoom = ({ onClose, room }: EditRoomProps) => {
           </Button>
         </div>
       </form>
+
+      {confirmDialog}
     </Modal>
   )
 }

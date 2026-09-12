@@ -39,6 +39,28 @@
       color: var(--ink-5);
     }
   }
+
+  /* Nothing can be queued at all — no room, or a room that is not playing.
+     The whole list is like this at once, so it is deliberately quieter than
+     .played: a key face that has lost its bevel and dimmed, not three hundred
+     rows shouting. The reason is printed once above the list rather than on
+     every row, and the star keeps its full ink because starring still works. */
+  &.blocked:not(.upcoming):not(.played) {
+    box-shadow: none;
+
+    .title {
+      color: var(--ink-3);
+    }
+
+    .meta {
+      color: var(--ink-5);
+    }
+  }
+
+  /* the press travel is feedback for something happening, and nothing is */
+  &.blocked:has(.primary:active) {
+    transform: none;
+  }
 }
 
 .duration {

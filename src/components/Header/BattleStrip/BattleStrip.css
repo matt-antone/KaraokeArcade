@@ -1,0 +1,61 @@
+/* The battle, captioned, in the header chrome under Your Turn.
+
+   Built to YourTurn's rules rather than PlayerBattle's: this is a status strip
+   in a phone's chrome, not the arcade splash on the television. One row,
+   recessed, seamed above and ruled below, so it reads as another band of the
+   faceplate rather than as a thing that has appeared.
+
+   The two channels are the same two the TV and BattleDialog use — crimson for
+   the challenger, moss for the opponent — and they arrive here as a rule down
+   the leading edge, never as type. --ans-1-hi as text on a faceplate measures
+   2.7:1, which is under AA and the reason BattleDialog draws its sides the
+   same way. */
+
+.container {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-3);
+  padding: var(--gap-2) var(--gap-4);
+  background-color: var(--key-well);
+  box-shadow: var(--well);
+  border-top: var(--seam-rule);
+  border-bottom: var(--hair-rule);
+  /* held for the beats about both fighters, so the row does not change width
+     when a side takes over */
+  border-left: 2px solid transparent;
+  overflow: hidden;
+}
+
+.sideOne {
+  border-left-color: var(--ans-1-hi);
+}
+
+.sideTwo {
+  border-left-color: var(--ans-2-hi);
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+}
+
+.legend {
+  display: block;
+}
+
+/* one line, ellipsized: a long name and a long title together will not fit a
+   phone, and wrapping this strip would push every screen under it down mid-song */
+.line {
+  font-weight: var(--weight-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scores,
+.clock {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--vu);
+}

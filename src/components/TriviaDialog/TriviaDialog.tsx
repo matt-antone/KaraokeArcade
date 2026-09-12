@@ -32,6 +32,44 @@ import styles from './TriviaDialog.css'
  *  the TV carries the same list. */
 const SCOREBOARD_ROWS = 5
 
+/** A correct answer that was yours, or the one you actually picked and missed.
+ *  Every other key is just its own text. */
+const labelOf = (answer: string, state: AnswerKeyState, isMine: boolean) => {
+  if (state === 'correct' && isMine) return `🎉 ${answer}`
+  if (state === 'missed') return `😬 ${answer}`
+
+  return answer
+}
+
+/** What one answer key is, which depends entirely on whether the reveal has
+ *  landed: before it, the keys are open or your choice is locked in; after it,
+ *  they are the correct one, the one you missed, or neither. */
+const stateOf = (i: number, correctIdx: number | undefined, answeredIdx: number | null): AnswerKeyState => {
+  if (correctIdx !== undefined) {
+    if (i === correctIdx) return 'correct'
+
+    return i === answeredIdx ? 'missed' : 'wrong'
+  }
+
+  if (answeredIdx === null) return 'open'
+
+  return i === answeredIdx ? 'chosen' : 'closed'
+}
+
+/** Top five, and your own row after them if you are not in it. A board you
+ *  cannot find yourself on is a board you stop playing for, and outside the
+ *  top five is exactly where most of the room is standing. */
+const scoreboardRows = (scores: TriviaScore[], userId: number | null) => {
+  const rows = scores.slice(0, SCOREBOARD_ROWS).map((score, i) => ({ score, rank: i, isAside: false }))
+  const myRank = scores.findIndex(s => s.userId === userId)
+
+  if (myRank >= SCOREBOARD_ROWS) {
+    rows.push({ score: scores[myRank], rank: myRank, isAside: true })
+  }
+
+  return rows
+}
+
 const TriviaDialog = () => {
   const dispatch = useAppDispatch()
   const { round, result } = useTriviaStage()
@@ -57,22 +95,6 @@ const TriviaDialog = () => {
   const isTally = !!result && now >= result.scoresFrom
   const isScoreboard = !!result?.boardFrom && now >= result.boardFrom
 
-  const labelOf = (answer: string, state: AnswerKeyState, isMine: boolean) => {
-    if (state === 'correct' && isMine) return `🎉 ${answer}`
-    if (state === 'missed') return `😬 ${answer}`
-    return answer
-  }
-
-  const stateOf = (i: number): AnswerKeyState => {
-    if (result) {
-      if (i === result.correctIdx) return 'correct'
-      return i === answeredIdx ? 'missed' : 'wrong'
-    }
-
-    if (answeredIdx === null) return 'open'
-    return i === answeredIdx ? 'chosen' : 'closed'
-  }
-
   // The same count the TV shows, on every question including the last.
   if (isTally && !isScoreboard) {
     return (
@@ -87,15 +109,7 @@ const TriviaDialog = () => {
   }
 
   if (isScoreboard) {
-    // Top five, and your own row after them if you are not in it. A board you
-    // cannot find yourself on is a board you stop playing for, and outside the
-    // top five is exactly where most of the room is standing.
-    const myRank = result.scores.findIndex(s => s.userId === userId)
-    const rows = result.scores.slice(0, SCOREBOARD_ROWS).map((score, i) => ({ score, rank: i, isAside: false }))
-
-    if (myRank >= SCOREBOARD_ROWS) {
-      rows.push({ score: result.scores[myRank], rank: myRank, isAside: true })
-    }
+    const rows = scoreboardRows(result.scores, userId)
 
     return (
       <Modal
@@ -141,7 +155,7 @@ const TriviaDialog = () => {
 
       <div className={styles.keys}>
         {round.answers.map((answer, i) => {
-          const state = stateOf(i)
+          const state = stateOf(i, result?.correctIdx, answeredIdx)
 
           return (
             <AnswerKey

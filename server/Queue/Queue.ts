@@ -3,6 +3,104 @@ import { db } from '../lib/Database.js'
 import sql from 'sqlate'
 import { clampKeyChange, QueueItem, QueueItemType } from '../../shared/types.js'
 
+/**
+ * One database row, turned into the queue item the clients are sent.
+ *
+ * Its own function because it is a long run of unrelated normalisations —
+ * absent singers, absent songs, the second fighter, the columns that must not
+ * go over the wire — and none of it is about the ordering the caller does
+ * around it.
+ */
+/** One row of the queue query, before shapeRow normalises it. Named because
+ *  shapeRow takes it and an inline type cannot be shared. */
+interface QueueRow {
+  queueId: number
+  type: QueueItemType
+  datePlayed: number | null
+  songId: number | null
+  userId: number | null
+  prevQueueId: number
+  keyChange: number
+  mediaId: number
+  relPath: string
+  rgTrackGain: number
+  rgTrackPeak: number
+  userDisplayName: string
+  userDateUpdated: number
+  pathId: number
+  pathData: string
+  opponentSongId: number | null
+  opponentUserId: number | null
+  opponentMediaId: number | null
+  opponentRelPath: string | null
+  opponentRgTrackGain: number | null
+  opponentRgTrackPeak: number | null
+  opponentDisplayName: string | null
+  opponentDateUpdated: number | null
+  opponentPathId: number | null
+  opponentPathData: string | null
+}
+
+/** A folder's parsed prefs. Only one key is ever read from them here. */
+interface PathPrefs {
+  isVideoKeyingEnabled?: boolean
+}
+
+function shapeRow (
+  row: QueueRow,
+  prefsForPath: (pathId: number | null, data: string | null) => PathPrefs | undefined,
+  getType: (relPath: string) => string | null,
+): QueueItem {
+  const pathPrefs = prefsForPath(row.pathId, row.pathData)
+  const oppPathPrefs = prefsForPath(row.opponentPathId, row.opponentPathData)
+  const item = row as QueueRow & Record<string, unknown>
+
+  item.mediaType = row.type === 'trivia' ? null : getType(row.relPath)
+  item.isVideoKeyingEnabled = !!pathPrefs?.isVideoKeyingEnabled
+
+  // a round has no singer and no song; 0 keeps every consumer that filters
+  // by userId or looks a song up by songId working without a null check
+  item.songId = row.songId ?? 0
+  item.userId = row.userId ?? 0
+
+  // Same rule for the second fighter, on every row rather than only on a
+  // battle: a consumer that reads opponentUserId without knowing about
+  // battles gets 0 and filters the row out, which is what it means.
+  item.opponentSongId = row.opponentSongId ?? 0
+  item.opponentUserId = row.opponentUserId ?? 0
+  item.opponentDisplayName = row.opponentDisplayName ?? ''
+  item.opponentDateUpdated = row.opponentDateUpdated ?? 0
+  item.opponentMediaId = row.opponentMediaId ?? 0
+  item.opponentMediaType = row.type === 'battle' ? getType(row.opponentRelPath as string) : null
+  item.opponentIsVideoKeyingEnabled = !!oppPathPrefs?.isVideoKeyingEnabled
+
+  // ponytail: no column behind this, so a battle always plays the
+  // opponent's half in the recording's own key. The row already carries
+  // one keyChange for the challenger; giving the second singer their own
+  // needs a migration, and nobody has asked to transpose half a battle.
+  item.opponentKeyChange = 0
+
+  // The player names whoever is up next during the intermission, in the
+  // corner panel and in the coming-up line. A round is up next like anyone
+  // else, so it is given a name here rather than teaching each of those
+  // three places what an absent singer looks like.
+  if (row.type === 'trivia') {
+    item.userDisplayName = 'Trivia'
+    item.isPlayed = row.datePlayed !== null
+  }
+
+  delete item.datePlayed
+
+  // don't send over the wire
+  delete item.relPath
+  delete item.pathData
+  delete item.opponentRelPath
+  delete item.opponentPathId
+  delete item.opponentPathData
+
+  return item as unknown as QueueItem
+}
+
 class Queue {
   /**
    * Add a songId to a room's queue
@@ -284,33 +382,7 @@ class Queue {
         )
       ORDER BY queue.queueId
     `
-    const rows = db.all<{
-      queueId: number
-      type: QueueItemType
-      datePlayed: number | null
-      songId: number | null
-      userId: number | null
-      prevQueueId: number
-      keyChange: number
-      mediaId: number
-      relPath: string
-      rgTrackGain: number
-      rgTrackPeak: number
-      userDisplayName: string
-      userDateUpdated: number
-      pathId: number
-      pathData: string
-      opponentSongId: number | null
-      opponentUserId: number | null
-      opponentMediaId: number | null
-      opponentRelPath: string | null
-      opponentRgTrackGain: number | null
-      opponentRgTrackPeak: number | null
-      opponentDisplayName: string | null
-      opponentDateUpdated: number | null
-      opponentPathId: number | null
-      opponentPathData: string | null
-    }>(String(query), query.parameters)
+    const rows = db.all<QueueRow>(String(query), query.parameters)
 
     /** A folder's prefs, parsed once per folder rather than once per row. */
     const prefsForPath = (pathId: number | null, data: string | null) => {
@@ -324,52 +396,7 @@ class Queue {
     }
 
     for (const row of rows) {
-      const pathPrefs = prefsForPath(row.pathId, row.pathData)
-      const oppPathPrefs = prefsForPath(row.opponentPathId, row.opponentPathData)
-
-      entities[row.queueId] = row
-      entities[row.queueId].mediaType = row.type === 'trivia' ? null : this.getType(row.relPath)
-      entities[row.queueId].isVideoKeyingEnabled = !!pathPrefs?.isVideoKeyingEnabled
-
-      // a round has no singer and no song; 0 keeps every consumer that filters
-      // by userId or looks a song up by songId working without a null check
-      entities[row.queueId].songId = row.songId ?? 0
-      entities[row.queueId].userId = row.userId ?? 0
-
-      // Same rule for the second fighter, on every row rather than only on a
-      // battle: a consumer that reads opponentUserId without knowing about
-      // battles gets 0 and filters the row out, which is what it means.
-      entities[row.queueId].opponentSongId = row.opponentSongId ?? 0
-      entities[row.queueId].opponentUserId = row.opponentUserId ?? 0
-      entities[row.queueId].opponentDisplayName = row.opponentDisplayName ?? ''
-      entities[row.queueId].opponentDateUpdated = row.opponentDateUpdated ?? 0
-      entities[row.queueId].opponentMediaId = row.opponentMediaId ?? 0
-      entities[row.queueId].opponentMediaType = row.type === 'battle' ? this.getType(row.opponentRelPath as string) : null
-      entities[row.queueId].opponentIsVideoKeyingEnabled = !!oppPathPrefs?.isVideoKeyingEnabled
-
-      // ponytail: no column behind this, so a battle always plays the
-      // opponent's half in the recording's own key. The row already carries
-      // one keyChange for the challenger; giving the second singer their own
-      // needs a migration, and nobody has asked to transpose half a battle.
-      entities[row.queueId].opponentKeyChange = 0
-
-      // The player names whoever is up next during the intermission, in the
-      // corner panel and in the coming-up line. A round is up next like anyone
-      // else, so it is given a name here rather than teaching each of those
-      // three places what an absent singer looks like.
-      if (row.type === 'trivia') {
-        entities[row.queueId].userDisplayName = 'Trivia'
-        entities[row.queueId].isPlayed = row.datePlayed !== null
-      }
-
-      delete entities[row.queueId].datePlayed
-
-      // don't send over the wire
-      delete entities[row.queueId].relPath
-      delete entities[row.queueId].pathData
-      delete entities[row.queueId].opponentRelPath
-      delete entities[row.queueId].opponentPathId
-      delete entities[row.queueId].opponentPathData
+      entities[row.queueId] = shapeRow(row, prefsForPath, relPath => this.getType(relPath))
 
       if (row.prevQueueId === null) {
         // found the first item

@@ -5,6 +5,7 @@ import Button from 'components/Button/Button'
 import Icon from 'components/Icon/Icon'
 import InputCheckbox from 'components/InputCheckbox/InputCheckbox'
 import Slider from 'components/Slider/Slider'
+import useConfirm from 'components/Modal/useConfirm'
 import { requestScoresReset } from 'store/modules/rooms'
 import {
   TRIVIA_COUNTDOWN_DEFAULT,
@@ -33,11 +34,17 @@ const TriviaPrefs = ({ onChange, prefs = {}, roomId }: TriviaPrefsProps) => {
     onChange({ ...prefs, trivia: { ...prefs.trivia, ...update } })
   }
 
-  const handleReset = () => {
+  const [confirm, confirmDialog] = useConfirm()
+
+  const handleReset = async () => {
     if (typeof roomId !== 'number') return
 
     // undoable only by playing the whole night again, so it asks first
-    if (!confirm('Reset every score in this room?\n\nThe scoreboard starts empty and this cannot be undone.')) return
+    if (!await confirm({
+      title: 'Reset scores',
+      confirmLabel: 'Reset scores',
+      message: 'Reset every score in this room?\n\nThe scoreboard starts empty and this cannot be undone.',
+    })) return
 
     dispatch(requestScoresReset(roomId))
     setIsReset(true)
@@ -87,6 +94,8 @@ const TriviaPrefs = ({ onChange, prefs = {}, roomId }: TriviaPrefsProps) => {
           </>
         )}
       </div>
+
+      {confirmDialog}
     </Accordion>
   )
 }

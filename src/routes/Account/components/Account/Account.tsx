@@ -3,10 +3,12 @@ import clsx from 'clsx'
 import { useNavigate } from 'react-router'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
 import { requestLogout, updateAccount } from 'store/modules/user'
+import { showErrorMessage } from 'store/modules/ui'
 import { removeItem } from 'routes/Queue/modules/queue'
 import getUpcoming from 'routes/Queue/selectors/getUpcoming'
 import Panel from 'components/Panel/Panel'
 import Button from 'components/Button/Button'
+import useConfirm from 'components/Modal/useConfirm'
 import AccountForm from '../AccountForm/AccountForm'
 import styles from './Account.css'
 
@@ -18,8 +20,9 @@ const Account = () => {
 
   const curPassword = useRef(null)
   const [isDirty, setDirty] = useState(false)
+  const [confirm, confirmDialog] = useConfirm()
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     if (!user.isAdmin) {
       const hasUpcomingSongs = upcomingQueueIds.length > 0
       let message = ''
@@ -32,7 +35,11 @@ const Account = () => {
         message = `Are you sure you want to sign out?\n\nYour upcoming songs will be removed from the queue.`
       }
 
-      if (message && !confirm(message)) return
+      if (message && !await confirm({
+        title: 'Sign out',
+        confirmLabel: 'Sign out',
+        message,
+      })) return
 
       if (hasUpcomingSongs) {
         dispatch(removeItem({ queueId: upcomingQueueIds }))
@@ -46,7 +53,10 @@ const Account = () => {
   const handleSubmit = (data: FormData) => {
     if (!user.isGuest) {
       if (!curPassword.current.value.trim()) {
-        alert('Please enter your current password to make changes.')
+        // The app's own fault panel rather than window.alert, which an
+        // embedded or managed browser suppresses outright — the form would
+        // simply refuse to submit with nothing said about why.
+        dispatch(showErrorMessage('Please enter your current password to make changes.'))
         curPassword.current.focus()
         return
       }
@@ -94,6 +104,8 @@ const Account = () => {
             </Button>
           </div>
         </AccountForm>
+
+        {confirmDialog}
       </>
     </Panel>
   )

@@ -18,6 +18,10 @@ interface SongItemProps {
   isStarred: boolean
   isUpcoming: boolean
   isAdmin: boolean
+  /** Nothing this device queues would be accepted right now — no room, or a
+   *  room that is not playing. The row goes inert like a played one; the star
+   *  stays live, because starring never needed a room. */
+  isQueueBlocked?: boolean
   /** Set when this song is the signed-in user's own upcoming item: tapping takes it back out. */
   myQueueId?: number
   /**
@@ -38,6 +42,47 @@ interface SongItemProps {
  * more takes your own queued song back out — the star is the row's only
  * other action.
  */
+/**
+ * What a row is, reduced to the four answers the render actually asks for.
+ *
+ * Pulled out because the row has three overlapping modes — normally browsing,
+ * picking for a battle, and a room that cannot take a song at all — and each
+ * one flips a different subset of the same flags. Read down the middle of a
+ * render they were six interlocking ternaries; named here they are a table.
+ */
+const rowState = ({ isBattle, isMine, isUpcoming, isPlayed, isQueueBlocked }: {
+  isBattle: boolean
+  isMine: boolean
+  isUpcoming: boolean
+  isPlayed: boolean
+  isQueueBlocked?: boolean
+}) => {
+  // Normally a song somebody else has queued, or one the room has already sung,
+  // is dead: tapping it would do nothing and the row says so rather than
+  // swallowing the tap. In battle mode that rule is wrong — you are choosing
+  // what your opponent has to sing, and the song you want is very often one
+  // already in the queue or one the room heard an hour ago. Nothing is inert
+  // while picking, and no tap removes anything either: a battle pick is not a
+  // queue action and must not take somebody's own song back out from under them.
+  //
+  // A blocked room kills the tap outright, including taking your own song back
+  // out: removing from the queue goes through the same room check the server
+  // applies to adding, so offering it would be the same lie one row over.
+  const isInert = !isBattle && (((isUpcoming || isPlayed) && !isMine) || !!isQueueBlocked)
+
+  // The row's one word of state, when it has one. In battle mode it is the
+  // instruction instead, on exactly the rows that would otherwise read as
+  // unavailable — the star stays on every other row so the list does not change
+  // height and PaddedList's measurement cache stays valid.
+  const hasLabel = isUpcoming || (isBattle && isPlayed)
+
+  // "tap to remove" on a row whose tap does nothing is the same lie the whole
+  // blocked state exists to stop telling.
+  const label = isBattle ? 'TAP TO PICK' : (isMine && !isInert) ? 'TAP TO REMOVE' : 'QUEUED'
+
+  return { isInert, hasLabel, label }
+}
+
 const SongItem = ({
   songId,
   artist,
@@ -51,6 +96,7 @@ const SongItem = ({
   isStarred,
   isUpcoming,
   isAdmin,
+  isQueueBlocked,
   myQueueId,
   battleForName,
   numStars,
@@ -58,16 +104,9 @@ const SongItem = ({
   filterKeywords,
 }: SongItemProps) => {
   const isMine = myQueueId !== undefined
-
-  // Normally a song somebody else has queued, or one the room has already sung,
-  // is dead: tapping it would do nothing and the row says so rather than
-  // swallowing the tap. In battle mode that rule is wrong — you are choosing
-  // what your opponent has to sing, and the song you want is very often one
-  // already in the queue or one the room heard an hour ago. Nothing is inert
-  // while picking, and no tap removes anything either: a battle pick is not a
-  // queue action and must not take somebody's own song back out from under them.
   const isBattle = !!battleForName
-  const isInert = !isBattle && (isUpcoming || isPlayed) && !isMine
+  const { isInert, hasLabel, label } = rowState({ isBattle, isMine, isUpcoming, isPlayed, isQueueBlocked })
+
   const handleClick = () => isMine && !isBattle ? onSongDequeue(myQueueId) : onSongQueue(songId)
   const handleStarClick = () => onSongStarClick(songId)
 
@@ -77,6 +116,7 @@ const SongItem = ({
         styles.container,
         isPlayed && styles.played,
         isUpcoming && styles.upcoming,
+        isQueueBlocked && !isBattle && styles.blocked,
       )}
     >
       <div className={styles.duration}>
@@ -104,16 +144,8 @@ const SongItem = ({
         )}
       </button>
 
-      {/* The row's one word of state. In battle mode it is the instruction
-          instead, on exactly the rows that would otherwise read as unavailable —
-          the star stays on every other row so the list does not change height
-          and PaddedList's measurement cache stays valid. */}
-      {isUpcoming || (isBattle && isPlayed)
-        ? (
-            <span className={styles.queued}>
-              {isBattle ? 'TAP TO PICK' : isMine ? 'TAP TO REMOVE' : 'QUEUED'}
-            </span>
-          )
+      {hasLabel
+        ? <span className={styles.queued}>{label}</span>
         : (
             <ButtonStar
               className={styles.btn}

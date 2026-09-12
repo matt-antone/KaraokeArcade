@@ -8,7 +8,7 @@ import LibrarySocket from './Library/socket.js'
 import PlayerSocket from './Player/socket.js'
 import Prefs from './Prefs/Prefs.js'
 import PrefsSocket from './Prefs/socket.js'
-import Rooms from './Rooms/Rooms.js'
+import Rooms, { STATUSES } from './Rooms/Rooms.js'
 import RoomsSocket from './Rooms/socket.js'
 import Queue from './Queue/Queue.js'
 import QueueSocket from './Queue/socket.js'
@@ -20,6 +20,7 @@ import {
   BATTLE_TURN,
   LIBRARY_PUSH,
   QUEUE_PUSH,
+  ROOM_STATUS_PUSH,
   STARS_PUSH,
   STAR_COUNTS_PUSH,
   PLAYER_STATUS,
@@ -182,6 +183,19 @@ export default function (io, jwtKey) {
     log.verbose('%s (%s) joined room %s (%s in room)',
       sock.user.name, sock.id, sock.user.roomId, sock.adapter.rooms.size,
     )
+
+    // Where the room's transport is. Pushed on the way in as well as on every
+    // change, because somebody who opens the app into a room that is already
+    // paused never sees a change — and the library decides whether to offer
+    // its songs from this.
+    io.to(sock.id).emit('action', {
+      type: ROOM_STATUS_PUSH,
+      payload: {
+        roomId: sock.user.roomId,
+        status: Rooms.get(sock.user.roomId, { status: STATUSES })
+          .entities[sock.user.roomId]?.status,
+      },
+    })
 
     // send room's queue
     io.to(sock.id).emit('action', {

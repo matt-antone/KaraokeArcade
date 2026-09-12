@@ -48,19 +48,25 @@ const BEAT_MS: Record<BattlePhase, number> = {
 
 /** The beats a battle always runs, in order. The judging beats are spliced in
  *  before the last one — see JUDGING_BEATS. */
-const BEATS: BattlePhase[] = ['versus', 'intro1', 'sing1', 'intro2', 'sing2', 'judge', 'winner']
+const BEATS: BattlePhase[] = ['versus', 'intro1', 'sing1', 'intro2', 'sing2', 'winner']
 
 /** What each way of deciding a fight costs in beats.
  *
- *  `crowd` is two, one fighter at a time, because a room cannot shout for two
- *  people at once and a microphone cannot tell them apart if it does. `ballot`
- *  is one: every phone holds both names and answers whenever it is ready.
- *  `none` is the room having asked for a microphone the player has not got —
- *  metering a silent input would hand every battle to whoever the rounding
- *  favoured, so nothing is metered and the verdict is a draw. */
+ *  `crowd` is two meters, one fighter at a time, because a room cannot shout
+ *  for two people at once and a microphone cannot tell them apart if it does.
+ *  `ballot` is one: every phone holds both names and answers whenever it is
+ *  ready. `none` is the room having asked for a microphone the player has not
+ *  got — metering a silent input would hand every battle to whoever the
+ *  rounding favoured, so nothing is metered and the verdict is a draw.
+ *
+ *  `judge` leads both of the deciding modes rather than sitting in BEATS,
+ *  because it is the question they answer. Under `none` there is nothing to
+ *  answer it with, and five seconds of asking "who wins" immediately before
+ *  announcing a nil-all draw reads as a screen that has crashed rather than as
+ *  a rule. */
 const JUDGING_BEATS: Record<BattleJudging, BattlePhase[]> = {
-  ballot: ['ballot'],
-  crowd: ['meter1', 'meter2'],
+  ballot: ['judge', 'ballot'],
+  crowd: ['judge', 'meter1', 'meter2'],
   none: [],
 }
 
@@ -463,8 +469,9 @@ class Battle {
    * canHearRoom is the player's own answer to "can you hear this room" — it is
    * the machine with the microphone, so it is the only one that knows. It only
    * matters to a room set to crowd scoring, and a no there drops both metering
-   * beats rather than running them against silence. A room on the default
-   * silent ballot never asks the player for anything.
+   * beats rather than running them against silence — along with the question
+   * they answer. A room on the default silent ballot never asks the player for
+   * anything.
    *
    * Idempotent: a second call while a battle is running is a no-op, so two
    * players in one room cannot start two. There is deliberately no in-flight
@@ -641,8 +648,11 @@ class Battle {
   /**
    * Drop a room's battle and its pending challenge, timers and all.
    *
-   * Deliberately silent — the callers are the room being stopped and the room
-   * being deleted, and by then there is nobody left to emit to. A timer that
+   * Silent, and it has no io to talk through. That is right for the room being
+   * deleted, which has nobody left to tell, and not enough on its own for the
+   * room being stopped, which disconnects nobody: `setRoomTransport` follows
+   * this call with BATTLE_TURN_CLEAR and BATTLE_INVITE_CLEAR, because a room
+   * that is still listening has to be told the fight is off. A timer that
    * outlives its room is not a leak here, it is a bug that was actually hit:
    * it fires against a queue that has just been emptied and pushes a beat into
    * a room that no longer exists.

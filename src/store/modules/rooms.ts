@@ -12,6 +12,7 @@ import {
   ROOM_REMOVE,
   ROOM_SET_STATUS,
   ROOM_PREFS_PUSH,
+  ROOM_STATUS_PUSH,
   ROOM_PREFS_PUSH_REQUEST,
   TRIVIA_SCORES_RESET,
   LOGOUT,
@@ -87,6 +88,7 @@ export const openRoomEditor = createAction(ROOM_EDITOR_OPEN)
 export const closeRoomEditor = createAction(ROOM_EDITOR_CLOSE)
 export const filterByStatus = createAction<boolean | string>(ROOM_FILTER_STATUS)
 const roomPrefsPush = createAction<{ roomId: number, prefs: IRoomPrefs }>(ROOM_PREFS_PUSH)
+const roomStatusPush = createAction<{ roomId: number, status: RoomStatus }>(ROOM_STATUS_PUSH)
 
 export function requestPrefsPush (roomId: number, prefs: IRoomPrefs): AppThunk {
   return (dispatch) => {
@@ -136,6 +138,19 @@ interface RoomsState {
   entities: Record<number, Room>
   filterStatus: boolean | string
   isEditorOpen: boolean
+  /**
+   * The transport of the room this device is in, as the server last told it.
+   *
+   * Kept beside `entities` rather than in it because it arrives without the
+   * rest of a room — a singer's phone never fetches the room list, and faking
+   * an entity out of a roomId and a status would put a nameless half-room in
+   * the list the Settings screen draws from.
+   *
+   * null means nobody has said yet, which is not the same as stopped: a client
+   * that has not heard is left able to queue rather than being shown a dead
+   * library on missing data.
+   */
+  myRoomStatus: RoomStatus | null
 }
 
 const initialState: RoomsState = {
@@ -148,6 +163,7 @@ const initialState: RoomsState = {
   // any more.
   filterStatus: false,
   isEditorOpen: false,
+  myRoomStatus: null,
 }
 
 const roomsReducer = createReducer(initialState, (builder) => {
@@ -175,6 +191,15 @@ const roomsReducer = createReducer(initialState, (builder) => {
 
       if (state.entities[roomId]) {
         state.entities[roomId].prefs = payload.prefs
+      }
+    })
+    .addCase(roomStatusPush, (state, { payload }) => {
+      state.myRoomStatus = payload.status
+
+      // the rooms list, when this device happens to have one, is looking at the
+      // same fact and would otherwise keep showing the old transport
+      if (state.entities[payload.roomId]) {
+        state.entities[payload.roomId].status = payload.status
       }
     })
     .addCase(LOGOUT, () => ({

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import RoomTransport from './RoomTransport'
 
 const dispatch = vi.fn()
@@ -21,17 +21,52 @@ const renderTransport = (status: 'play' | 'paused' | 'stopped' = 'play') =>
 
 beforeEach(() => {
   vi.clearAllMocks()
-  window.confirm = vi.fn(() => true)
 })
 
 afterEach(cleanup)
 
 describe('RoomTransport', () => {
-  it('lights the key the room is on, and only that one', () => {
+  // The running key offers what pressing it does, not where the room is, so
+  // only one of play and pause is ever on screen.
+  it('offers pause while the room is playing', () => {
+    renderTransport('play')
+
+    expect(screen.getByLabelText('Pause')).toBeTruthy()
+    expect(screen.queryByLabelText('Play')).toBeNull()
+  })
+
+  it('offers play while the room is not', () => {
     renderTransport('paused')
 
-    expect(screen.getByLabelText('Pause').getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByLabelText('Play').getAttribute('aria-pressed')).toBe('false')
+    expect(screen.getByLabelText('Play')).toBeTruthy()
+    expect(screen.queryByLabelText('Pause')).toBeNull()
+
+    cleanup()
+    renderTransport('stopped')
+
+    expect(screen.getByLabelText('Play')).toBeTruthy()
+    expect(screen.queryByLabelText('Pause')).toBeNull()
+  })
+
+  // Playing is the state worth spotting down a list of rooms, so pause takes
+  // the lit variant while the room is running.
+  it('lights the pause key while the room is playing', () => {
+    const { container } = renderTransport('play')
+    expect(container.querySelector('[aria-label="Pause"]').className).toContain('primary')
+
+    cleanup()
+    const paused = renderTransport('paused')
+    expect(paused.container.querySelector('[aria-label="Play"]').className).not.toContain('primary')
+  })
+
+  // With one key swapping between two states, stop lighting up is what keeps
+  // paused and stopped apart — both offer Play.
+  it('lights stop only when the room is stopped', () => {
+    renderTransport('stopped')
+    expect(screen.getByLabelText('Stop').getAttribute('aria-pressed')).toBe('true')
+
+    cleanup()
+    renderTransport('paused')
     expect(screen.getByLabelText('Stop').getAttribute('aria-pressed')).toBe('false')
   })
 
@@ -39,7 +74,14 @@ describe('RoomTransport', () => {
     renderTransport('paused')
     fireEvent.click(screen.getByLabelText('Play'))
 
-    expect(window.confirm).not.toHaveBeenCalled()
+    expect(screen.queryByText('Stop the room')).toBeNull()
+    expect(setRoomStatus).toHaveBeenCalledWith({ roomId: 7, status: 'play' })
+  })
+
+  it('plays a stopped room rather than leaving it stranded', () => {
+    renderTransport('stopped')
+    fireEvent.click(screen.getByLabelText('Play'))
+
     expect(setRoomStatus).toHaveBeenCalledWith({ roomId: 7, status: 'play' })
   })
 
@@ -49,33 +91,42 @@ describe('RoomTransport', () => {
     renderTransport('play')
     fireEvent.click(screen.getByLabelText('Pause'))
 
-    expect(window.confirm).not.toHaveBeenCalled()
+    expect(screen.queryByText('Stop the room')).toBeNull()
     expect(setRoomStatus).toHaveBeenCalledWith({ roomId: 7, status: 'paused' })
   })
 
-  it('asks before stopping, since the queue and the scores go', () => {
+  // A native confirm() is suppressed outright in an embedded or managed
+  // browser — it returns false with no dialog and no error — which left this
+  // key looking completely dead. The ask is the app's own Modal now, so the
+  // room is not stopped on the press itself.
+  it('asks before stopping, since the queue and the scores go', async () => {
     renderTransport('play')
     fireEvent.click(screen.getByLabelText('Stop'))
 
-    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('LOVESHACK'))
-    expect(setRoomStatus).toHaveBeenCalledWith({ roomId: 7, status: 'stopped' })
+    // the ask resolves a promise, so the dialog lands a microtask after the press
+    expect(await screen.findByText(/Stop "LOVESHACK"/)).toBeTruthy()
+    expect(setRoomStatus).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByText('Stop the room'))
+    await waitFor(() => expect(setRoomStatus).toHaveBeenCalledWith({ roomId: 7, status: 'stopped' }))
   })
 
-  it('leaves the room alone when the stop is declined', () => {
-    window.confirm = vi.fn(() => false)
+  it('leaves the room alone when the stop is declined', async () => {
     renderTransport('play')
     fireEvent.click(screen.getByLabelText('Stop'))
+    fireEvent.click(await screen.findByText('Cancel'))
 
     expect(setRoomStatus).not.toHaveBeenCalled()
+    expect(screen.queryByText('Stop the room')).toBeNull()
   })
 
-  // pressing the lit key is a no-op, not a re-stop: it would otherwise empty a
-  // room that is already stopped, and ask before doing it
+  // pressing stop on a stopped room is a no-op, not a re-stop: it would
+  // otherwise empty a room that is already empty, and ask before doing it
   it('ignores a press on the key the room is already on', () => {
     renderTransport('stopped')
     fireEvent.click(screen.getByLabelText('Stop'))
 
-    expect(window.confirm).not.toHaveBeenCalled()
+    expect(screen.queryByText('Stop the room')).toBeNull()
     expect(setRoomStatus).not.toHaveBeenCalled()
   })
 })

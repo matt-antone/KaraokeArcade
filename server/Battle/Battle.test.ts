@@ -11,8 +11,8 @@
  *    row that produced a lone MAX(), and a second plain join would have made
  *    that MAX() range over both songs' media at once — a battle playing one
  *    singer's file to the other singer's name, with nothing in any log;
- *  - and the beats have to skip the two metering ones on a player that cannot
- *    hear the room, rather than grading thirty seconds of silence.
+ *  - and the beats have to skip the judging ones on a player that cannot hear
+ *    the room, rather than grading thirty seconds of silence.
  *
  * Battle.stopRoom is called in both setup and teardown: the module's maps
  * outlive the :memory: database between tests, which is the same reason the
@@ -361,14 +361,16 @@ describe('the beats', () => {
     expect(Battle.getTurn(ROOM_ID)).toBeNull()
   })
 
-  it('skips both metering beats when it cannot', async () => {
+  it('skips the judging beats when it cannot', async () => {
     const io = fakeIo()
     setJudging('crowd')
 
     // grading a room the player cannot hear hands the fight to whoever the
-    // rounding favoured, so the beats simply do not happen
+    // rounding favoured, so the beats simply do not happen — including the
+    // question they answer, which on its own is five seconds of asking who
+    // wins immediately before announcing a nil-all draw
     expect(await runBattle(io, false)).toEqual([
-      'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'judge', 'winner',
+      'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'winner',
     ])
   })
 

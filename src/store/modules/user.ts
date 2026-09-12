@@ -2,6 +2,7 @@ import { createAction, createAsyncThunk, createReducer } from '@reduxjs/toolkit'
 import { persistReducer } from 'redux-persist'
 import storage from 'redux-persist/lib/storage'
 import socket from 'lib/socket'
+import { navigate } from 'lib/navigate'
 import type { ThunkDispatch, UnknownAction } from '@reduxjs/toolkit'
 import type { RootState } from 'store/store'
 import { SongHistoryItem } from 'shared/types'
@@ -11,6 +12,7 @@ import { fetchPrefs } from './prefs'
 import {
   ACCOUNT_RECEIVE,
   ACCOUNT_REQUEST,
+  ACCOUNT_SET_ROOM,
   ACCOUNT_CREATE,
   ACCOUNT_UPDATE,
   LOGIN,
@@ -39,11 +41,7 @@ const completeSignIn = async (user: object, dispatch: ThunkDispatch<RootState, u
   const redirect = new URLSearchParams(window.location.search).get('redirect')
   if (!redirect) return
 
-  // imported here, not at module scope: AppRouter renders <App/>, which reaches
-  // this module back through the store — a cycle that only works by luck of
-  // evaluation order
-  const { default: AppRouter } = await import('lib/AppRouter')
-  AppRouter.navigate(basename.replace(/\/$/, '') + redirect)
+  navigate(basename.replace(/\/$/, '') + redirect)
 }
 
 // ------------------------------------
@@ -59,6 +57,37 @@ export const login = createAsyncThunk<void, object, { state: RootState }>(
     })
 
     await completeSignIn(user, thunkAPI.dispatch)
+  },
+)
+
+// ------------------------------------
+// Change room
+// ------------------------------------
+
+/**
+ * Move to another room without signing out.
+ *
+ * The room lives in the JWT, so the server re-issues the cookie and hands back
+ * the same account payload a sign-in does. The socket is then bounced: it read
+ * the old cookie at its handshake and is still joined to the old room's
+ * channel, and on reconnecting the server pushes this room's queue, trivia
+ * round and battle beat the way it does for anyone arriving.
+ *
+ * No Persistor purge, unlike completeSignIn. Nothing being rehydrated belongs
+ * to the old room — the account is the same account — and purging here would
+ * throw away the sung history the Account view is drawing behind this.
+ */
+export const setRoom = createAsyncThunk<void, { roomId: number, roomPassword?: string }, { state: RootState }>(
+  ACCOUNT_SET_ROOM,
+  async ({ roomId, roomPassword }, thunkAPI) => {
+    const user = await api.post('user/room', {
+      body: { roomId, roomPassword },
+    })
+
+    thunkAPI.dispatch(receiveAccount(user))
+
+    socket.close()
+    socket.open()
   },
 )
 

@@ -91,10 +91,45 @@ describe('PlayerTextOverlay intermission', () => {
     // no face: a trivia row is user 0, and asking for its avatar is a 404
     expect(html).not.toContain('api/user/')
   })
+
+  // Same reasoning, stronger: the battle's own `versus` beat names both
+  // fighters and both songs, and this page can only name one of the two — so
+  // running it first announces a duel as though it were a solo.
+  it('keeps only the clock when a battle is next', () => {
+    const html = render({
+      nextQueueItem: {
+        queueId: 2, userId: 42, userDisplayName: 'Dot Matrix', type: 'battle',
+      } as QueueItem,
+      nextSongTitle: 'Barracuda',
+      nextSongArtist: 'Heart',
+      comingUpSongTitles: ['Ludicrous Speed', 'Combing the Desert'],
+    })
+    const text = html.replace(/<[^>]+>/g, '')
+
+    expect(text).toMatch(/^\d+$/)
+    expect(text).not.toContain('Dot Matrix')
+    expect(text).not.toContain('Barracuda')
+    expect(text).not.toContain('coming up')
+  })
 })
 
 describe('PlayerTextOverlay up next', () => {
   const playing = { intermissionEndsAt: null as number | null }
+
+  // The corner panel names one singer. A battle is two of them, and the stage
+  // is about to draw the pair properly.
+  it('never teases a battle', () => {
+    const html = render({
+      ...playing,
+      isSongEnding: true,
+      nextQueueItem: {
+        queueId: 2, userId: 42, userDisplayName: 'Dot Matrix', type: 'battle',
+      } as QueueItem,
+    })
+
+    expect(html).not.toContain('up next')
+    expect(html).not.toContain('Dot Matrix')
+  })
 
   it('teases the next singer only when the song is ending', () => {
     expect(render({ ...playing, isSongEnding: false })).not.toContain('up next')

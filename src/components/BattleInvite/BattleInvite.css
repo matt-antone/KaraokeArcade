@@ -1,0 +1,354 @@
+/* The opponent's phone. See BattleInvite.tsx.
+
+   Arcade, not DECK, and exempted from the palette and shadow rules in
+   src/styles/deck-rules.test.ts on purpose — the reasoning is on the .screen
+   rule in BattleStage/BattleFrame.css, which is also where every --arc-*
+   colour read below is declared. Nothing here names a colour of its own. */
+
+.body {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--arc-ground);
+}
+
+.slam {
+  transform-origin: var(--fx-x) var(--fx-y);
+  animation: battle-invite-slam 260ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.gap {
+  flex: 1 1 auto;
+  min-height: 90px;
+}
+
+.footer {
+  flex: none;
+  position: relative;
+  margin-top: 14px;
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+  background-color: var(--arc-panel);
+  border-top: 1px solid var(--arc-rule);
+}
+
+.footerStack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.footerPair {
+  display: flex;
+  gap: 8px;
+}
+
+/* ---- THE INVITE ------------------------------------------------------- */
+
+/* The challenger's own colour, thrown up the screen behind their fighter. Red
+   is theirs on every surface in the feature, so an invite is recognisable as
+   an invite before a word of it has been read. */
+.glow {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 54%;
+  pointer-events: none;
+  background: radial-gradient(70% 100% at 50% 100%, rgba(192, 23, 35, 0.3) 0%, rgba(13, 14, 15, 0) 72%);
+}
+
+/* Behind the content rather than in the flow: whatever the fighter's
+   proportions are, the clock, the handle and the song sit where they always
+   sit. Fitted rather than cropped here — this is the only place the figure is
+   a portrait of somebody rather than a tile. */
+.hero {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  top: 63px;
+  bottom: 285px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.heroArt {
+  background-size: contain;
+  background-position: 50% 50%;
+  animation: battle-invite-slam 340ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.topRow {
+  flex: none;
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 18px 14px 0;
+}
+
+.incomingDot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  background-color: var(--arc-one);
+  animation: battle-invite-blink 900ms steps(1) infinite;
+}
+
+.incoming {
+  flex: 1;
+  font-family: var(--font-arcade);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--arc-one);
+}
+
+/* Counted down to the expiry the server set. Quiet until the last ten seconds,
+   because a clock that shouts for forty-five of them is a clock nobody reads
+   at the moment it matters. */
+.clock {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--arc-muted);
+}
+
+.clockUrgent {
+  color: var(--arc-one);
+}
+
+/* The one non-pixel asset in the set, and the only thing on these screens
+   drawn smoothly. */
+.lockup {
+  flex: 0 1 auto;
+  min-height: 0;
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  max-width: 250px;
+  height: auto;
+  margin: 12px auto 0;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+.lockupSpent {
+  opacity: 0.5;
+}
+
+/* Whose challenge it is, at the size a name is said out loud. The one-shot
+   shake is the knock on the door — it happens on arrival and never again,
+   because a name that keeps moving is a name nobody can read. */
+.challenger {
+  flex: none;
+  position: relative;
+  z-index: 3;
+  padding: 10px 18px 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 1.25;
+  text-shadow: 3px 3px 0 #000;
+  text-align: center;
+  animation: battle-invite-knock 520ms steps(2) 1;
+}
+
+.card {
+  flex: none;
+  position: relative;
+  z-index: 3;
+  margin: 8px 14px 0;
+  padding: 11px 12px;
+  background-color: var(--arc-card);
+  box-shadow: inset 0 0 0 1px var(--arc-hair);
+}
+
+/* Gold: the song is the product's, not either fighter's. */
+.cardLegend {
+  font-family: var(--font-arcade);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  color: var(--arc-gold);
+}
+
+.cardTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.cardMeta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 7px;
+  font-family: var(--font-arcade);
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  color: var(--arc-quiet);
+}
+
+/* The handle is the half that gives: a long one ellipsises rather than pushing
+   the format off the end of the row. */
+.cardBy {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terms {
+  font-family: var(--font-arcade);
+  font-size: 8px;
+  line-height: 2;
+  letter-spacing: 0.12em;
+  color: var(--arc-quiet);
+  text-align: center;
+}
+
+/* ---- CONFIRM ---------------------------------------------------------- */
+
+.masthead {
+  flex: none;
+  padding: 20px 14px 0;
+  text-align: center;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 21px;
+  line-height: 1.15;
+  text-shadow: 3px 3px 0 #000;
+}
+
+.lede {
+  margin-top: 10px;
+  font-family: var(--font-arcade);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  color: var(--arc-muted);
+}
+
+.scroller {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden auto;
+  padding: 18px 14px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--arc-rule) var(--arc-card);
+}
+
+.closing {
+  margin-top: 16px;
+  font-family: var(--font-arcade);
+  font-size: 8px;
+  line-height: 2.2;
+  letter-spacing: 0.1em;
+  color: var(--arc-quiet);
+  text-align: center;
+}
+
+/* ---- HANDOFF ---------------------------------------------------------- */
+
+.inHead {
+  flex: none;
+  padding: 30px 18px 0;
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1.15;
+  color: var(--arc-two);
+  text-shadow: 3px 3px 0 #000;
+  text-align: center;
+  animation: battle-invite-slam 320ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.inPair {
+  flex: none;
+  margin-top: 14px;
+  padding: 0 18px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--arc-muted);
+  text-align: center;
+}
+
+.inLockup {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 16px 14px;
+}
+
+.lockupLarge {
+  flex: 0 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: 340px;
+  height: auto;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+/* ---- DECLINED and TOO SLOW -------------------------------------------- */
+
+/* No recovery on either. An invite that has been answered or has run out is
+   finished, and offering a way back into it is offering to reopen a decision
+   the other side has already been told about. */
+.ended {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 28px;
+  background-color: var(--arc-ground);
+  text-align: center;
+}
+
+.endedTitle {
+  font-family: var(--font-display);
+  font-size: 19px;
+  color: var(--arc-muted);
+  text-shadow: 3px 3px 0 #000;
+}
+
+.endedNote {
+  font-family: var(--font-arcade);
+  font-size: 9px;
+  line-height: 2;
+  letter-spacing: 0.14em;
+  color: var(--arc-quiet);
+}
+
+@keyframes battle-invite-slam {
+  0% { transform: scale(1.9); opacity: 0; }
+  40% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes battle-invite-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.12; }
+}
+
+@keyframes battle-invite-knock {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-3px); }
+  40% { transform: translateX(3px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+}

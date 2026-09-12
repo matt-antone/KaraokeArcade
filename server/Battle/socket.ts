@@ -45,9 +45,16 @@ const ACTION_HANDLERS = {
 
     acknowledge({ type: BATTLE_REQ_SINGERS + _SUCCESS })
   },
-  // The challenger picked an opponent and a song for them to sing. queueId is
-  // the turn the challenger is putting up to fight in, or 0 if they have none
-  // waiting — Battle.pick appends in that case rather than refusing.
+  // The challenger picked an opponent, a song for them to sing, and the
+  // fighter they are singing as themselves. queueId is the turn the challenger
+  // is putting up to fight in, or 0 if they have none waiting — Battle.pick
+  // appends in that case rather than refusing.
+  //
+  // singerId is a roster id like 'p1', from src/lib/battleSingers.ts. The
+  // roster is client-side art and the server has no copy of it, so this is
+  // carried and stored and never looked up; Battle.challenge caps its length
+  // and that is the whole of the validation there can be. An absent one is
+  // legal and reads as the default fighter on the stage.
   [BATTLE_CHALLENGE]: async (sock, { payload }, acknowledge) => {
     const { roomId, userId } = sock.user
 
@@ -65,6 +72,7 @@ const ACTION_HANDLERS = {
         opponentUserId: payload.opponentUserId,
         songId: payload.songId,
         queueId: payload.queueId,
+        singerId: payload.singerId,
       })
     } catch (err) {
       return acknowledge({
@@ -75,7 +83,11 @@ const ACTION_HANDLERS = {
 
     acknowledge({ type: BATTLE_CHALLENGE + _SUCCESS })
   },
-  [BATTLE_ACCEPT]: async (sock, action, acknowledge) => {
+  // Yes, and this is who I am singing as. The two arrive together because
+  // picking a fighter is a step of accepting on the opponent's phone, not a
+  // thing they do afterwards — and because the challenger's screen has been
+  // waiting long enough without a second round trip in it.
+  [BATTLE_ACCEPT]: async (sock, { payload }, acknowledge) => {
     const { roomId, userId } = sock.user
 
     if (typeof roomId !== 'number') {
@@ -86,7 +98,7 @@ const ACTION_HANDLERS = {
     }
 
     try {
-      await Battle.accept(sock.server, roomId, userId)
+      await Battle.accept(sock.server, roomId, userId, payload?.singerId)
     } catch (err) {
       return acknowledge({
         type: BATTLE_ACCEPT + _ERROR,
@@ -173,7 +185,7 @@ const ACTION_HANDLERS = {
   // answers — wait versus move on — and collapsing them into one falsy flag
   // ends the feature after its first beat under React's double-invoked
   // effects, which development guarantees.
-  [BATTLE_REQ_TURN]: (sock, { payload }, acknowledge) => {
+  [BATTLE_REQ_TURN]: async (sock, { payload }, acknowledge) => {
     const { roomId } = sock.user
     const { queueId } = payload
 
@@ -184,9 +196,16 @@ const ACTION_HANDLERS = {
       })
     }
 
+    // Counted before the guard below, never between it and the store: that
+    // pair has to stay one synchronous stretch or two players in one room
+    // start two battles, and this is the only I/O anywhere near it. Passing 0
+    // for the excluded user asks for the whole room; startTurn takes the two
+    // fighters back off it.
+    const roomSize = (await Battle.getSingers(sock.server, roomId, 0)).length
+
     const status = Battle.isTurnInProgress(roomId, queueId)
       ? 'inProgress'
-      : Battle.startTurn(sock.server, roomId, queueId, !!payload.canHearRoom)
+      : Battle.startTurn(sock.server, roomId, queueId, !!payload.canHearRoom, roomSize)
         ? 'started'
         : 'unavailable'
 
@@ -212,8 +231,8 @@ const ACTION_HANDLERS = {
     acknowledge({ type: BATTLE_SONG_ENDED + _SUCCESS })
   },
   // One phone's vote in a silent ballot. Battle.vote ignores anything that is
-  // not the ballot beat of the battle actually running, so a tap that lands
-  // after the beat closed costs nothing and says nothing.
+  // not the judging beat of a ballot-judged battle actually running, so a tap
+  // that lands after the beat closed costs nothing and says nothing.
   //
   // userId rather than socket id: one person with a phone and a tablet is the
   // ordinary case in this codebase, and it is one person's vote.
@@ -227,7 +246,7 @@ const ACTION_HANDLERS = {
       })
     }
 
-    Battle.vote(roomId, payload.queueId, userId, toSide(payload.side))
+    Battle.vote(sock.server, roomId, payload.queueId, userId, toSide(payload.side))
     acknowledge({ type: BATTLE_VOTE + _SUCCESS })
   },
   // How loud the room was for one fighter, measured by the machine with the

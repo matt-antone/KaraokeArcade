@@ -35,6 +35,10 @@ const SongList = (props: SongListProps) => {
   // is the whole discriminator: with it, this tap creates the challenge; without
   // it, this tap is the opponent answering one.
   const pendingUserId = useAppSelector(state => state.battle.pending?.userId ?? 0)
+  // Chosen back on the setup screen, which has closed by the time this tap
+  // happens. The challenge is thrown from here, so this is where it has to
+  // arrive from.
+  const pendingSingerId = useAppSelector(state => state.battle.pendingSingerId)
   const battleQueueId = useAppSelector(getBattleTargetQueueId)
 
   // Why a tap would be refused, or null. Not consulted while picking for a
@@ -48,7 +52,7 @@ const SongList = (props: SongListProps) => {
 
     // The challenger spends the turn they already had — getBattleTargetQueueId
     // is 0 when they have none, and the server appends a fresh row instead.
-    if (pendingUserId) return dispatch(challengeSinger(pendingUserId, songId, battleQueueId))
+    if (pendingUserId) return dispatch(challengeSinger(pendingUserId, songId, battleQueueId, pendingSingerId))
 
     dispatch(pickBattleSong(songId))
   }

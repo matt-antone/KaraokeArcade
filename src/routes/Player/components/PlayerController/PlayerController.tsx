@@ -6,6 +6,9 @@ import PlayerTextOverlay from '../PlayerTextOverlay/PlayerTextOverlay'
 import PlayerQR from '../PlayerQR/PlayerQR'
 import PlayerTrivia from '../PlayerTrivia/PlayerTrivia'
 import PlayerBattle from '../PlayerBattle/PlayerBattle'
+import type { BattleUpNext } from '../PlayerBattle/battleBeats'
+import battleVideoRect from '../PlayerBattle/battleVideoRect'
+import PlayerFrame from './PlayerFrame'
 import TriviaMark from 'components/TriviaMark/TriviaMark'
 import getRoundRobinQueue from 'routes/Queue/selectors/getRoundRobinQueue'
 import { playerLeave, playerError, playerLoad, playerPlay, playerStatus, type PlayerState } from '../../modules/player'
@@ -17,7 +20,7 @@ import { battleSongEnded, requestBattleTurn } from 'store/modules/battle'
 import getSkipEndsAt, { INTERMISSION_MS } from './getSkipEndsAt'
 import { getBattleSide, getIsMediaVisible, resolveMedia } from './playerStage'
 import { SONG_PLAYED } from 'shared/actionTypes'
-import { isBattleItem, isTriviaItem, type QueueItem } from 'shared/types'
+import { isBattleItem, isTriviaItem, rotationIdOf, type QueueItem } from 'shared/types'
 
 interface PlayerControllerProps {
   width: number
@@ -63,11 +66,20 @@ const CAN_HEAR_ROOM = typeof window !== 'undefined'
 /** The room's join code, when the room is showing one. Its own component so
  *  the two levels of "has the room asked for this" do not sit in the middle of
  *  the stage's render. */
-const RoomQR = ({ roomPrefs, height, queueItem }: {
+const RoomQR = ({ roomPrefs, height, isBattleRow, queueItem }: {
   roomPrefs?: { qr?: React.ComponentProps<typeof PlayerQR>['prefs'] & { isEnabled?: boolean } }
   height: number
+  /** A battle owns the whole screen for the length of the row. */
+  isBattleRow: boolean
   queueItem?: QueueItem
 }) => {
+  // Never over a battle. The stage is a designed 12:7 composition with the
+  // fighters at its outer edges, and the code parks itself in a corner on top
+  // of one of them. The join code is for the idle end of the night anyway —
+  // during a battle the room is watching, not joining, and the two phones in
+  // the fight are already in.
+  if (isBattleRow) return null
+
   if (!roomPrefs?.qr?.isEnabled) return null
 
   return <PlayerQR height={height} prefs={roomPrefs.qr} queueItem={queueItem} />
@@ -87,6 +99,7 @@ const StageOverlay = ({
   isTriviaLeadIn,
   isBattleRow,
   battleQueueId,
+  battleUpNext,
   getAudioCtx,
   width,
   height,
@@ -98,6 +111,7 @@ const StageOverlay = ({
   isTriviaLeadIn: boolean
   isBattleRow: boolean
   battleQueueId: number
+  battleUpNext: BattleUpNext | null
   getAudioCtx: () => AudioContext | null
   width: number
   height: number
@@ -119,7 +133,15 @@ const StageOverlay = ({
   // server's first beat lands — PlayerBattle draws its own holding card for
   // that, the way the trivia mark covers a round's lead-in.
   if (isBattleRow) {
-    return <PlayerBattle queueId={battleQueueId} getAudioCtx={getAudioCtx} width={width} height={height} />
+    return (
+      <PlayerBattle
+        queueId={battleQueueId}
+        getAudioCtx={getAudioCtx}
+        upNext={battleUpNext}
+        width={width}
+        height={height}
+      />
+    )
   }
 
   return (
@@ -161,6 +183,24 @@ const PlayerController = (props: PlayerControllerProps) => {
   const comingUpSongTitles = useAppSelector(state => comingUpQueueItems.map(item => state.songs.entities[item.songId]?.title))
   const nextSong = useAppSelector(state => nextQueueItem ? state.songs.entities[nextQueueItem.songId] : undefined)
   const nextArtist = useAppSelector(state => nextSong ? state.artists.entities[nextSong.artistId] : undefined)
+
+  /* Who the room goes back to when a fight is over, drawn on the verdict beat.
+     The page that normally names the next singer is stood down before a battle
+     — it can only name one of two fighters — so the verdict's fifteen seconds
+     carries the handover instead, and nobody waits an extra countdown for it.
+
+     Only for an ordinary song. A trivia round draws its own mark and a second
+     battle opens by naming both of its own fighters, so announcing either from
+     inside this one is the duplicate screen this change exists to remove. */
+  const battleUpNext: BattleUpNext | null = nextQueueItem
+    && !isTriviaItem(nextQueueItem)
+    && !isBattleItem(nextQueueItem)
+    ? {
+        singer: nextQueueItem.userDisplayName,
+        songArtist: nextArtist?.name,
+        songTitle: nextSong?.title,
+      }
+    : null
   // the corner panel names the singer *and* their song, so the player needs the current one too
   const song = useAppSelector(state => queueItem ? state.songs.entities[queueItem.songId] : undefined)
   const artist = useAppSelector(state => song ? state.artists.entities[song.artistId] : undefined)
@@ -206,6 +246,9 @@ const PlayerController = (props: PlayerControllerProps) => {
   const isBattleOnStage = isBattleRow && liveBattle.turn?.queueId === player.queueId
 
   const battleSide = getBattleSide(isBattleOnStage, liveBattle.phase)
+  // Null on every beat but the two singing ones, which is also the only time
+  // the stage leaves a hole for the media to play in.
+  const videoRect = battleSide ? battleVideoRect(props.width, props.height, battleSide) : null
   const media = resolveMedia(queueItem as QueueItem | undefined, battleSide)
 
   // Player owns the page's AudioContext and stays mounted even on the beats
@@ -328,6 +371,18 @@ const PlayerController = (props: PlayerControllerProps) => {
       return
     }
 
+    // Nothing to wait for before a battle either. The intermission exists to
+    // name the next singer and give them fifteen seconds to reach the
+    // microphone — and a battle opens by naming both of its fighters and both
+    // of their songs on the `versus` beat, to two people who agreed to fight
+    // minutes ago and are already standing there. Running the page first is
+    // the same announcement twice, the first one worse and only half true,
+    // because it can only name one of the two.
+    if (isBattleItem(nextQueueItem)) {
+      handleLoadNext()
+      return
+    }
+
     setIntermission({
       endsAt: Date.now() + INTERMISSION_MS,
       queueId: player.queueId,
@@ -436,17 +491,33 @@ const PlayerController = (props: PlayerControllerProps) => {
     player.queueId,
   ])
 
-  // "lock in" the next user that isn't the currently up user, if possible
+  /* "lock in" the next user that isn't the currently up user, if possible.
+     Rotation ids rather than raw userIds, so a battle locks in as itself. Its
+     userId is the challenger's, and storing that sends getSettled looking for
+     the challenger in raw queue order — where it finds one of their ordinary
+     songs, pins that instead, and pushes the fight back a slot on every
+     advance until it is last in the queue. */
   useEffect(() => {
-    if (!player.nextUserId || queueItem?.userId === nextQueueItem?.userId) {
-      for (let i = queue.result.indexOf(queueItem?.queueId) + 1; i < queue.result.length; i++) {
-        if (queueItem?.userId !== queue.entities[queue.result[i]].userId) {
-          handleStatus({ nextUserId: queue.entities[queue.result[i]].userId })
-          return
-        }
-      }
+    const curId = queueItem ? rotationIdOf(queueItem) : undefined
+
+    for (let i = queue.result.indexOf(queueItem?.queueId) + 1; i < queue.result.length; i++) {
+      const rowId = rotationIdOf(queue.entities[queue.result[i]])
+
+      if (curId === rowId) continue
+
+      // Only when it actually changes. Written as "recompute, compare, maybe
+      // emit" rather than the old "emit unless something looks already set",
+      // because that guard leaned on the locked id being falsy to know it was
+      // spent — true of a singer's 0-less id and of trivia's 0, and false of a
+      // battle's -1, which is truthy and so stuck the lock on the fight for
+      // the rest of the night. This converges: the locked row is the one the
+      // rotation then places next, so the same value is computed and nothing
+      // is dispatched until the player moves past it.
+      if (rowId !== player.nextUserId) handleStatus({ nextUserId: rowId })
+
+      return
     }
-  }, [handleStatus, nextQueueItem, player.nextUserId, queue, queueItem])
+  }, [handleStatus, player.nextUserId, queue, queueItem])
 
   // always emit status when any of these change
   useEffect(() => handleStatus({ isVideoKeyingEnabled: media?.isVideoKeyingEnabled }), [
@@ -542,33 +613,42 @@ const PlayerController = (props: PlayerControllerProps) => {
           covers the other two, so the thread field has to stop for the whole
           row — otherwise it burns a core behind the fight for five minutes. */}
       <PlayerBackdrop isCovered={isMediaVisible || isTriviaLeadIn || isBattleRow} />
-      <Player
-        ref={playerRef}
-        cdgAlpha={player.cdgAlpha}
-        cdgSize={player.cdgSize}
-        isPlaying={player.isPlaying}
-        isVisible={isMediaVisible}
-        keyChange={media.keyChange}
-        isReplayGainEnabled={prefs.isReplayGainEnabled}
-        isVideoKeyingEnabled={media.isVideoKeyingEnabled}
-        isWebGLSupported={player.isWebGLSupported}
-        mediaId={media.mediaId}
-        mediaKey={media.key}
-        mediaReplayKey={player._lastReplayTime}
-        mediaType={media.mediaType}
-        mp4Alpha={player.mp4Alpha}
-        onEnd={handleMediaEnd}
-        onError={handleError}
-        onLoad={handleLoad}
-        onPlay={handlePlay}
-        onStatus={handleStatus}
-        rgTrackGain={media.rgTrackGain}
-        rgTrackPeak={media.rgTrackPeak}
-        visualizer={playerVisualizer}
-        volume={player.volume}
-        width={props.width}
-        height={props.height}
-      />
+      {/* On a singing beat the stage above is a bezel with a hole cut in it and
+          this is what shows through, so the media is sized and placed to the
+          opening rather than to the screen. Everywhere else it is the whole
+          display — the same box with different numbers, never a removed one.
+          Taking the wrapper away for that case, by fragment or by
+          `display: contents`, costs either the AudioContext or the video's
+          compositing layer; PlayerFrame.tsx has the full account. */}
+      <PlayerFrame rect={videoRect} width={props.width} height={props.height}>
+        <Player
+          ref={playerRef}
+          cdgAlpha={player.cdgAlpha}
+          cdgSize={player.cdgSize}
+          isPlaying={player.isPlaying}
+          isVisible={isMediaVisible}
+          keyChange={media.keyChange}
+          isReplayGainEnabled={prefs.isReplayGainEnabled}
+          isVideoKeyingEnabled={media.isVideoKeyingEnabled}
+          isWebGLSupported={player.isWebGLSupported}
+          mediaId={media.mediaId}
+          mediaKey={media.key}
+          mediaReplayKey={player._lastReplayTime}
+          mediaType={media.mediaType}
+          mp4Alpha={player.mp4Alpha}
+          onEnd={handleMediaEnd}
+          onError={handleError}
+          onLoad={handleLoad}
+          onPlay={handlePlay}
+          onStatus={handleStatus}
+          rgTrackGain={media.rgTrackGain}
+          rgTrackPeak={media.rgTrackPeak}
+          visualizer={playerVisualizer}
+          volume={player.volume}
+          width={videoRect ? videoRect.width : props.width}
+          height={videoRect ? videoRect.height : props.height}
+        />
+      </PlayerFrame>
       <StageOverlay
         trivia={trivia}
         isTriviaOnStage={isTriviaOnStage}
@@ -576,6 +656,7 @@ const PlayerController = (props: PlayerControllerProps) => {
         isTriviaLeadIn={isTriviaLeadIn}
         isBattleRow={isBattleRow}
         battleQueueId={player.queueId}
+        battleUpNext={battleUpNext}
         getAudioCtx={getAudioCtx}
         width={props.width}
         height={props.height}
@@ -596,7 +677,7 @@ const PlayerController = (props: PlayerControllerProps) => {
           isErrored: player.isErrored,
         }}
       />
-      <RoomQR roomPrefs={roomPrefs} height={props.height} queueItem={queueItem} />
+      <RoomQR roomPrefs={roomPrefs} height={props.height} isBattleRow={isBattleRow} queueItem={queueItem} />
     </>
   )
 }

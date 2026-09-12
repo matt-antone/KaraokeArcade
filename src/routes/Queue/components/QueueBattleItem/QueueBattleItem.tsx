@@ -52,7 +52,7 @@ const QueueBattleItem = ({ isCurrent, isPlayed, challenger, opponent }: QueueBat
       <div className={clsx(styles.container, isPlayed && styles.spent)}>
         <div className={styles.header}>
           <span className={clsx('silkscreen', styles.legend)}>
-            {isCurrent ? 'battle · on stage' : isPlayed ? 'battle · fought' : 'battle · one turn, two songs'}
+            {isCurrent ? 'singer battle · on stage' : isPlayed ? 'singer battle · fought' : 'singer battle · one turn, two songs'}
           </span>
           {isCurrent && <span className={styles.now}>NOW</span>}
         </div>

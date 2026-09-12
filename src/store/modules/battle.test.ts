@@ -49,11 +49,11 @@ const pick = (userId: number, actions: UnknownAction[]) => getBattlePick(run(use
 // what the server emits to both parties once a challenge is thrown
 const invited = { type: BATTLE_INVITE, payload: battleInvite() }
 const accepted = { type: BATTLE_INVITE, payload: battleInvite({ isAccepted: true }) }
-const cleared = { type: BATTLE_INVITE_CLEAR }
+const cleared = { type: BATTLE_INVITE_CLEAR, payload: { reason: 'matched' } }
 
 const barf = battleSinger({ userId: OPPONENT, name: 'Barf' })
 const singersArrive = { type: BATTLE_SINGERS, payload: [barf] }
-const challenge = challengeSinger(OPPONENT, 11, 7) as UnknownAction
+const challenge = challengeSinger(OPPONENT, 11, 7, 'p1') as UnknownAction
 
 describe('battle reducer', () => {
   it('starts with nothing on stage and no row resolved', () => {
@@ -62,8 +62,13 @@ describe('battle reducer', () => {
     expect(battle).toEqual({
       singers: [],
       pending: null,
+      // empty rather than null, and it travels with `pending`: it is only ever
+      // read on the way to throwing a challenge, and there is no challenge
+      // without an opponent to throw it at
+      pendingSingerId: '',
       vote: null,
       invite: null,
+      inviteEnded: null,
       turn: null,
       // -1, not 0: 0 is a real "no queue row" on the wire and would read as a
       // resolved row the moment the player mounted
@@ -82,7 +87,7 @@ describe('battle negotiation, as the challenger sees it', () => {
   })
 
   it('picks for the chosen opponent, before the server knows anything', () => {
-    expect(pick(CHALLENGER, [singersArrive, startBattlePick(barf)]))
+    expect(pick(CHALLENGER, [singersArrive, startBattlePick(barf, 'p1')]))
       .toEqual({ forUserId: OPPONENT, forName: 'Barf' })
   })
 
@@ -90,17 +95,17 @@ describe('battle negotiation, as the challenger sees it', () => {
     // not when the server answers: the library is in picking mode *because*
     // pending is set, so a slow round trip is a window in which a second tap
     // throws a second challenge at the same person
-    expect(pick(CHALLENGER, [startBattlePick(barf), challenge])).toBeNull()
+    expect(pick(CHALLENGER, [startBattlePick(barf, 'p1'), challenge])).toBeNull()
   })
 
   it('is still not picking once the opponent accepts', () => {
     // the challenger's song is the opponent's to choose; both phones hold this
     // same accepted invite and only one of them may act on it
-    expect(pick(CHALLENGER, [startBattlePick(barf), challenge, invited, accepted])).toBeNull()
+    expect(pick(CHALLENGER, [startBattlePick(barf, 'p1'), challenge, invited, accepted])).toBeNull()
   })
 
   it('drops the invite when the challenger backs out', () => {
-    const { battle } = run(CHALLENGER, [startBattlePick(barf), challenge, invited, cancelBattle()])
+    const { battle } = run(CHALLENGER, [startBattlePick(barf, 'p1'), challenge, invited, cancelBattle()])
     expect(battle.invite).toBeNull()
     expect(battle.pending).toBeNull()
   })
@@ -122,7 +127,7 @@ describe('battle negotiation, as the opponent sees it', () => {
     // accepting is not applied locally, unlike declining: if the challenger
     // cancelled in the same instant, this phone would be picking a song for an
     // invite that no longer exists
-    expect(pick(OPPONENT, [invited, acceptBattle() as UnknownAction])).toBeNull()
+    expect(pick(OPPONENT, [invited, acceptBattle('p2') as UnknownAction])).toBeNull()
   })
 
   it('closes the modal on decline without waiting for the server', () => {
@@ -138,6 +143,56 @@ describe('battle negotiation, as the opponent sees it', () => {
 
   it('stops picking when the opponent walks away from the library', () => {
     expect(pick(OPPONENT, [invited, accepted, exitBattlePick()])).toBeNull()
+  })
+})
+
+/**
+ * The four ways a challenge can stop existing are one action on the wire and
+ * four different screens on a phone. The pair that matters most is `declined`
+ * against `expired`: "they said no" and "they never picked their phone up"
+ * feel nothing alike to the person who threw it, and a screen that cannot tell
+ * them apart says the unkind one to somebody who was in the toilet.
+ */
+describe('how a challenge ended', () => {
+  const endedBy = (reason: string) => ({ type: BATTLE_INVITE_CLEAR, payload: { reason } })
+
+  it('survives the invite it is about, by exactly one screen', () => {
+    const { battle } = run(CHALLENGER, [invited, endedBy('expired')])
+
+    // the invite is gone — that is what ending it means — so the outcome
+    // cannot be read off it and has to be held separately
+    expect(battle.invite).toBeNull()
+    expect(battle.inviteEnded).toBe('expired')
+  })
+
+  it('keeps a refusal apart from nobody answering', () => {
+    expect(run(CHALLENGER, [invited, endedBy('declined')]).battle.inviteEnded).toBe('declined')
+    expect(run(CHALLENGER, [invited, endedBy('expired')]).battle.inviteEnded).toBe('expired')
+  })
+
+  it('does not read a successful match as a refusal', () => {
+    // the happy ending comes through the same clear as a decline does
+    expect(run(OPPONENT, [invited, accepted, cleared]).battle.inviteEnded).toBe('matched')
+  })
+
+  it('answers the tap without waiting for the server', () => {
+    // the modal goes away on the tap, and the screen behind it has to already
+    // know which of the four it is looking at
+    expect(run(OPPONENT, [invited, declineBattle()]).battle.inviteEnded).toBe('declined')
+    expect(run(CHALLENGER, [invited, cancelBattle()]).battle.inviteEnded).toBe('cancelled')
+  })
+
+  it('says nothing when the room was stopped underneath the negotiation', () => {
+    // server/Rooms/transport.ts clears every invite with no reason to give.
+    // Inventing one would blame the opponent for the host ending the party.
+    expect(run(CHALLENGER, [invited, { type: BATTLE_INVITE_CLEAR }]).battle.inviteEnded).toBeNull()
+  })
+
+  it('forgets the last outcome the moment there is a new challenge', () => {
+    const after = run(CHALLENGER, [invited, endedBy('declined'), startBattlePick(barf, 'p1')])
+
+    // a stale DECLINED behind a fresh pick reads as this pick being refused
+    expect(after.battle.inviteEnded).toBeNull()
   })
 })
 

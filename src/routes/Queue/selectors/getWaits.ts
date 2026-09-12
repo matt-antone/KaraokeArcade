@@ -19,12 +19,27 @@ const getQueueId = (state: RootState) => state.status.queueId
 const getSongs = (state: RootState) => state.songs
 
 /** Everything in a battle that is not singing: the versus splash, both fighter
- *  intros, the "who wins" ask, both metering beats and the verdict. Seconds,
- *  because every duration in this file is. Counted in full even when the
- *  player cannot hear the room and skips the two metering beats — this
- *  selector has no idea which player will run the row, and a wait estimate
- *  that is thirty seconds long is a better lie than one that is thirty seconds
- *  short. */
+ *  intros, the judging section and the verdict. Seconds, because every
+ *  duration in this file is.
+ *
+ *  The judging section is the crowd path's — a short ask plus two metering
+ *  beats — and it is counted whichever way the room actually decides its
+ *  fights, for two reasons that point the same way.
+ *
+ *  This selector cannot know which path will run. Judging is settled per
+ *  battle by whether the player that reaches the row can hear the room, which
+ *  has not happened yet and may not be the player that is plugged in now.
+ *
+ *  And where the two differ, the crowd path is the longer: five seconds of
+ *  asking plus thirty of metering, against the ballot's single thirty-second
+ *  beat that is the ask and the vote at once. Taking the longer over-states a
+ *  ballot-judged battle by those five seconds and is never short. Every wait
+ *  in the room is a running total of these, so a short estimate compounds
+ *  down the queue and the singer who was told "ten minutes" is still sitting
+ *  down when their name comes up; five seconds long, once, does nothing.
+ *
+ *  A player that cannot hear the room skips metering entirely and the row runs
+ *  thirty-five seconds shorter than this. Same trade, same direction. */
 const BATTLE_OVERHEAD_SECS = (
   BATTLE_VERSUS_MS + (BATTLE_INTRO_MS * 2) + BATTLE_JUDGE_MS + (BATTLE_METER_MS * 2) + BATTLE_WINNER_MS
 ) / 1000

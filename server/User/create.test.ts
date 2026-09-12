@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { db, open, close } from '../lib/Database.js'
-import User from './User.js'
+import User, { IMG_MAX_LENGTH } from './User.js'
 
 /**
  * Every way User.create says no, and the two ways it says yes.
@@ -71,8 +71,7 @@ describe('creating a user', () => {
   })
 
   it('refuses an oversized image', async () => {
-    // the only thing checked about an image is its length
-    await expect(User.create({ ...ok, image: { length: 999_999_999 } }))
+    await expect(User.create({ ...ok, image: Buffer.alloc(IMG_MAX_LENGTH + 1) }))
       .rejects.toThrow('Invalid image')
   })
 

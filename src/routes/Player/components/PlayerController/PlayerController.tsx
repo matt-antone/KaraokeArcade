@@ -17,7 +17,7 @@ import { battleSongEnded, requestBattleTurn } from 'store/modules/battle'
 import getSkipEndsAt, { INTERMISSION_MS } from './getSkipEndsAt'
 import { getBattleSide, getIsMediaVisible, resolveMedia } from './playerStage'
 import { SONG_PLAYED } from 'shared/actionTypes'
-import { isBattleItem, isTriviaItem, type QueueItem } from 'shared/types'
+import { isBattleItem, isTriviaItem, type QueueItem, type TriviaResult, type TriviaRound } from 'shared/types'
 
 interface PlayerControllerProps {
   width: number
@@ -92,7 +92,7 @@ const StageOverlay = ({
   height,
   overlay,
 }: {
-  trivia: { round?, result? }
+  trivia: { round: TriviaRound | null, result: TriviaResult | null }
   isTriviaOnStage: boolean
   isTriviaRow: boolean
   isTriviaLeadIn: boolean

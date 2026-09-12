@@ -59,7 +59,7 @@ function assertCredentials (username: string, newPassword: string, newPasswordCo
 
 /** Asked of everyone, guests included: it is the name the room reads off the
  *  queue and the player. */
-function assertDisplayName (name: string): void {
+function assertDisplayName (name?: string): void {
   if (!name) {
     throw new Error('Display name is required')
   }
@@ -144,6 +144,12 @@ class User {
     newPasswordConfirm,
     name,
     image,
+  }: {
+    username?: string
+    newPassword?: string
+    newPasswordConfirm?: string
+    name?: string
+    image?: Buffer
   }, role = 'standard') {
     username = username?.trim()
     name = name?.trim()

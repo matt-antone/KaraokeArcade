@@ -37,7 +37,7 @@ const ROOM_ID = 7
 
 const fakeIo = () => {
   const emit = vi.fn()
-  return { emit, io: { to: vi.fn(() => ({ emit })) } }
+  return { emit, io: { to: vi.fn<(roomKey: string) => { emit: typeof emit }>(() => ({ emit })) } }
 }
 
 const typesEmitted = (emit: ReturnType<typeof vi.fn>) =>

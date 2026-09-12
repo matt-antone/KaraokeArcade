@@ -228,7 +228,15 @@ class Player extends React.Component<PlayerProps> {
   render () {
     if (!this.props.isVisible || typeof this.props.mediaId !== 'number') return null
 
-    let PlayerComponent
+    // One component type rather than a union of the three classes: a union has
+    // no single construct signature, so TypeScript refuses it as a JSX tag.
+    // The props stay a union because the three players want overlapping but
+    // unequal sets, and the spread below satisfies all of them.
+    let PlayerComponent: React.ComponentClass<
+      React.ComponentProps<typeof CDGPlayer>
+      | React.ComponentProps<typeof MP4Player>
+      | React.ComponentProps<typeof MP4AlphaPlayer>
+    > | undefined
 
     if (this.props.mediaType === 'cdg') PlayerComponent = CDGPlayer
     else if (this.props.mediaType === 'mp4') PlayerComponent = this.props.isVideoKeyingEnabled ? MP4AlphaPlayer : MP4Player

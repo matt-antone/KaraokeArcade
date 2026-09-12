@@ -40,7 +40,7 @@ const recordingContext = () => {
 const canvasWith = (ctx: CanvasRenderingContext2D) => {
   const cv = document.createElement('canvas')
 
-  cv.getContext = (() => ctx) as HTMLCanvasElement['getContext']
+  cv.getContext = (() => ctx) as unknown as HTMLCanvasElement['getContext']
   cv.getBoundingClientRect = (() => ({ width: 400, height: 300 })) as HTMLElement['getBoundingClientRect']
 
   return cv

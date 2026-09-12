@@ -24,3 +24,6 @@ node_modules/
 
 # browser-automation snapshots from local testing
 .playwright-mcp/
+scratch
+.agents/skills/*
+skills-lock

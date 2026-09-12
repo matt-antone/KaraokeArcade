@@ -91,7 +91,7 @@ describe('resolveMedia', () => {
 })
 
 describe('getIsMediaVisible', () => {
-  const playing = {
+  const playing: Parameters<typeof getIsMediaVisible>[0] = {
     queueItem: battleRow,
     isTriviaRow: false,
     isErrored: false,

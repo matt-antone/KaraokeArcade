@@ -8,6 +8,7 @@ import QueueView from 'routes/Queue/views/QueueView'
 import SettingsView from 'routes/Settings/views/SettingsView'
 
 const PlayerView = React.lazy(() => import('routes/Player/views/PlayerView'))
+const Preview = React.lazy(() => import('./Preview'))
 
 const AppRoutes = () => (
   <Routes>
@@ -51,6 +52,12 @@ const AppRoutes = () => (
         </RequireAuth>
       )}
     />
+    {/* TEMPORARY screenshot harness — delete this route, Preview.tsx, and
+        'preview' from the index-route list in server/serverWorker.ts together,
+        once the README art is captured. Unguarded on purpose: every scene is
+        built from the fixtures the tests use, so it reads nothing from the
+        room and there is nothing here to require an account for. */}
+    <Route path='/preview' element={<PreviewScene />} />
     {/* The only way in. Signing out, an expired session and a deep link to a
         guarded route all land here, so there is exactly one place that asks
         for credentials. Once signed in it hands off to the app. */}
@@ -59,6 +66,16 @@ const AppRoutes = () => (
 )
 
 export default AppRoutes
+
+/** Scene, width and height all come off the query string. A path segment
+ *  would read better but the dev and production servers both hand the SPA
+ *  index to a fixed list of single-segment paths, so /preview/<scene> is a
+ *  404 before React sees it. */
+const PreviewScene = () => {
+  const scene = new URLSearchParams(useLocation().search).get('scene') ?? ''
+
+  return <Preview scene={scene} />
+}
 
 interface RequireAuthProps {
   children: React.ReactNode

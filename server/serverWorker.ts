@@ -184,7 +184,7 @@ async function serverWorker ({ env, startScanner, stopScanner, shutdownHandlers 
   const createIndexMiddleware = (content) => {
     const indexRoutes = [
       urlPath,
-      ...['account', 'library', 'queue', 'player', 'settings'].map(r => urlPath + r + '/'),
+      ...['account', 'library', 'queue', 'player', 'settings', 'preview'].map(r => urlPath + r + '/'),
     ]
 
     content = content.replace('<base href="/">', `<base href="${urlPath}">`)

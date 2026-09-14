@@ -44,6 +44,8 @@ One turn, two singers, and each of them picks the other's song. It runs on the T
 - **Two minutes each**, so a whole battle is about five minutes of the night and costs one place in the queue, not two.
 - **The room decides.** Everybody votes on their own phone — one vote each, anonymous, and nobody sees the count until the verdict. (Prefer it loud? A player running on the machine with the mic can score it on crowd noise instead.)
 
+**Create your own singers** with [CharacterAssetGenerator](https://github.com/matt-antone/CharacterAssetGenerator).
+
 Trivia and battles are off until a host turns them on for a room, so a night that is only songs is only songs.
 
 ## Good to know
@@ -71,6 +73,7 @@ KaraokeParty is a fork of [Karaoke Eternal](https://github.com/bhj/KaraokeEterna
 | **Between songs** | ✅ Intermission names the next singer | Songs run back-to-back |
 | **Music trivia rounds** | ✅ Built in, takes its own turn | ❌ |
 | **Head-to-head singer battles** | ✅ Built in, with fighters and a room vote | ❌ |
+| **Make your own fighters** | ✅ A written brief becomes sprite sheets, via an AI pipeline ([CharacterAssetGenerator](https://github.com/matt-antone/CharacterAssetGenerator)) | ❌ |
 | **What you've sung** | ✅ Kept per singer, across parties | ❌ |
 | **Change key** | ✅ ±6 semitones, same tempo, remembered next time you queue it | ❌ |
 | **Look and feel** | DECK — dark, mixing-desk | The original Karaoke Eternal UI |

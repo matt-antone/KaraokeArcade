@@ -4,19 +4,15 @@
 
 KaraokeParty runs the whole night from a browser. Guests scan a QR code, search your library, queue a song and watch their place in line from the couch. You self-host it on a laptop, a Mac mini, a Raspberry Pi or a NAS — no accounts to make, no subscription, no ads, nothing phoning home.
 
-[![KaraokeParty](/docs/assets/images/README.jpg?raw=true)](/docs/assets/images/README.jpg?raw=true)
+## One queue, three kinds of turn
 
-<p align="center">
-  <i>The app in a phone browser (top) driving the player on the TV (bottom)</i>
-</p>
-
-## Three ways to run the night
-
-A room can be pure karaoke, or you can switch on the other two modes and let them take their turn in the same rotation.
+There is one rotation and everything takes its turn in it. A trivia round and a singer battle sit in the queue exactly like a song does — they come round when they come round, and each costs a turn.
 
 ### 🎤 Karaoke
 
 The part everybody came for. MP3+G, MP4 and a music-synced visualizer, a round-robin queue that stays fair as people arrive, and singers who can manage their own spot without asking the host for anything.
+
+[![Karaoke on a phone](/docs/assets/images/karaoke.jpg?raw=true)](/docs/assets/images/karaoke.jpg?raw=true)
 
 - **Queue from the couch.** Search by artist or song, star the ones you want later, tap once to get in line.
 - **Know when you're up.** A strip at the top of every screen counts down to your turn.
@@ -29,7 +25,7 @@ The part everybody came for. MP3+G, MP4 and a music-synced visualizer, a round-r
 
 Music trivia that takes the gap between two singers, so the room has something to do — and the guests who would rather not sing get a way to play.
 
-[![Trivia](/docs/assets/images/trivia.png?raw=true)](/docs/assets/images/trivia.png?raw=true)
+[![Trivia](/docs/assets/images/trivia.jpg?raw=true)](/docs/assets/images/trivia.jpg?raw=true)
 
 - A round waits in the queue like a singer does, and comes up about once per lap.
 - **Five questions**, big on the TV, four colored keys on every phone in the room.
@@ -48,9 +44,7 @@ One turn, two singers, and each of them picks the other's song. It runs on the T
 - **Two minutes each**, so a whole battle is about five minutes of the night and costs one place in the queue, not two.
 - **The room decides.** Everybody votes on their own phone — one vote each, anonymous, and nobody sees the count until the verdict. (Prefer it loud? A player running on the machine with the mic can score it on crowd noise instead.)
 
-[![Singer Battle verdict](/docs/assets/images/singer-battle-verdict.jpg?raw=true)](/docs/assets/images/singer-battle-verdict.jpg?raw=true)
-
-Trivia and Singer Battle are off until you switch them on, per room, so a night that just wants karaoke gets exactly that.
+Trivia and battles are off until a host turns them on for a room, so a night that is only songs is only songs.
 
 ## Good to know
 
@@ -78,7 +72,7 @@ KaraokeParty is a fork of [Karaoke Eternal](https://github.com/bhj/KaraokeEterna
 | **Music trivia rounds** | ✅ Built in, takes its own turn | ❌ |
 | **Head-to-head singer battles** | ✅ Built in, with fighters and a room vote | ❌ |
 | **What you've sung** | ✅ Kept per singer, across parties | ❌ |
-| **Sing in your own key** | ✅ ±6 semitones | ✅ |
+| **Change key** | ✅ ±6 semitones, same tempo, remembered next time you queue it | ❌ |
 | **Look and feel** | DECK — dark, mixing-desk | The original Karaoke Eternal UI |
 | **Self-hosted, ad-free, no telemetry** | ✅ | ✅ |
 

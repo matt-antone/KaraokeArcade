@@ -7,9 +7,9 @@ import PlayerBattle from 'routes/Player/components/PlayerBattle/PlayerBattle'
 import PlayerTrivia from 'routes/Player/components/PlayerTrivia/PlayerTrivia'
 import * as battleFixtures from 'lib/battleFixtures'
 import * as triviaFixtures from 'lib/triviaFixtures'
-import type { BattlePhase, BattleTurn } from 'shared/types'
+import type { BattlePhase, BattleTurn, TriviaRound } from 'shared/types'
 
-const round = () => triviaFixtures.triviaRound({
+const round = (over: Partial<TriviaRound> = {}) => triviaFixtures.triviaRound({
   questionNumber: 3,
   questionCount: 5,
   question: 'Which band released the album "Rumours" in 1977?',
@@ -17,6 +17,7 @@ const round = () => triviaFixtures.triviaRound({
   difficulty: 'easy',
   endsAt: Date.now() + 14000,
   sentAt: Date.now(),
+  ...over,
 })
 
 const result = () => triviaFixtures.triviaResult({
@@ -31,6 +32,26 @@ const result = () => triviaFixtures.triviaResult({
   ],
   scoresFrom: Date.now() - 1000,
   endsAt: Date.now() + 4000,
+  sentAt: Date.now(),
+})
+
+/** The last beat of a round: five of five answered, the board up. `boardFrom`
+ *  in the past is what moves the screen off the reveal and onto the standings. */
+const finalResult = () => triviaFixtures.triviaResult({
+  questionNumber: 5,
+  isFinal: true,
+  correctIdx: 0,
+  numCorrect: 3,
+  scores: [
+    { userId: 1, name: 'Dot Matrix', score: 5, numAnswered: 5 },
+    { userId: 2, name: 'Barf', score: 4, numAnswered: 5 },
+    { userId: 3, name: 'Vespa', score: 3, numAnswered: 5 },
+    { userId: 4, name: 'Lone Starr', score: 2, numAnswered: 4 },
+    { userId: 5, name: 'Princess Vespa', score: 1, numAnswered: 3 },
+  ],
+  scoresFrom: Date.now() - 4000,
+  boardFrom: Date.now() - 2000,
+  endsAt: Date.now() + 8000,
   sentAt: Date.now(),
 })
 
@@ -53,6 +74,9 @@ const Preview = ({ scene }: { scene: string }) => {
     } else if (scene === 'trivia-phone-reveal') {
       dispatch({ type: 'trivia/ROUND', payload: round() })
       dispatch({ type: 'trivia/RESULT', payload: result() })
+    } else if (scene === 'trivia-phone-board') {
+      dispatch({ type: 'trivia/ROUND', payload: round({ questionNumber: 5 }) })
+      dispatch({ type: 'trivia/RESULT', payload: finalResult() })
     } else if (scene === 'battle-versus') {
       dispatch({ type: 'battle/TURN', payload: turn('versus') })
     } else if (scene === 'battle-ballot') {
@@ -60,7 +84,13 @@ const Preview = ({ scene }: { scene: string }) => {
       // and only when the turn says the room settles fights by ballot — the
       // fixture default is 'crowd', which is graded by the player's own
       // microphone and puts no ballot on a phone at all.
-      dispatch({ type: 'battle/TURN', payload: turn('judge', { judging: 'ballot' }) })
+      // The fighters get no ballot — they are holding a microphone. So this
+      // scene's two of them are somebody other than whoever is signed in on
+      // the phone taking the screenshot.
+      dispatch({
+        type: 'battle/TURN',
+        payload: turn('judge', { judging: 'ballot', challengerUserId: 101, opponentUserId: 102 }),
+      })
     } else if (scene === 'battle-winner') {
       dispatch({
         type: 'battle/TURN',
@@ -102,6 +132,19 @@ const Preview = ({ scene }: { scene: string }) => {
     return (
       <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 9999 }}>
         <PlayerTrivia round={round()} result={result()} width={w} height={h} />
+      </div>
+    )
+  }
+
+  if (scene === 'trivia-tv-board') {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 9999 }}>
+        <PlayerTrivia
+          round={round({ questionNumber: 5 })}
+          result={finalResult()}
+          width={w}
+          height={h}
+        />
       </div>
     )
   }

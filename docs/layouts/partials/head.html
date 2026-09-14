@@ -2,8 +2,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
   <meta name="description" content="{{ .Description }}" />
-  <link rel="shortcut icon" href='{{ (resources.Get "images/favicon.ico").Permalink }}'>
-  <link rel="apple-touch-icon" href='{{ (resources.Get "images/logo_mic.png").Permalink }}'>
+  <link rel="shortcut icon" href='{{ (resources.Get "images/brand/favicon.ico").Permalink }}'>
+  <link rel="apple-touch-icon" sizes="180x180" href='{{ (resources.Get "images/brand/apple-touch-180.png").Permalink }}'>
   <title>{{ if .Params.seoTitle }}{{ .Params.seoTitle }}{{ else }}{{ .Site.Title }} | {{ .Title }}{{ end }}</title>
   <style>
     @font-face {

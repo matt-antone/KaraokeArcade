@@ -10,9 +10,9 @@ KaraokeParty runs the whole night from a browser. Guests scan a QR code, search 
   <i>The app in a phone browser (top) driving the player on the TV (bottom)</i>
 </p>
 
-## Three ways to run the night
+## One queue, three kinds of turn
 
-A room can be pure karaoke, or you can switch on the other two modes and let them take their turn in the same rotation.
+There is one rotation and everything takes its turn in it. A trivia round and a singer battle sit in the queue exactly like a song does — they come round when they come round, and each costs a turn.
 
 ### 🎤 Karaoke
 
@@ -50,7 +50,7 @@ One turn, two singers, and each of them picks the other's song. It runs on the T
 
 [![Singer Battle verdict](/docs/assets/images/singer-battle-verdict.jpg?raw=true)](/docs/assets/images/singer-battle-verdict.jpg?raw=true)
 
-Trivia and Singer Battle are off until you switch them on, per room, so a night that just wants karaoke gets exactly that.
+Trivia and battles are off until a host turns them on for a room, so a night that is only songs is only songs.
 
 ## Good to know
 

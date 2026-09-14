@@ -1,16 +1,27 @@
 {
   "name": "KaraokeArcade",
-  "short_name": "Karaoke",
+  "short_name": "Arcade",
   "description": "Find and queue songs from your phone.",
   "scope": "../",
   "display": "standalone",
-  "background_color": "#141414",
+  "background_color": "#0d0e0f",
   "theme_color": "#141414",
   "icons": [
     {
-      "src": "app.png",
+      "src": "brand/app-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "brand/app-512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "brand/app-mono-1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "monochrome"
     }
   ]
 }

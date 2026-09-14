@@ -164,8 +164,8 @@ const getRoundRobinQueue = createSelector(
     // Nothing settled can be optimistic: an optimistic row is appended to the
     // end of the queue and has never been played, so it reaches neither the
     // play history nor the playing row, and the "lock in next singer" pass
-    // above skips it explicitly. Without the assertion this reads the rotation
-    // id off a row type that has no userId.
+    // above skips it explicitly. Without the assertion this reads off a row
+    // type that has neither a userId nor a type to derive a rotation id from.
     const resultByUser = settled.map(queueId => rotationIdOf(entities[queueId] as QueueItem))
 
     return {

@@ -49,11 +49,11 @@ describe('the prefs a non-admin may see', () => {
     // An upgraded install has no prefs at all, and must not sprout an empty
     // battle key that reads as a decision somebody made.
     expect(publicRoomPrefs(undefined)).toEqual({})
-    expect(publicRoomPrefs({} as IRoomPrefs)).toEqual({})
+    expect(publicRoomPrefs({})).toEqual({})
   })
 
   it('omits a key rather than sending an undefined one', () => {
-    const out = publicRoomPrefs({ roles: { 3: { allowNew: true } } } as unknown as IRoomPrefs)
+    const out = publicRoomPrefs({ roles: { 3: { allowNew: true } } })
 
     expect('battle' in out).toBe(false)
   })

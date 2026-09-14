@@ -16,7 +16,12 @@ import type { IRoomPrefs } from '../../shared/types.js'
  * this wrong is either a leaked room password or a feature that is silently
  * dead for everybody who is not an admin, and neither shows up as a type error.
  */
-export default function publicRoomPrefs (prefs: IRoomPrefs | undefined): Partial<IRoomPrefs> {
+/* Partial in as well as out: every key below is guarded, and a room made
+ * before a given pref existed simply does not carry it — an upgraded install
+ * may have no `qr` block at all. Taking the full IRoomPrefs here would be a
+ * type that lies about what reaches this function, and would force a cast at
+ * every call site and in every test. */
+export default function publicRoomPrefs (prefs: Partial<IRoomPrefs> | undefined): Partial<IRoomPrefs> {
   if (!prefs) return {}
 
   return {

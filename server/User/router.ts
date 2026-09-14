@@ -401,7 +401,9 @@ router.put('/user/:userId', async (ctx) => {
 async function assertMaySignUp (
   fail: Fail,
   actor: { userId: number | null },
-  body: RequestWithBody['body'],
+  body: { role?: string, roomPassword?: string },
+  // Not read off the body: it arrives as a multipart string and is parsed once
+  // by the caller, which is the whole of the signup fix.
   roomId: number | null,
 ) {
   // already signed in?

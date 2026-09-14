@@ -1,78 +1,113 @@
 # KaraokeParty
 
-Host awesome karaoke parties where everyone can easily find and queue songs from their phone's browser. The player is also fully browser-based with support for MP3+G, MP4 videos and WebGL visualizations. The server is self-hosted and runs on nearly everything.
+**Your TV is the stage. Everybody's phone is the remote. Nobody installs anything.**
+
+KaraokeParty runs the whole night from a browser. Guests scan a QR code, search your library, queue a song and watch their place in line from the couch. You self-host it on a laptop, a Mac mini, a Raspberry Pi or a NAS — no accounts to make, no subscription, no ads, nothing phoning home.
 
 [![KaraokeParty](/docs/assets/images/README.jpg?raw=true)](/docs/assets/images/README.jpg?raw=true)
 
 <p align="center">
-  <i>App in mobile browser (top) controlling player in desktop browser (bottom)</i>
+  <i>The app in a phone browser (top) driving the player on the TV (bottom)</i>
 </p>
 
-## Features
+## Three ways to run the night
 
-- Plays:
-  - MP3+G (MP3 with CDG lyrics; including zipped)
-  - MP4 videos
-  - Music-synced visualizations (with automatic lyrics background removal)
-- Fast, modern mobile browser app designed for "karaoke conditions"
-- Easy joining with QR codes and guest accounts
-- Multiple simultaneous rooms/queues (optionally password-protected)
-- Dynamic queues keep parties fair, fun and no-fuss
-- Singers manage their own spot:
-  - A **Me** tab with drag-to-reorder and swipe-to-remove for your own upcoming songs
-  - A wait-time readout with a pause key, so you can step away without losing your place
-  - A **History** tab of what the room has sung tonight, plus your own song history across parties
-- A short intermission between songs that names and shows the next singer
-- Fully self-hosted
-- No ads or telemetry
+A room can be pure karaoke, or you can switch on the other two modes and let them take their turn in the same rotation.
 
-Microphones are *not* required since the player itself only outputs music - this allows your audio setup to be as simple or complex as you like. See the [F.A.Q.](docs/content/faq/recommended-audio-microphone-setup.md) for more information.
+### 🎤 Karaoke
 
-## Getting Started
+The part everybody came for. MP3+G, MP4 and a music-synced visualizer, a round-robin queue that stays fair as people arrive, and singers who can manage their own spot without asking the host for anything.
 
-KaraokeParty basically has 3 parts. See [Getting Started](docs/content/docs/getting-started/index.md) to get up and running step-by-step, or jump to the documentation for each part below:
+- **Queue from the couch.** Search by artist or song, star the ones you want later, tap once to get in line.
+- **Know when you're up.** A strip at the top of every screen counts down to your turn.
+- **Step away.** Hit pause and the rotation skips you until you're back — your songs keep their place.
+- **Your list is yours.** Drag your own upcoming songs into the order you want. The rotation between singers stays automatic.
+- **Sing it in your key.** Shift a song up or down six semitones without changing its tempo, and it remembers next time.
+- **A moment between songs.** A short intermission names and shows the next singer, so nobody's left hunting for the mic.
 
-- **[Server:](docs/content/docs/karaokeparty-server/index.md)** Runs on pretty much anything to serve the web app and your media files, including a Windows PC, Mac, or a dedicated server like a Raspberry Pi or Synology NAS.
-- **[App:](docs/content/docs/karaokeparty-app/index.md)** Fast, modern mobile web app designed for "karaoke conditions".
-- **[Player:](docs/content/docs/karaokeparty-app/index.md#player)** Just another part of the app, but meant to run fullscreen on the system handling audio/video for a [room](docs/content/docs/karaokeparty-app/index.md#rooms-admin-only)
+### 🧠 Trivia
 
-## Installation
+Music trivia that takes the gap between two singers, so the room has something to do — and the guests who would rather not sing get a way to play.
 
-There are several [installation methods](docs/content/docs/karaokeparty-server/index.md#installation) available for KaraokeParty Server.
+[![Trivia](/docs/assets/images/trivia.png?raw=true)](/docs/assets/images/trivia.png?raw=true)
 
-## Credits
+- A round waits in the queue like a singer does, and comes up about once per lap.
+- **Five questions**, big on the TV, four colored keys on every phone in the room.
+- Anyone can play, whether or not they have a song queued. One answer each, first tap counts.
+- The right answer goes up for everyone at once, then the scoreboard, then the next singer is on.
+- Questions come from the [Open Trivia Database](https://opentdb.com/) and are cached ahead of time, so a party in a basement with no internet still plays.
 
-KaraokeParty is a fork of [Karaoke Eternal](https://github.com/bhj/KaraokeEternal) by RadRoot LLC, used under the ISC license.
+### 🥊 Singer Battle
 
-## Discord & Support
+One turn, two singers, and each of them picks the other's song. It runs on the TV as an arcade cabinet: fighters, a VS slam, two-minute rounds and a verdict.
 
-For bugs and requests specific to this fork, open an [issue](https://github.com/matt-antone/KaraokeParty/issues). For general karaoke-system support and development chat, the upstream [Karaoke Eternal Discord Server](https://discord.gg/PgqVtFq) is the place to be.
+[![Singer Battle](/docs/assets/images/singer-battle.jpg?raw=true)](/docs/assets/images/singer-battle.jpg?raw=true)
 
-## Contributing & Development
+- **Pick who you sing as.** Eight fighters; whoever you choose is who the room watches on stage.
+- **Throw a challenge.** Pick somebody in the room, then pick the song *they* have to sing. Their phone gets 45 seconds to accept — and the song they pick back is the one *you* sing. Neither of you sees the other's choice until it's on screen.
+- **Two minutes each**, so a whole battle is about five minutes of the night and costs one place in the queue, not two.
+- **The room decides.** Everybody votes on their own phone — one vote each, anonymous, and nobody sees the count until the verdict. (Prefer it loud? A player running on the machine with the mic can score it on crowd noise instead.)
 
-Contributions are welcome! Please open an issue before embarking on major features; the project's scope is limited to ensure success.
+[![Singer Battle verdict](/docs/assets/images/singer-battle-verdict.jpg?raw=true)](/docs/assets/images/singer-battle-verdict.jpg?raw=true)
 
-Make sure you have [Node.js](https://nodejs.org/en/) v24 or later and [Bun](https://bun.sh) v1.2 or later, then:
+Trivia and Singer Battle are off until you switch them on, per room, so a night that just wants karaoke gets exactly that.
 
-1. Fork and clone the repo
-2. `bun install`
-3. `npm run dev` and look for "Web server running at" for the **server URL**
+## Good to know
 
-Other useful scripts: `npm test` (vitest), `npm run lint`, `npm run typecheck`, and `npm run build` followed by `npm run serve` for a production run.
+- **Nothing to install for guests** — it's a web app; joining is a QR code and a name.
+- **Guests welcome.** Let people in with an account, a new sign-up or as a guest, room by room.
+- **More than one room.** Each has its own queue and can be password-protected.
+- **Microphones are not required.** The player only outputs music, so your audio setup can be as simple or as serious as you like — see the [F.A.Q.](docs/content/faq/recommended-audio-microphone-setup.md)
+- **Your library stays yours.** Point it at your folders; it scans MP3+G (including zipped) and MP4.
+- **No ads, no telemetry, no cloud account.** Self-hosted, and ISC-licensed.
 
-## KaraokeParty vs. Karaoke Eternal
+## How KaraokeParty compares
 
-KaraokeParty tracks Karaoke Eternal for the media, scanning and server side of things, and diverges on how singers experience the party. Everything below is a difference; everything not listed (media formats, rooms, guest accounts, QR joining, the scanner, the metadata parser, the visualizer) works the same way.
+KaraokeParty is a fork of [Karaoke Eternal](https://github.com/bhj/KaraokeEternal), and tracks it for the media, scanning and server side. Where it differs is what the night feels like for the people in the room.
 
 | | KaraokeParty | Karaoke Eternal |
 | --- | --- | --- |
-| **Interface** | DECK — a dark, mixing-desk visual system with its own type, tokens and controls | The original Karaoke Eternal UI |
-| **Queue screen** | Three tabs: *Queue*, *Me* and *History* | A single queue list |
-| **Reordering your songs** | Any singer drags their own upcoming songs on the *Me* tab; the shared queue stays admin-only | Reordering the queue is admin-only |
-| **Stepping away** | Pause your spot in the rotation and resume when you're back; the round-robin skips you while paused | No equivalent — remove and re-queue the song |
-| **Wait time** | A header strip shows how long until your turn, and whether you're up now | Position is implied by the queue list |
-| **Between songs** | A 15-second intermission that names and pictures the next singer | Songs follow back-to-back |
-| **Song history** | Kept per user and survives re-scans, shown on the *Me* tab and your account page | Not kept |
-| **Tooling** | Bun for installs and the lockfile | npm |
+| **Queue from your phone** | ✅ | ✅ |
+| **MP3+G, MP4, visualizer** | ✅ | ✅ |
+| **QR-code joining, guest accounts** | ✅ | ✅ |
+| **Fair round-robin rotation** | ✅ | ✅ |
+| **Reorder your own songs** | ✅ Drag them on your *Me* tab | Host only |
+| **See how long until your turn** | ✅ Counts down in the header | Guess from the list |
+| **Step away without losing your spot** | ✅ Pause and resume | Remove and re-queue |
+| **Between songs** | ✅ Intermission names the next singer | Songs run back-to-back |
+| **Music trivia rounds** | ✅ Built in, takes its own turn | ❌ |
+| **Head-to-head singer battles** | ✅ Built in, with fighters and a room vote | ❌ |
+| **What you've sung** | ✅ Kept per singer, across parties | ❌ |
+| **Sing in your own key** | ✅ ±6 semitones | ✅ |
+| **Look and feel** | DECK — dark, mixing-desk | The original Karaoke Eternal UI |
+| **Self-hosted, ad-free, no telemetry** | ✅ | ✅ |
 
-Both are self-hosted, ad-free and telemetry-free, and both are ISC-licensed.
+Both are free and ISC-licensed. If you want the original's simplicity, it's an excellent piece of software and you should use it.
+
+## Getting started
+
+KaraokeParty has three parts. [Getting Started](docs/content/docs/getting-started/index.md) walks through them step by step:
+
+- **[Server](docs/content/docs/karaokeparty-server/index.md)** — runs on a Windows PC, a Mac, a Raspberry Pi or a NAS, and serves both the app and your media. Several [installation methods](docs/content/docs/karaokeparty-server/index.md#installation) are available.
+- **[App](docs/content/docs/karaokeparty-app/index.md)** — the phone app everyone uses. Nothing to install.
+- **[Player](docs/content/docs/karaokeparty-app/index.md#player)** — the same app, running fullscreen on whatever is hooked up to your TV and speakers.
+
+## Support
+
+For bugs and requests specific to this fork, open an [issue](https://github.com/matt-antone/KaraokeParty/issues). For general karaoke-system and development chat, the upstream [Karaoke Eternal Discord](https://discord.gg/PgqVtFq) is the place to be.
+
+## Contributing & development
+
+Contributions are welcome — please open an issue before starting on anything major, since the project's scope is deliberately narrow.
+
+You'll need [Node.js](https://nodejs.org/en/) v24 or later and [Bun](https://bun.sh) v1.2 or later:
+
+1. Fork and clone the repo
+2. `bun install`
+3. `npm run dev`, then look for "Web server running at" for the server URL
+
+Other useful scripts: `npm test` (vitest), `npm run lint`, `npm run typecheck`, and `npm run build` followed by `npm run serve` for a production run.
+
+## Credits
+
+KaraokeParty is a fork of [Karaoke Eternal](https://github.com/bhj/KaraokeEternal) by RadRoot LLC, used under the ISC license. Trivia questions come from the [Open Trivia Database](https://opentdb.com/), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).

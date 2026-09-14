@@ -2,6 +2,7 @@
 // with the `/preview` route in Routes.tsx once the images are captured.
 import React, { useEffect } from 'react'
 import { useAppDispatch } from 'store/hooks'
+import BattleSetup from 'components/BattleSetup/BattleSetup'
 import PlayerBattle from 'routes/Player/components/PlayerBattle/PlayerBattle'
 import PlayerTrivia from 'routes/Player/components/PlayerTrivia/PlayerTrivia'
 import * as battleFixtures from 'lib/battleFixtures'
@@ -63,7 +64,26 @@ const Preview = ({ scene }: { scene: string }) => {
     } else if (scene === 'battle-winner') {
       dispatch({
         type: 'battle/TURN',
-        payload: turn('winner', { challengerScore: 71, opponentScore: 88 }),
+        // A ballot verdict, so the numbers on the plate are votes and match
+        // what the phone's ballot row was counting up to.
+        payload: turn('winner', {
+          judging: 'ballot',
+          challengerScore: 5,
+          opponentScore: 9,
+          ballotsIn: 14,
+          ballotsOf: 14,
+        }),
+      })
+    } else if (scene === 'battle-setup') {
+      // The roster the challenger picks an opponent from. Everyone in the room
+      // bar themselves, which is what the server sends.
+      dispatch({
+        type: 'battle/SINGERS',
+        payload: [
+          battleFixtures.battleSinger({ userId: 2, name: 'Barf' }),
+          battleFixtures.battleSinger({ userId: 3, name: 'Vespa' }),
+          battleFixtures.battleSinger({ userId: 4, name: 'Lone Starr' }),
+        ],
       })
     } else if (scene === 'battle-intro') {
       dispatch({ type: 'battle/TURN', payload: turn('intro2') })
@@ -84,6 +104,10 @@ const Preview = ({ scene }: { scene: string }) => {
         <PlayerTrivia round={round()} result={result()} width={w} height={h} />
       </div>
     )
+  }
+
+  if (scene === 'battle-setup') {
+    return <BattleSetup isOpen onClose={() => {}} />
   }
 
   if (scene.startsWith('battle-') && !scene.endsWith('ballot')) {

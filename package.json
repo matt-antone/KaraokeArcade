@@ -1,5 +1,5 @@
 {
-  "name": "karaokeparty",
+  "name": "karaokearcade",
   "version": "0.0.0-dev.0",
   "description": "Open karaoke party system",
   "keywords": [
@@ -42,13 +42,13 @@
     "build/shared/**"
   ],
   "bin": {
-    "karaokeparty-server": "build/server/main.js"
+    "karaokearcade-server": "build/server/main.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/matt-antone/KaraokeParty.git"
   },
-  "productName": "KaraokeParty Server",
+  "productName": "KaraokeArcade Server",
   "author": "RadRoot LLC",
   "license": "ISC",
   "overrides": {

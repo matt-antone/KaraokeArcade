@@ -1,14 +1,14 @@
-# Competitive Feature Research — KaraokeParty
+# Competitive Feature Research — KaraokeArcade
 
 **Date:** 2026-08-26
-**Question:** What features do competing karaoke systems offer that KaraokeParty lacks, and which should we add?
+**Question:** What features do competing karaoke systems offer that KaraokeArcade lacks, and which should we add?
 **Method:** 6 search angles → 29 sources fetched → 141 claims extracted → 25 verified by 3-vote adversarial review (20 confirmed, 5 refuted) → 14 synthesized findings. Competitor scope limited to self-hosted/OSS and commercial party/venue-KJ tools; consumer social singing apps (Smule, StarMaker) deliberately excluded.
 
 ---
 
 ## Executive summary
 
-KaraokeParty's **architecture is already at parity** with the best self-hosted competitors. PiKaraoke matches it on all three defining traits — no-app mobile web remote joined by QR, a browser-openable full-screen player, and Pi-to-PC/Docker deploy. The gap is not infrastructure; it is the layer of party/KJ features built on top.
+KaraokeArcade's **architecture is already at parity** with the best self-hosted competitors. PiKaraoke matches it on all three defining traits — no-app mobile web remote joined by QR, a browser-openable full-screen player, and Pi-to-PC/Docker deploy. The gap is not infrastructure; it is the layer of party/KJ features built on top.
 
 Two clusters account for nearly all of it:
 
@@ -19,7 +19,7 @@ Almost none of this is blocked by the browser + Node architecture. The genuine c
 
 ---
 
-## What KaraokeParty has today
+## What KaraokeArcade has today
 
 Established by reading the repo, not inferred:
 
@@ -44,7 +44,7 @@ Established by reading the repo, not inferred:
 
 PiKaraoke's README advertises "Instant Mobile Remote: Search and queue songs from any smartphone—just scan and sing" and a "Dedicated Player… that can be opened on any web browser", running on Pi 3/4, macOS, Windows, Linux, with `--headless` and an official Docker image. Karaoke Eternal advertises the same three traits.
 
-Divergence outside those three is real — PiKaraoke is Python/Flask with a yt-dlp-centric pipeline and no first-class multi-room; KaraokeParty ships password-protected rooms — so this is not "no differentiation at all", but the architecture is not the moat.
+Divergence outside those three is real — PiKaraoke is Python/Flask with a yt-dlp-centric pipeline and no first-class multi-room; KaraokeArcade ships password-protected rooms — so this is not "no differentiation at all", but the architecture is not the moat.
 
 Sources: [pikaraoke](https://github.com/vicwomg/pikaraoke) · [wiki](https://github.com/vicwomg/pikaraoke/wiki) · [docker](https://hub.docker.com/r/vicwomg/pikaraoke) · [karaoke-eternal.com](https://www.karaoke-eternal.com/)
 
@@ -77,7 +77,7 @@ Sources: [OpenKJ tablemodelqueuesongs.cpp](https://raw.githubusercontent.com/Ope
 
 OpenKJ marks a "tracked regular singer" with a heart icon; clicking it saves the singer and continues to track songs added, deleted or moved **and saves associated key changes** for future sessions. Siglos fills a returning singer's song list from past performances, with venue tagging and a "Show from current venue only" filter. PCDJ Karaoki ships a "Singer Data" screen storing prior requests including key change, per-singer song stacks, and an "On Break" state.
 
-KaraokeParty already has more of this than the raw comparison suggests — `songHistory` exists *and is surfaced* in the Account view, and `songStarsByName` survives scanner re-minting of songIds. **The missing piece is specifically key memory and cross-session queue restore**, not history itself.
+KaraokeArcade already has more of this than the raw comparison suggests — `songHistory` exists *and is surfaced* in the Account view, and `songStarsByName` survives scanner re-minting of songIds. **The missing piece is specifically key memory and cross-session queue restore**, not history itself.
 
 Sources: [OpenKJ docs](https://docs.openkj.org/doku.php?id=getting_started) · [Siglos Pro](https://www.powerkaraoke.com/download/SiglosPro.pdf) · [PCDJ Karaoki](https://pcdj.com/karaoke-software/karaoki/)
 
@@ -90,7 +90,7 @@ Siglos runs strict round-based rotation with a separate singer list: "first play
 
 KaraFun's Singer Rotation is group-based round-robin ("By default, one group corresponds to one remote"; groups mergeable; pre-existing items land in an "Unassigned Group"). It shipped April 2025 as a **pro-exclusive feature** on the ~$49/mo venue tier, while the ~$9.99 consumer tier is private-use-only. Fairness is deliberately sold as the venue differentiator — a useful signal about what the market prices.
 
-KaraokeParty's `Queue.add({roomId, songId, userId})` hard-codes tail insertion; `QUEUE_ADD` carries only `songId`; the only repositioning is a separate admin drag via `QUEUE_MOVE`.
+KaraokeArcade's `Queue.add({roomId, songId, userId})` hard-codes tail insertion; `QUEUE_ADD` carries only `songId`; the only repositioning is a separate admin drag via `QUEUE_MOVE`.
 
 Sources: [OpenKJ docs](https://docs.openkj.org/doku.php?id=getting_started) · [Siglos playback mgmt](https://www.powerkaraoke.com/help/siglospro/idh_playback_management.html) · [KaraFun help](https://www.karafun.com/help/web_484.html) · [KaraFun blog](https://www.karafun.com/blog/1511-singer-rotation-a-new-exclusive-feature-for-effortless-karaoke-hosting.html) · [KaraFun pro pricing](https://www.karafun.com/our-pro-offers)
 
@@ -101,7 +101,7 @@ Karaoke Mugen models two modes: private karaoke = "all additions are made direct
 
 SongbookDB lets the KJ "switch song requesting on or off… ban requesters" (banned users move to a Blocked Users grid) and optionally "turn on 'auto mode' so requests are automatically sent to rotation without any manual interaction".
 
-Grep of KaraokeParty for `suggest|approve|pendingApproval|moderat` returns nothing.
+Grep of KaraokeArcade for `suggest|approve|pendingApproval|moderat` returns nothing.
 
 Sources: [Karaoke Mugen operator docs](https://docs.karaokes.moe/user-guide/operator/index.html) · [playlists](https://docs.karaokes.moe/user-guide/playlists/index.html) · [SongbookDB PAL docs](https://www.songbookdb.com/docs2/songbookdb-pal-documentation.php)
 

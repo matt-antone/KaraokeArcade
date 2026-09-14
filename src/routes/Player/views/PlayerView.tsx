@@ -31,7 +31,7 @@ const PlayerView = () => {
 
   // set page title
   useEffect(() => {
-    document.title = 'KaraokeParty | Player'
+    document.title = 'KaraokeArcade | Player'
   }, [])
 
   return (

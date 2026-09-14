@@ -1,4 +1,4 @@
 ---
 title: Documentation
-description: Documentation for KaraokeParty (the app) and KaraokeParty Server
+description: Documentation for KaraokeArcade (the app) and KaraokeArcade Server
 ---

@@ -41,7 +41,7 @@ const env = {
   KES_PGID: parseInt(process.env.PGID, 10) || undefined,
 }
 
-const HELP = `KaraokeParty Server
+const HELP = `KaraokeArcade Server
 
   --data <path>              Absolute path of folder for database files
   -p, --port <n>             Web server port (default=0/auto)
@@ -56,7 +56,7 @@ const HELP = `KaraokeParty Server
                              QR codes and home screen installs. Defaults to the
                              current LAN IP, which changes with the network
   --urlPath <path>           Web server URL base path (default=/)
-  -v, --version              Output the KaraokeParty Server version and exit
+  -v, --version              Output the KaraokeArcade Server version and exit
   -h, --help                 Show this help and exit
 
   Logging options use the following numeric levels:

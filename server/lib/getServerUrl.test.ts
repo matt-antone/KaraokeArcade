@@ -41,13 +41,13 @@ describe('getServerUrl', () => {
   })
 
   it('prefers an override, so an install survives changing networks', () => {
-    setEnv('KES_SERVER_URL', 'http://karaokeparty.local:8080')
-    expect(getServerUrl('8080')).toBe('http://karaokeparty.local:8080/')
+    setEnv('KES_SERVER_URL', 'http://karaokearcade.local:8080')
+    expect(getServerUrl('8080')).toBe('http://karaokearcade.local:8080/')
   })
 
   it('normalizes the override to a trailing slash, as the fallback is', () => {
-    setEnv('KES_SERVER_URL', 'http://karaokeparty.local:8080/kp')
-    expect(getServerUrl('8080')).toBe('http://karaokeparty.local:8080/kp')
+    setEnv('KES_SERVER_URL', 'http://karaokearcade.local:8080/kp')
+    expect(getServerUrl('8080')).toBe('http://karaokearcade.local:8080/kp')
   })
 
   it('ignores the port and base path once overridden', () => {
@@ -56,15 +56,15 @@ describe('getServerUrl', () => {
     expect(getServerUrl('8080')).toBe('https://party.example.com/')
   })
 
-  // new URL() parses "karaokeparty.local:8080" without complaint, taking
-  // "karaokeparty.local:" for the scheme, so try/catch alone lets it through
+  // new URL() parses "karaokearcade.local:8080" without complaint, taking
+  // "karaokearcade.local:" for the scheme, so try/catch alone lets it through
   it('falls back on a host:port missing its scheme, rather than poisoning every QR', () => {
-    setEnv('KES_SERVER_URL', 'karaokeparty.local:8080')
+    setEnv('KES_SERVER_URL', 'karaokearcade.local:8080')
     expect(getServerUrl('8080')).toBe('http://192.168.86.235:8080/')
   })
 
   it('falls back on a non-http scheme', () => {
-    setEnv('KES_SERVER_URL', 'ftp://karaokeparty.local')
+    setEnv('KES_SERVER_URL', 'ftp://karaokearcade.local')
     expect(getServerUrl('8080')).toBe('http://192.168.86.235:8080/')
   })
 

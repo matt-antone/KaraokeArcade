@@ -26,14 +26,27 @@ export const SHEET_COLS = 8
 export const FRAME_WIDTH = 480
 export const FRAME_HEIGHT = 560
 
-/** Every delivered loop is drawn at 4fps and is seamless at that rate. */
+/** Every delivered set is drawn at 4fps. */
 export const FRAME_MS = 250
 
-/** The loops a fighter can be drawn in. Every fighter has both. `ko`,
- *  `victory`, and Belter's `entrance`, `flinch` and `guard` sheets are also
- *  delivered under assets/sprites/ but nothing plays them yet, so they are not
- *  copied in or named here — add the loop and the sheet together. */
-export type BattleSingerLoop = 'sing' | 'dance'
+/** The animation sets a fighter can be drawn in. Every fighter has all four.
+ *  Belter's `entrance`, `flinch` and `guard` sheets are also delivered under
+ *  assets/sprites/ but nothing plays them yet, so they are not copied in or
+ *  named here — add the set and the sheet together.
+ *
+ *  Called `Loop` because two of the four are: `sing` and `dance` cycle
+ *  seamlessly for as long as a beat lasts. `ko` and `victory` do not — see
+ *  ONE_SHOT_SETS. */
+export type BattleSingerLoop = 'sing' | 'dance' | 'ko' | 'victory'
+
+/** The sets that play once and hold their last frame instead of cycling.
+ *
+ *  A ko ends with the fighter on the floor and a victory with their arm up,
+ *  and neither drawing returns to where it started: cycling them pops the
+ *  loser back onto their feet to be knocked down again every two seconds, and
+ *  snaps the winner's arm back down mid-wave. useSpriteFrame reads this rather
+ *  than taking a flag, so a caller cannot forget which kind it asked for. */
+export const ONE_SHOT_SETS: ReadonlySet<BattleSingerLoop> = new Set<BattleSingerLoop>(['ko', 'victory'])
 
 export interface RosterSinger {
   id: string
@@ -47,7 +60,7 @@ export interface RosterSinger {
   name: string
   /** No art drawn yet: the tile renders as a locked `?` and cannot be picked. */
   pending?: boolean
-  /** Frame counts per loop. A loop absent from here is not drawn for this
+  /** Frame counts per set. A set absent from here is not drawn for this
    *  fighter and callers fall back to one that is. */
   loops: Partial<Record<BattleSingerLoop, number>>
 }
@@ -56,14 +69,14 @@ export interface RosterSinger {
  *  every drawn fighter is finished, so there is no longer a reason to lead
  *  with a subset. */
 export const BATTLE_SINGERS: RosterSinger[] = [
-  { id: 'p1', slug: 'belter', name: 'BELTER', loops: { sing: 8, dance: 16 } },
-  { id: 'p2', slug: 'crooner', name: 'CROONER', loops: { sing: 8, dance: 16 } },
-  { id: 'p3', slug: 'hype-man', name: 'HYPEMAN', loops: { sing: 8, dance: 16 } },
-  { id: 'p4', slug: 'diva', name: 'DIVA', loops: { sing: 8, dance: 16 } },
-  { id: 'p5', slug: 'screamer', name: 'SCREAMER', loops: { sing: 8, dance: 16 } },
-  { id: 'p6', slug: 'outlaw', name: 'OUTLAW', loops: { sing: 8, dance: 16 } },
-  { id: 'p7', slug: 'idol', name: 'IDOL', loops: { sing: 8, dance: 16 } },
-  { id: 'p8', slug: 'heavyweight', name: 'HEAVYWEIGHT', loops: { sing: 8, dance: 16 } },
+  { id: 'p1', slug: 'belter', name: 'BELTER', loops: { sing: 8, dance: 16, ko: 8, victory: 8 } },
+  { id: 'p2', slug: 'crooner', name: 'CROONER', loops: { sing: 8, dance: 16, ko: 8, victory: 8 } },
+  { id: 'p3', slug: 'hype-man', name: 'HYPEMAN', loops: { sing: 8, dance: 16, ko: 8, victory: 8 } },
+  { id: 'p4', slug: 'diva', name: 'DIVA', loops: { sing: 8, dance: 16, ko: 8, victory: 8 } },
+  { id: 'p5', slug: 'screamer', name: 'SCREAMER', loops: { sing: 8, dance: 16, ko: 8, victory: 8 } },
+  { id: 'p6', slug: 'outlaw', name: 'OUTLAW', loops: { sing: 8, dance: 16, ko: 8, victory: 8 } },
+  { id: 'p7', slug: 'idol', name: 'IDOL', loops: { sing: 8, dance: 16, ko: 8, victory: 8 } },
+  { id: 'p8', slug: 'heavyweight', name: 'HEAVYWEIGHT', loops: { sing: 8, dance: 16, ko: 8, victory: 8 } },
   { id: 'p9', slug: '', name: 'TBD', pending: true, loops: {} },
 ]
 
@@ -83,8 +96,8 @@ export const battleSingerOrDefault = (id?: string | null): RosterSinger => {
   return singer && !singer.pending ? singer : BATTLE_SINGERS_PLAYABLE[0]
 }
 
-/** Which loop this fighter can actually show for the one that was asked for.
- *  Every drawn fighter has both loops today, so this only does anything if a
+/** Which set this fighter can actually show for the one that was asked for.
+ *  Every drawn fighter has all four today, so this only does anything if a
  *  future slot lands with one of them missing. */
 export const battleSingerLoop = (singer: RosterSinger, want: BattleSingerLoop): BattleSingerLoop => {
   if (singer.loops[want]) return want
@@ -114,8 +127,10 @@ export interface SpriteCell {
   row: number
 }
 
-/** One frame of a loop. The index wraps, so a caller can hand this a
- *  monotonically increasing tick and stop thinking about it.
+/** One frame of a set. The index wraps, so a caller animating a cycling set
+ *  can hand this a monotonically increasing tick and stop thinking about it;
+ *  a caller playing a one-shot clamps the tick itself and never reaches the
+ *  wrap.
  *
  *  Frames run left to right and then wrap to the next row, which is how the
  *  sixteen-frame dance sheets are cut: two rows of eight. */

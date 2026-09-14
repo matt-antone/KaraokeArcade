@@ -186,6 +186,72 @@ describe('a battle, beat by beat', () => {
     expect(winner).toContain('>88<')
     expect(winner).toContain('>41<')
     expect(winner).toContain('By 47')
+    // Both fighters are on the verdict, and which set each plays is the whole
+    // reading of it: side 2 won, so the crooner celebrates and the belter is
+    // on the floor. Swapping these draws the loser taking a bow.
+    expect(winner).toContain('fighters/crooner/victory.png')
+    expect(winner).toContain('fighters/belter/ko.png')
+  })
+
+  /**
+   * A ko ends with the fighter on the floor and a victory with their arm up.
+   * Neither drawing returns to where it started, so both play once and stop
+   * rather than cycling — a looped ko stands the loser back up to be knocked
+   * down again every two seconds, in front of the room.
+   */
+  describe('the verdict one-shots', () => {
+    /** One payload, watched as time passes over it — which is the only way to
+     *  drive this. serverNow pins its correction to the first render of a
+     *  given turn object, so a fresh one always reads as just-sent and the
+     *  animation never leaves frame 0. */
+    const watch = () => {
+      const turn = beat('winner', 290_000, BATTLE_WINNER_MS, {
+        challengerScore: 41,
+        opponentScore: 88,
+      })
+
+      return (intoBeatMs: number) => {
+        at(290_000 + intoBeatMs)
+
+        return screen(turn)
+      }
+    }
+
+    it('starts both fighters on their first frame', () => {
+      vi.useFakeTimers()
+      at(290_000)
+
+      expect(watch()(0)).toContain('background-position:0% 0%')
+    })
+
+    it('walks the animation and then holds its last frame', () => {
+      vi.useFakeTimers()
+      at(290_000)
+      const verdict = watch()
+
+      // 4fps, eight frames: the last is reached at 1.75s and has to still be
+      // the one on screen for the rest of a fifteen-second beat.
+      expect(verdict(0)).toContain('background-position:0% 0%')
+      expect(verdict(750)).toContain('background-position:42.857142857142854% 0%')
+      expect(verdict(1_750)).toContain('background-position:100% 0%')
+      expect(verdict(14_000)).toContain('background-position:100% 0%')
+    })
+
+    it('knocks both fighters down on a draw and stands neither up', () => {
+      vi.useFakeTimers()
+      at(290_000)
+
+      const drawn = screen(beat('winner', 290_000, BATTLE_WINNER_MS, {
+        challengerScore: 50,
+        opponentScore: 50,
+      }))
+
+      expect(drawn).toContain('Draw')
+      expect(drawn).toContain('Nobody wins')
+      expect(drawn).toContain('fighters/belter/ko.png')
+      expect(drawn).toContain('fighters/crooner/ko.png')
+      expect(drawn).not.toContain('victory.png')
+    })
   })
 
   it('zero-pads a single-digit grade rather than letting the band shift', () => {

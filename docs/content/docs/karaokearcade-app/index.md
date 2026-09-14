@@ -1,6 +1,6 @@
 ---
-title: KaraokeParty (the app)
-description: Documentation for KaraokeParty (the app)
+title: KaraokeArcade (the app)
+description: Documentation for KaraokeArcade (the app)
 resources:
 - src: 'app-library.png'
   params:
@@ -25,7 +25,7 @@ resources:
     galleryOrder: 7
 ---
 
-KaraokeParty is a modern mobile browser app that lets everyone join without having to install anything on their phones. It's built for touch, but a mouse is supported in desktop browsers (click and drag to emulate swipe gestures).
+KaraokeArcade is a modern mobile browser app that lets everyone join without having to install anything on their phones. It's built for touch, but a mouse is supported in desktop browsers (click and drag to emulate swipe gestures).
 
 The bottom navigation has three destinations for everyone - Library, Queue and My Account - plus Settings for admins. The player is not one of them: it's a room fixture set up once from [Settings](#player-admin-only).
 
@@ -70,7 +70,7 @@ The queue view has three tabs:
   {{% img "app-queue-history.png" "History tab" /%}}
 </div>
 
-KaraokeParty automatically manages the queue using a round-robin method for fairness, without penalizing those joining later in the party. For example, a latecomer will be able to sing right after the next-up singer regardless of how long the queue was when they joined. Singers who have [paused](#status-strip) are skipped until they resume.
+KaraokeArcade automatically manages the queue using a round-robin method for fairness, without penalizing those joining later in the party. For example, a latecomer will be able to sing right after the next-up singer regardless of how long the queue was when they joined. Singers who have [paused](#status-strip) are skipped until they resume.
 
 Swiping left on a song reveals its available actions:
 
@@ -160,7 +160,7 @@ Admins get a fourth navigation entry with everything that configures the party: 
 
 The Rooms panel allows admins to create, edit or remove rooms.
 
-KaraokeParty uses "rooms" to organize sessions by time and space (spacetime?) Users choose an open room when signing in, and each room has its own queue. **Start each session with an empty queue** - either create a new room, or reuse one and press **Reset for New Night** first. Set the room to `closed` when finished.
+KaraokeArcade uses "rooms" to organize sessions by time and space (spacetime?) Users choose an open room when signing in, and each room has its own queue. **Start each session with an empty queue** - either create a new room, or reuse one and press **Reset for New Night** first. Set the room to `closed` when finished.
 
 <div class="row">
   {{% img "app-settings-room.png" "Room editor" /%}}
@@ -248,7 +248,7 @@ While a battle is on, every phone in the room carries a strip under the status s
 
 ### Preferences (admin only)
 
-The Preferences panel holds the **Media Folders** list. Add folders with [supported media files]({{< ref "docs/karaokeparty-server#media-files" >}}) to scan them into the library. You can re-arrange the folder order by dragging and dropping, and when songs have multiple versions the one in the folder highest in the list will be used.
+The Preferences panel holds the **Media Folders** list. Add folders with [supported media files]({{< ref "docs/karaokearcade-server#media-files" >}}) to scan them into the library. You can re-arrange the folder order by dragging and dropping, and when songs have multiple versions the one in the folder highest in the list will be used.
 
 ## Player
 

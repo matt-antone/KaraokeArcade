@@ -1,5 +1,5 @@
 ---
-title: KaraokeParty isn't quite what I'm looking for. What else is out there?
+title: KaraokeArcade isn't quite what I'm looking for. What else is out there?
 category: General
 weight: 3
 ---

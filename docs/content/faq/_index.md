@@ -1,6 +1,6 @@
 ---
 title: F.A.Q.
-description: Frequently asked questions for KaraokeParty (the app) and KaraokeParty Server
+description: Frequently asked questions for KaraokeArcade (the app) and KaraokeArcade Server
 cascade:
   build:
     render: false

@@ -4,7 +4,7 @@ category: Troubleshooting
 weight: 6
 ---
 
-Yes, just place the following <a href='{{< ref "docs/karaokeparty-server/#metadata-parser" >}}'>_kes.v2.json</a> file in the applicable media folder:
+Yes, just place the following <a href='{{< ref "docs/karaokearcade-server/#metadata-parser" >}}'>_kes.v2.json</a> file in the applicable media folder:
 
 {{< highlight js >}}
 {

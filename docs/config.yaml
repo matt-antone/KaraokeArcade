@@ -1,6 +1,6 @@
 baseURL: /
 languageCode: en-us
-title: KaraokeParty
+title: KaraokeArcade
 permalinks:
   page: "/:slug/"
 markup:

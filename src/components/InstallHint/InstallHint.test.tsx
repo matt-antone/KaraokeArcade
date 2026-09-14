@@ -24,7 +24,7 @@ beforeEach(() => {
   set('maxTouchPoints', 5)
   set('standalone', undefined)
   setStandalone(false)
-  setHostname('karaokeparty.local')
+  setHostname('karaokearcade.local')
 })
 
 afterEach(cleanup)

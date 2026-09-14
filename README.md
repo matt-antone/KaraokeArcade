@@ -1,8 +1,8 @@
-# KaraokeParty
+# KaraokeArcade
 
 **Your TV is the stage. Everybody's phone is the remote. Nobody installs anything.**
 
-KaraokeParty runs the whole night from a browser. Guests scan a QR code, search your library, queue a song and watch their place in line from the couch. You self-host it on a laptop, a Mac mini, a Raspberry Pi or a NAS — no accounts to make, no subscription, no ads, nothing phoning home.
+KaraokeArcade runs the whole night from a browser. Guests scan a QR code, search your library, queue a song and watch their place in line from the couch. You self-host it on a laptop, a Mac mini, a Raspberry Pi or a NAS — no accounts to make, no subscription, no ads, nothing phoning home.
 
 ## One queue, three kinds of turn
 
@@ -57,11 +57,11 @@ Trivia and battles are off until a host turns them on for a room, so a night tha
 - **Your library stays yours.** Point it at your folders; it scans MP3+G (including zipped) and MP4.
 - **No ads, no telemetry, no cloud account.** Self-hosted, and ISC-licensed.
 
-## How KaraokeParty compares
+## How KaraokeArcade compares
 
-KaraokeParty is a fork of [Karaoke Eternal](https://github.com/bhj/KaraokeEternal), and tracks it for the media, scanning and server side. Where it differs is what the night feels like for the people in the room.
+KaraokeArcade is a fork of [Karaoke Eternal](https://github.com/bhj/KaraokeEternal), and tracks it for the media, scanning and server side. Where it differs is what the night feels like for the people in the room.
 
-| | KaraokeParty | Karaoke Eternal |
+| | KaraokeArcade | Karaoke Eternal |
 | --- | --- | --- |
 | **Queue from your phone** | ✅ | ✅ |
 | **MP3+G, MP4, visualizer** | ✅ | ✅ |
@@ -83,11 +83,11 @@ Both are free and ISC-licensed. If you want the original's simplicity, it's an e
 
 ## Getting started
 
-KaraokeParty has three parts. [Getting Started](docs/content/docs/getting-started/index.md) walks through them step by step:
+KaraokeArcade has three parts. [Getting Started](docs/content/docs/getting-started/index.md) walks through them step by step:
 
-- **[Server](docs/content/docs/karaokeparty-server/index.md)** — runs on a Windows PC, a Mac, a Raspberry Pi or a NAS, and serves both the app and your media. Several [installation methods](docs/content/docs/karaokeparty-server/index.md#installation) are available.
-- **[App](docs/content/docs/karaokeparty-app/index.md)** — the phone app everyone uses. Nothing to install.
-- **[Player](docs/content/docs/karaokeparty-app/index.md#player)** — the same app, running fullscreen on whatever is hooked up to your TV and speakers.
+- **[Server](docs/content/docs/karaokearcade-server/index.md)** — runs on a Windows PC, a Mac, a Raspberry Pi or a NAS, and serves both the app and your media. Several [installation methods](docs/content/docs/karaokearcade-server/index.md#installation) are available.
+- **[App](docs/content/docs/karaokearcade-app/index.md)** — the phone app everyone uses. Nothing to install.
+- **[Player](docs/content/docs/karaokearcade-app/index.md#player)** — the same app, running fullscreen on whatever is hooked up to your TV and speakers.
 
 ## Support
 
@@ -107,4 +107,4 @@ Other useful scripts: `npm test` (vitest), `npm run lint`, `npm run typecheck`, 
 
 ## Credits
 
-KaraokeParty is a fork of [Karaoke Eternal](https://github.com/bhj/KaraokeEternal) by RadRoot LLC, used under the ISC license. Trivia questions come from the [Open Trivia Database](https://opentdb.com/), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+KaraokeArcade is a fork of [Karaoke Eternal](https://github.com/bhj/KaraokeEternal) by RadRoot LLC, used under the ISC license. Trivia questions come from the [Open Trivia Database](https://opentdb.com/), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).

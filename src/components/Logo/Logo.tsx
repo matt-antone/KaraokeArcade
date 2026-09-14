@@ -11,14 +11,14 @@ interface LogoProps {
 }
 
 /**
- * Wordmark: KARAOKE in ink over PARTY in amber, stacked, Michroma, tracked
+ * Wordmark: KARAOKE in ink over ARCADE in amber, stacked, Michroma, tracked
  * .13em — two channel labels silkscreened on a faceplate. Never on a light
  * background, never on one line, never re-tracked.
  *
  * Both marks are CSS geometry. There is no logo image and none should be drawn.
  */
 const Logo = ({ withMark, markSize = 36, className }: LogoProps) => (
-  <div className={clsx(styles.container, className)} role='img' aria-label='KaraokeParty'>
+  <div className={clsx(styles.container, className)} role='img' aria-label='KaraokeArcade'>
     {withMark && (
       <div
         className={styles.mark}
@@ -31,7 +31,7 @@ const Logo = ({ withMark, markSize = 36, className }: LogoProps) => (
     )}
     <span className={styles.title} aria-hidden='true'>
       Karaoke
-      <span className={styles.subtitle}>Party</span>
+      <span className={styles.subtitle}>Arcade</span>
     </span>
   </div>
 )

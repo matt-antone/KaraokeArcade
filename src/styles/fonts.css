@@ -10,7 +10,7 @@
 
    Self-hosted through @fontsource, which ships the woff2 files and the
    @font-face rules; webpack emits them as assets (config/webpack.config.js).
-   KaraokeParty's whole deployment model is a server on a LAN, so nothing here
+   KaraokeArcade's whole deployment model is a server on a LAN, so nothing here
    may need an uplink — a party in a basement used to get the system-ui
    fallbacks instead of the brand, because these came off the Google CDN.
 

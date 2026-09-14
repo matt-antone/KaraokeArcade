@@ -1,4 +1,4 @@
-# Feature Backlog — KaraokeParty
+# Feature Backlog — KaraokeArcade
 
 Features we intend to build, with enough detail to start from. Sibling to
 [competitive-features.md](competitive-features.md), which is a dated research

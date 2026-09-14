@@ -32,8 +32,8 @@ export default function getServerUrl (port?: string): string | undefined {
       // reported below, with the same message as a wrong-scheme override
     }
 
-    // new URL() accepts any "scheme:rest", so a bare "karaokeparty.local:8080"
-    // parses happily with "karaokeparty.local:" as its scheme. Checking the
+    // new URL() accepts any "scheme:rest", so a bare "karaokearcade.local:8080"
+    // parses happily with "karaokearcade.local:" as its scheme. Checking the
     // protocol is what actually rejects a host:port missing its scheme, which
     // would otherwise poison every join QR silently. href normalizes to a
     // trailing slash, matching the fallback's shape.
@@ -41,7 +41,7 @@ export default function getServerUrl (port?: string): string | undefined {
       return parsed.href
     }
 
-    log.warn('Ignoring KES_SERVER_URL (%s): expected an http(s) URL, e.g. http://karaokeparty.local:8080', override)
+    log.warn('Ignoring KES_SERVER_URL (%s): expected an http(s) URL, e.g. http://karaokearcade.local:8080', override)
   }
 
   const ip = getIPAddress()

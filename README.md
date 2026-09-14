@@ -44,6 +44,8 @@ One turn, two singers, and each of them picks the other's song. It runs on the T
 - **Two minutes each**, so a whole battle is about five minutes of the night and costs one place in the queue, not two.
 - **The room decides.** Everybody votes on their own phone — one vote each, anonymous, and nobody sees the count until the verdict. (Prefer it loud? A player running on the machine with the mic can score it on crowd noise instead.)
 
+**Create your own singers** with [CharacterAssetGenerator](https://github.com/matt-antone/CharacterAssetGenerator).
+
 Trivia and battles are off until a host turns them on for a room, so a night that is only songs is only songs.
 
 ## Good to know

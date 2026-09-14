@@ -73,6 +73,7 @@ KaraokeParty is a fork of [Karaoke Eternal](https://github.com/bhj/KaraokeEterna
 | **Between songs** | ✅ Intermission names the next singer | Songs run back-to-back |
 | **Music trivia rounds** | ✅ Built in, takes its own turn | ❌ |
 | **Head-to-head singer battles** | ✅ Built in, with fighters and a room vote | ❌ |
+| **Make your own fighters** | ✅ A written brief becomes sprite sheets, via an AI pipeline ([CharacterAssetGenerator](https://github.com/matt-antone/CharacterAssetGenerator)) | ❌ |
 | **What you've sung** | ✅ Kept per singer, across parties | ❌ |
 | **Change key** | ✅ ±6 semitones, same tempo, remembered next time you queue it | ❌ |
 | **Look and feel** | DECK — dark, mixing-desk | The original Karaoke Eternal UI |

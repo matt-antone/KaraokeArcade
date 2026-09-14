@@ -53,10 +53,8 @@ const songLine = (song: BattleSong) => `${song.title} — ${song.artist}`
 const roleOf = (side: BattleSide) => (side === 1 ? 'Singer 1' : 'Singer 2')
 
 /** battleSingerOrDefault never hands back a fighter with no art, so the key
- *  pose always exists. The fallback is here because the signature allows a
- *  null and `background-image: url('')` re-fetches the page itself. */
-const keyArtOf = (singer: RosterSinger) =>
-  battleSingerKeyArt(singer) ?? battleSingerPortrait(singer, 80)
+ *  pose always exists and the null the signature allows cannot arrive here. */
+const keyArtOf = (singer: RosterSinger) => battleSingerKeyArt(singer)!
 
 /** Who chose the song this fighter has to sing, which is always the other one.
  *  It is the whole shape of the format and the room needs telling. */
@@ -71,7 +69,7 @@ const progress = (turn: BattleTurn, msLeft: number) =>
 
 /** A fighter's portrait chip, ringed in their own colour. */
 const Portrait = ({ singer, className }: { singer: RosterSinger, className: string }) => (
-  <img className={clsx(styles.chip, className)} src={battleSingerPortrait(singer, 34)} alt='' />
+  <img className={clsx(styles.chip, className)} src={battleSingerPortrait(singer)} alt='' />
 )
 
 /* --- versus ----------------------------------------------------------- */

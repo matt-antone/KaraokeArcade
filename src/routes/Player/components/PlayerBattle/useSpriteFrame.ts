@@ -1,15 +1,13 @@
 import { useEffect } from 'react'
 import useNow from 'lib/useNow'
 import {
-  battleSingerFrame,
-  battleSingerFrameCount,
+  FRAME_MS,
+  battleSingerCell,
   battleSingerLoop,
   type BattleSingerLoop,
   type RosterSinger,
+  type SpriteCell,
 } from 'lib/battleSingers'
-
-/** Every delivered loop is drawn at 8fps and is seamless at that rate. */
-const FRAME_MS = 125
 
 /**
  * The frame of a fighter's loop that is on screen right now.
@@ -19,28 +17,22 @@ const FRAME_MS = 125
  * arriving over the beat before it — are on the same frame as each other, and
  * neither drifts across a two-minute song.
  *
- * Every frame is fetched on mount. Without it the first cycle of a loop stalls
- * once per frame while each PNG decodes, which on an eight-frame loop is the
- * whole first second of a beat and on the sixteen-frame fighter is two — and it
- * happens again at the start of every beat, because each one wants a different
- * loop. A fighter is at most sixteen 512px frames and only the two on stage are
- * ever asked for.
+ * The sheet is fetched on mount. A loop is one file, so this is one request
+ * that either is in cache or is not; there is no longer a per-frame stall to
+ * pre-empt, which is the main thing the packed sheets bought.
  *
- * `want` is what the beat would like to see, not what it gets: a wave-1 fighter
- * with only an idle loop drawn falls back to it rather than to a 404, which is
- * battleSingerLoop's job.
+ * `want` is what the beat would like to see, not what it gets: a fighter
+ * missing the loop that was asked for falls back to one they have rather than
+ * to a 404, which is battleSingerLoop's job.
  */
-export default function useSpriteFrame (singer: RosterSinger, want: BattleSingerLoop): string {
+export default function useSpriteFrame (singer: RosterSinger, want: BattleSingerLoop): SpriteCell {
   const loop = battleSingerLoop(singer, want)
-  const count = battleSingerFrameCount(singer, loop)
   const now = useNow(FRAME_MS)
 
   useEffect(() => {
-    for (let i = 0; i < count; i++) {
-      const img = new Image()
-      img.src = battleSingerFrame(singer, loop, i)
-    }
-  }, [count, loop, singer])
+    const img = new Image()
+    img.src = battleSingerCell(singer, loop, 0).url
+  }, [loop, singer])
 
-  return battleSingerFrame(singer, loop, Math.floor(now / FRAME_MS))
+  return battleSingerCell(singer, loop, Math.floor(now / FRAME_MS))
 }

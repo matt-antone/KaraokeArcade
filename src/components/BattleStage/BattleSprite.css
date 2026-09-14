@@ -1,14 +1,29 @@
-/* See BattleSprite.tsx. The three numbers here are the whole of it: bottom
-   anchored, 111% of the box height, sides cropped. */
+/* See BattleSprite.tsx. The outer element is the box and does the cropping;
+   the inner one is exactly one frame of the sheet.
+
+   The three numbers that matter are on .frame: bottom anchored, 111% of the
+   box height, sides allowed to overhang and be clipped. */
 .sprite {
   position: absolute;
   inset: 0;
+  overflow: hidden;
+}
+
+/* The ratio is FRAME_WIDTH / FRAME_HEIGHT in lib/battleSingers.ts, which
+   battleSingers.test.ts measures against the sheets themselves. */
+.frame {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  height: 111%;
+  aspect-ratio: 480 / 560;
+  transform: translateX(-50%);
   background-repeat: no-repeat;
-  background-position: 50% 100%;
-  background-size: auto 111%;
   image-rendering: pixelated;
 }
 
+/* Flipping the box rather than the frame keeps the frame's own centring
+   arithmetic out of the transform. */
 .flipped {
   transform: scaleX(-1);
 }

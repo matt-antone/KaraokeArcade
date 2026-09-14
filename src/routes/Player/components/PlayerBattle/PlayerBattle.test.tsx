@@ -94,8 +94,8 @@ describe('a battle, beat by beat', () => {
     // the colour wedges and both fighters in key art rather than a loop
     expect(versus).toContain('wedgeOne')
     expect(versus).toContain('wedgeTwo')
-    expect(versus).toContain('p1-key.png')
-    expect(versus).toContain('p2-key.png')
+    expect(versus).toContain('fighters/belter/key.png')
+    expect(versus).toContain('fighters/crooner/key.png')
 
     // --- intro1: the challenger alone, with the song their opponent chose.
     // Naming the picker is the point of the beat, so unlike the rest of this
@@ -106,7 +106,7 @@ describe('a battle, beat by beat', () => {
     expect(intro1).toContain('Dot Matrix')
     expect(intro1).toContain('Barracuda')
     expect(intro1).toContain('Picked by Barf')
-    expect(intro1).toContain('p1-dance-')
+    expect(intro1).toContain('fighters/belter/dance.png')
     expect(intro1).not.toContain('Africa')
 
     // --- sing1: the fighter keeps the left third, the video takes the rest
@@ -114,7 +114,7 @@ describe('a battle, beat by beat', () => {
     const sing1 = screen(beat('sing1', 10_000, BATTLE_SING_MS))
     expect(sing1).toContain('Dot Matrix')
     expect(sing1).toContain('Barracuda')
-    expect(sing1).toContain('p1-sing-')
+    expect(sing1).toContain('fighters/belter/sing.png')
     // a clock, not a score: two minutes opens at 2:00, not at 120
     expect(sing1).toContain('2:00')
     // the panel and the hole in the plate behind it are on the same side, and
@@ -133,14 +133,14 @@ describe('a battle, beat by beat', () => {
     expect(intro2).toContain('Barf')
     expect(intro2).toContain('Africa')
     expect(intro2).toContain('Picked by Dot Matrix')
-    expect(intro2).toContain('p2-dance-')
+    expect(intro2).toContain('fighters/crooner/dance.png')
 
     // --- sing2: the whole beat mirrors, panel and hole with it
     at(135_000)
     const sing2 = screen(beat('sing2', 135_000, BATTLE_SING_MS))
     expect(sing2).toContain('Barf')
     expect(sing2).toContain('Africa')
-    expect(sing2).toContain('p2-sing-')
+    expect(sing2).toContain('fighters/crooner/sing.png')
     expect(sing2).toContain('panelTwo')
     expect(sing2).toContain('holeTwo')
     expect(sing2).toContain('singSpriteTwo')
@@ -154,8 +154,8 @@ describe('a battle, beat by beat', () => {
     expect(judge).toContain('Get loud for the one you liked')
     // Both fighters are on stage and neither is named: the room has just heard
     // them and the question is about the singing, not about reading a caption.
-    expect(judge).toContain('p1-key.png')
-    expect(judge).toContain('p2-key.png')
+    expect(judge).toContain('fighters/belter/key.png')
+    expect(judge).toContain('fighters/crooner/key.png')
     expect(judge).not.toContain('Dot Matrix')
     expect(judge).not.toContain('ballotCard')
 
@@ -166,14 +166,14 @@ describe('a battle, beat by beat', () => {
     expect(meter1).toContain('Dot Matrix')
     expect(meter1).toContain('Onboard mic listening')
     expect(meter1).toContain('role="meter"')
-    expect(meter1).toContain('p1-dance-')
+    expect(meter1).toContain('fighters/belter/dance.png')
 
     // --- meter2: and for the opponent
     at(275_000)
     const meter2 = screen(beat('meter2', 275_000, BATTLE_METER_MS))
     expect(meter2).toContain('Barf')
     expect(meter2).toContain('role="meter"')
-    expect(meter2).toContain('p2-dance-')
+    expect(meter2).toContain('fighters/crooner/dance.png')
 
     // --- winner: the verdict, both grades, and the margin between them
     at(290_000)

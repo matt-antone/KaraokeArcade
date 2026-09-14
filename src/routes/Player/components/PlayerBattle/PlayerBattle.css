@@ -156,9 +156,25 @@
    keeps the fighter's feet on one line. */
 .sprite {
   position: absolute;
+}
+
+/* One frame of the sheet, fitted inside .sprite and standing on its bottom
+   edge — what `background-size: contain` with a bottom-centre position did
+   before the frames were packed into sheets. height and max-width together are
+   the fit: whichever of the two the box runs out of first is the one that
+   bounds the frame, and aspect-ratio supplies the other.
+
+   The ratio is FRAME_WIDTH / FRAME_HEIGHT in lib/battleSingers.ts, which
+   battleSingers.test.ts measures against the sheets themselves. */
+.spriteFrame {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  height: 100%;
+  max-width: 100%;
+  aspect-ratio: 480 / 560;
+  transform: translateX(-50%);
   background-repeat: no-repeat;
-  background-position: 50% 100%;
-  background-size: contain;
   image-rendering: pixelated;
 }
 

@@ -178,7 +178,7 @@ const BattleVote = () => {
             <div className={styles.rosterRow} key={at}>
               <img
                 className={clsx(styles.portrait, at === 1 ? styles.ringOne : styles.ringTwo)}
-                src={battleSingerPortrait(fighter.singer, 34)}
+                src={battleSingerPortrait(fighter.singer)}
                 alt=''
               />
               <div className={styles.rosterText}>
@@ -279,7 +279,7 @@ const BattleVote = () => {
       </div>
 
       <div className={clsx(styles.pick, vote?.side === 2 ? styles.pickTwo : styles.pickOne)}>
-        <img className={styles.pickArt} src={battleSingerPortrait(picked.singer, 34)} alt='' />
+        <img className={styles.pickArt} src={battleSingerPortrait(picked.singer)} alt='' />
         <div className={styles.pickText}>
           <div className={styles.pickLabel}>YOU VOTED</div>
           <div

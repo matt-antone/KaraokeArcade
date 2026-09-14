@@ -38,7 +38,7 @@ export function answerTrivia (roundId: number, answerIdx: number): AppThunk {
   }
 }
 
-interface TriviaState {
+export interface TriviaState {
   /** The question on screen, or null between rounds. Stays put through the
    *  reveal so the player can show the answers alongside the right one. */
   round: TriviaRound | null

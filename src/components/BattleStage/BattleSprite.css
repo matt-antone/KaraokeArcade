@@ -1,0 +1,14 @@
+/* See BattleSprite.tsx. The three numbers here are the whole of it: bottom
+   anchored, 111% of the box height, sides cropped. */
+.sprite {
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-position: 50% 100%;
+  background-size: auto 111%;
+  image-rendering: pixelated;
+}
+
+.flipped {
+  transform: scaleX(-1);
+}

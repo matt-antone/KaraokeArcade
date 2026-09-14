@@ -1,0 +1,128 @@
+/* The pairing and the summary under it. See BattleVersus.tsx. */
+
+/* Bottom-aligned rather than centred: the plates are figures standing on a
+   floor, and VS sits a little above that floor between them. */
+.pairing {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+}
+
+.plate {
+  position: relative;
+  width: 116px;
+  height: 116px;
+  overflow: hidden;
+  background-color: var(--arc-panel);
+}
+
+/* The two sides of the fight, and the only two colours that ever ring a plate.
+   Side one is the challenger wherever the phone is standing. */
+.ringOne {
+  box-shadow: inset 0 0 0 2px var(--arc-one);
+}
+
+.ringTwo {
+  box-shadow: inset 0 0 0 2px var(--arc-two);
+}
+
+.tintOne {
+  color: var(--arc-one);
+}
+
+.tintTwo {
+  color: var(--arc-two);
+}
+
+.tintGold {
+  color: var(--arc-gold);
+}
+
+/* Type standing in for word art that is not drawn yet — match the size and the
+   position, expect to swap in a PNG. */
+.vs {
+  padding-bottom: 30px;
+  font-family: var(--font-display);
+  font-size: 26px;
+  text-shadow: 3px 3px 0 #000;
+}
+
+.handles {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.handlePlate {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 6px;
+  background-color: var(--arc-panel);
+  box-shadow: inset 0 0 0 1px var(--arc-hair);
+  text-align: center;
+}
+
+.handleLabel {
+  font-family: var(--font-arcade);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+}
+
+/* A handle is somebody's name as they typed it, so it is set in the mono face
+   every handle in this feature uses and never wrapped: two people whose names
+   both wrap turn a fixed-height plate into two different heights. */
+.handle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 18px;
+  background-color: var(--arc-hair);
+  box-shadow: inset 0 0 0 1px var(--arc-hair);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 12px;
+  background-color: var(--arc-card);
+}
+
+/* Fixed, so every value in the list starts at the same place. The opponent's
+   labels are one word longer than the challenger's, which is the only reason
+   there are two widths. */
+.rowLabel {
+  flex: none;
+  width: 96px;
+  font-family: var(--font-arcade);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  color: var(--arc-muted);
+}
+
+.rowLabelWide {
+  width: 104px;
+}
+
+.rowValue {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--arc-ink);
+}

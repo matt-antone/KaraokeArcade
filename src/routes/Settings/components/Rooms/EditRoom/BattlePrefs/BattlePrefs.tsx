@@ -2,8 +2,7 @@ import React from 'react'
 import Accordion from 'components/Accordion/Accordion'
 import Icon from 'components/Icon/Icon'
 import InputCheckbox from 'components/InputCheckbox/InputCheckbox'
-import InputRadio from 'components/InputRadio/InputRadio'
-import { BATTLE_JUDGING_DEFAULT, type BattleJudgingPref, type IRoomPrefs } from 'shared/types'
+import { BATTLE_JUDGING_DEFAULT, type IRoomPrefs } from 'shared/types'
 import styles from './BattlePrefs.css'
 
 interface BattlePrefsProps {
@@ -24,56 +23,39 @@ const BattlePrefs = ({ onChange, prefs = {} }: BattlePrefsProps) => {
       headingComponent={(
         <div className={styles.heading}>
           <Icon icon='FLAG' />
-          <div>Battle</div>
+          <div>Singer Battle</div>
         </div>
       )}
     >
       <div className={styles.content}>
         <div>
           <InputCheckbox
-            label='Allow song battles'
+            label='Allow singer battles'
             checked={isEnabled}
-            disabled
             onChange={event => handleSetPref({ isEnabled: event.currentTarget.checked })}
           />
         </div>
 
-        {/* A key that cannot be pressed and says nothing about why is the same
-            fault as one that silently does nothing. The checkbox dims itself;
-            this is the sentence that makes it a state rather than a bug. */}
+        {/* Off until a host asks for it, rather than on until they object. A
+            battle spends one queue row and five minutes of the room's evening
+            on two people, and a room that gets one it did not ask for has lost
+            a turn it cannot get back. */}
         <p className={styles.note}>
-          Battles are turned off while the feature is being finished. A room that
-          already has them on keeps them until this is switched back on.
+          One turn, two singers, one song each, and the room decides who won.
+          Takes about five minutes and uses a single place in the queue.
         </p>
         {isEnabled && (
           <>
-            <div className={styles.field}>
-              <label className={styles.groupLabel}>How a battle is decided</label>
-              <InputRadio
-                name='battle-judging'
-                value='ballot'
-                checked={judging === 'ballot'}
-                onChange={value => handleSetPref({ judging: value as BattleJudgingPref })}
-                label='Silent ballot on phones'
-              />
-              <InputRadio
-                name='battle-judging'
-                value='crowd'
+            <div>
+              <InputCheckbox
+                label='Judge singer battles by crowd noise'
                 checked={judging === 'crowd'}
-                onChange={value => handleSetPref({ judging: value as BattleJudgingPref })}
-                label='Crowd noise through the microphone'
+                onChange={event => handleSetPref({ judging: event.currentTarget.checked ? 'crowd' : 'ballot' })}
               />
             </div>
 
-            {judging === 'ballot'
+            {judging === 'crowd'
               ? (
-                  <p className={styles.note}>
-                    Everyone in the room votes on their own phone, one vote each and the
-                    two fighters sitting it out. Nobody sees the count — not the room, not
-                    the TV — until the verdict.
-                  </p>
-                )
-              : (
                   // The one thing about battles an operator cannot work out from
                   // the screen. Crowd scoring is a getUserMedia call, and browsers
                   // only grant a microphone on a secure origin — localhost counts,
@@ -89,6 +71,13 @@ const BattlePrefs = ({ onChange, prefs = {} }: BattlePrefsProps) => {
                     practice, a player opened at http://localhost on the machine running the
                     server. A player opened at the LAN address cannot hear the room, so its
                     battles are decided as a draw instead.
+                  </p>
+                )
+              : (
+                  <p className={styles.note}>
+                    Everyone in the room votes on their own phone, one vote each and the
+                    two fighters sitting it out. Nobody sees the count — not the room, not
+                    the TV — until the verdict.
                   </p>
                 )}
           </>

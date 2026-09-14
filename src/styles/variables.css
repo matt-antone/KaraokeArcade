@@ -157,6 +157,10 @@
   --font-display: 'Michroma', 'Arial Narrow', sans-serif;
   --font-body: 'Figtree', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  /* Arcade chrome, Singer Battle only. A bitmap face at 7-10px: micro-labels
+     and nothing else, never a sentence. Falls back to the mono stack so a
+     party with no uplink gets small caps rather than a serif. */
+  --font-arcade: 'Silkscreen', 'JetBrains Mono', ui-monospace, monospace;
 
   --weight-regular: 400;
   --weight-medium: 500;

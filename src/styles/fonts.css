@@ -1,17 +1,31 @@
-/* DECK uses three Google faces:
+/* DECK uses four faces:
 
    Michroma       — display. Wordmark, player headlines, big numerals.
    Figtree        — body. Everything read as a sentence or a song title.
    JetBrains Mono — silkscreen. Labels, counts, waits, meter legends.
+   Silkscreen     — arcade chrome. Singer Battle only: the 7-10px all-caps
+                    micro-labels the battle screens are set in. Nothing outside
+                    the battle feature uses it, and it is a bitmap face — it
+                    has no business anywhere a sentence is read.
 
-   ponytail: loaded from the Google Fonts CDN because no licensed binaries
-   shipped with the rebrand. This is the one thing here that needs internet,
-   and KaraokeParty's whole deployment model is a server on a LAN — a party
-   in a basement with no uplink gets the system-ui fallbacks instead of the
-   brand. Upgrade path: `npm i @fontsource/michroma @fontsource/figtree
-   @fontsource-variable/jetbrains-mono` and swap this @import for their
-   imports, or drop the woff2 files in docs/assets/fonts/ (already aliased
-   to `~fonts` in config/webpack.config.js) and write real @font-face rules.
-   Nothing else in the system changes — every family is referenced through
-   --font-display / --font-body / --font-mono, each with a fallback stack. */
-@import url('https://fonts.googleapis.com/css2?family=Michroma&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+   Self-hosted through @fontsource, which ships the woff2 files and the
+   @font-face rules; webpack emits them as assets (config/webpack.config.js).
+   KaraokeParty's whole deployment model is a server on a LAN, so nothing here
+   may need an uplink — a party in a basement used to get the system-ui
+   fallbacks instead of the brand, because these came off the Google CDN.
+
+   Figtree and JetBrains Mono are the variable cuts, so one file covers every
+   weight the system asks for rather than three. `wght` and not `index` on
+   those two: nothing in the product is set in italic, and the italic axis is
+   a second file for nobody. Michroma and Silkscreen have no variable cut;
+   Michroma is 400-only by design and Silkscreen needs its 700 for the arcade
+   labels that are drawn bold.
+
+   Every family is still referenced through --font-display / --font-body /
+   --font-mono / --font-arcade in variables.css, each with a fallback stack, so
+   swapping a source again touches this file only. */
+@import '@fontsource/michroma/index.css';
+@import '@fontsource/silkscreen/400.css';
+@import '@fontsource/silkscreen/700.css';
+@import '@fontsource-variable/figtree/wght.css';
+@import '@fontsource-variable/jetbrains-mono/wght.css';

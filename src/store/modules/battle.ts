@@ -2,6 +2,7 @@ import { createAction, createReducer } from '@reduxjs/toolkit'
 import type { RootState } from 'store/store'
 import type {
   BattleInvite,
+  BattleInviteEnd,
   BattleSide,
   BattleSinger,
   BattleTurn,
@@ -43,7 +44,12 @@ const BATTLE_PICK_MODE_ENTER = 'battle/PICK_MODE_ENTER'
 const logout = createAction(LOGOUT)
 const battleSingers = createAction<BattleSinger[]>(BATTLE_SINGERS)
 const battleInvite = createAction<BattleInvite>(BATTLE_INVITE)
-const battleInviteClear = createAction(BATTLE_INVITE_CLEAR)
+/** Typed as though the reason always arrives, and the reducer still guards for
+ *  it. One emitter has none to give — stopping a room clears every invite in
+ *  it from server/Rooms/transport.ts — so the guard is real; but declaring the
+ *  field optional makes the whole payload a weak type, which createAction
+ *  reads as non-inferrable and hands the reducer back as `unknown`. */
+const battleInviteClear = createAction<{ reason: BattleInviteEnd }>(BATTLE_INVITE_CLEAR)
 const battleTurn = createAction<BattleTurn>(BATTLE_TURN)
 const battleTurnClear = createAction(BATTLE_TURN_CLEAR)
 const battleTurnRequested = createAction<{ queueId: number, status: BattleTurnRequestStatus }>(BATTLE_REQ_TURN + _SUCCESS)
@@ -53,10 +59,15 @@ const battleTurnRequested = createAction<{ queueId: number, status: BattleTurnRe
  * passes on to the reducer. That is what lets the reducer below answer a tap
  * before the round trip does — see the notes on each case.
  */
-const battleChallenge = createAction<{ opponentUserId: number, songId: number, queueId: number }>(BATTLE_CHALLENGE)
+const battleChallenge = createAction<{
+  opponentUserId: number
+  songId: number
+  queueId: number
+  singerId: string
+}>(BATTLE_CHALLENGE)
 const battleDecline = createAction(BATTLE_DECLINE)
 const battleCancel = createAction(BATTLE_CANCEL)
-const battlePickModeEnter = createAction<BattleSinger>(BATTLE_PICK_MODE_ENTER)
+const battlePickModeEnter = createAction<{ singer: BattleSinger, singerId: string }>(BATTLE_PICK_MODE_ENTER)
 const battlePickModeExit = createAction(BATTLE_PICK_MODE_EXIT)
 const battleVote = createAction<{ queueId: number, side: BattleSide }>(BATTLE_VOTE)
 
@@ -69,9 +80,16 @@ export function requestBattleSingers () {
 /** The challenger has chosen an opponent but not yet a song for them. Nothing
  *  goes to the server yet: until a song is picked there is no challenge to
  *  throw, and telling the room about a half-formed one would let a wandering
- *  thumb pin somebody in a dialog they cannot answer. */
-export function startBattlePick (singer: BattleSinger) {
-  return battlePickModeEnter(singer)
+ *  thumb pin somebody in a dialog they cannot answer.
+ *
+ *  `singerId` is who the challenger is singing as, and it rides through pick
+ *  mode because of where the two halves of a challenge are decided. The fighter
+ *  is chosen on the setup screen, which then closes; the song is chosen in the
+ *  library, which is what actually throws the challenge. Nothing else is alive
+ *  in both places, so without this the library would have to reach back into a
+ *  screen that is gone. */
+export function startBattlePick (singer: BattleSinger, singerId: string) {
+  return battlePickModeEnter({ singer, singerId })
 }
 
 /** Back out of the library's picking mode, from either side of the
@@ -84,13 +102,24 @@ export function exitBattlePick () {
 
 /** Throw the challenge. `queueId` is the challenger's next upcoming song row —
  *  the turn they are spending on this — or 0 if they have none, in which case
- *  the server appends a fresh row at the tail. */
-export function challengeSinger (opponentUserId: number, songId: number, queueId: number) {
-  return battleChallenge({ opponentUserId, songId, queueId })
+ *  the server appends a fresh row at the tail. `singerId` is the roster id of
+ *  the fighter the challenger is singing as, from BATTLE_SINGERS.
+ *
+ *  singerId defaults to empty rather than being required so a caller that has
+ *  no fighter to offer still throws a legal challenge. Empty is the same thing
+ *  a battle queued before the roster shipped carries, and battleSingerOrDefault
+ *  already turns it into the first playable fighter — a stage drawing the
+ *  default beats a challenge that cannot be thrown at all. */
+export function challengeSinger (opponentUserId: number, songId: number, queueId: number, singerId = '') {
+  return battleChallenge({ opponentUserId, songId, queueId, singerId })
 }
 
-export function acceptBattle () {
-  return { type: BATTLE_ACCEPT }
+/** Say yes, and say who you are singing as — picking a fighter is a step of
+ *  accepting rather than something that follows it, so both go in one message
+ *  and the challenger's waiting screen ends on the first round trip. Defaults
+ *  to empty for the same reason challengeSinger's does. */
+export function acceptBattle (singerId = '') {
+  return { type: BATTLE_ACCEPT, payload: { singerId } }
 }
 
 export function declineBattle () {
@@ -140,14 +169,24 @@ export function reportBattleScore (queueId: number, side: BattleSide, score: num
 // ------------------------------------
 // Reducer
 // ------------------------------------
-interface BattleState {
+export interface BattleState {
   /** Everyone else in the room, as of the last time this device asked. */
   singers: BattleSinger[]
   /** The opponent this device has chosen but not yet challenged. Local only,
    *  and the first of the two things that put the library into picking mode. */
   pending: BattleSinger | null
+  /** Who the challenger is singing as, alongside the opponent they picked.
+   *  Empty whenever `pending` is null, and only ever read on the way to
+   *  throwing the challenge. */
+  pendingSingerId: string
   /** The challenge in flight, as both parties see it. Null when there is none. */
   invite: BattleInvite | null
+  /** How the last challenge ended, or null if none has. Its own field rather
+   *  than something read off the departing invite, because by the time a phone
+   *  needs to draw DECLINED or TOO SLOW the invite is gone — that is what
+   *  ending it means — and the outcome has to outlive it by exactly one
+   *  screen. Cleared the moment another challenge exists. */
+  inviteEnded: BattleInviteEnd | null
   /** The beat on stage right now. One of these per beat, not one per battle. */
   turn: BattleTurn | null
   /** This phone's vote in the battle on stage, and the row it was cast in.
@@ -165,7 +204,9 @@ interface BattleState {
 const initialState: BattleState = {
   singers: [],
   pending: null,
+  pendingSingerId: '',
   invite: null,
+  inviteEnded: null,
   turn: null,
   vote: null,
   resolvedQueueId: -1,
@@ -177,11 +218,17 @@ const battleReducer = createReducer(initialState, (builder) => {
       state.singers = payload
     })
     .addCase(battlePickModeEnter, (state, { payload }) => {
-      state.pending = payload
+      state.pending = payload.singer
+      state.pendingSingerId = payload.singerId
+      // choosing somebody new is the end of caring how the last one went, and
+      // a stale DECLINED behind a fresh pick reads as this pick being refused
+      state.inviteEnded = null
     })
     .addCase(battlePickModeExit, (state) => {
       state.pending = null
+      state.pendingSingerId = ''
       state.invite = null
+      state.inviteEnded = null
     })
     .addCase(battleChallenge, (state) => {
       // Cleared on the way out rather than on the way back. The library is in
@@ -189,6 +236,7 @@ const battleReducer = createReducer(initialState, (builder) => {
       // round trip means the next tap picks a second song and throws a second
       // challenge at the same person.
       state.pending = null
+      state.pendingSingerId = ''
     })
     .addCase(battleInvite, (state, { payload }) => {
       state.invite = payload
@@ -196,20 +244,35 @@ const battleReducer = createReducer(initialState, (builder) => {
       // opponent may have been mid-pick against somebody else when this landed
       // and two pick modes at once has no honest answer.
       state.pending = null
+      state.pendingSingerId = ''
+      state.inviteEnded = null
     })
-    .addCase(battleInviteClear, (state) => {
+    .addCase(battleInviteClear, (state, { payload }) => {
       state.invite = null
       state.pending = null
+      state.pendingSingerId = ''
+      // Only when the server said why, and the optional chain is load-bearing
+      // despite the type: server/Rooms/transport.ts clears every invite in a
+      // stopped room with no payload at all. That is the room ending
+      // underneath the negotiation rather than an answer to it, and inventing
+      // "declined" would blame the opponent for the host shutting the party
+      // down.
+      if (payload?.reason) state.inviteEnded = payload.reason
     })
     .addCase(battleDecline, (state) => {
       // Applied locally so the modal goes away on the tap. The server's
-      // BATTLE_INVITE_CLEAR follows and lands on an already-empty state.
+      // BATTLE_INVITE_CLEAR follows carrying the same reason and lands on an
+      // already-settled state.
       state.invite = null
       state.pending = null
+      state.pendingSingerId = ''
+      state.inviteEnded = 'declined'
     })
     .addCase(battleCancel, (state) => {
       state.invite = null
       state.pending = null
+      state.pendingSingerId = ''
+      state.inviteEnded = 'cancelled'
     })
     // Accepting is deliberately NOT applied locally, unlike declining. Accept
     // sends this phone into the library to pick, and if the challenger cancels

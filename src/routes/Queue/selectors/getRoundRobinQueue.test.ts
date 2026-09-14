@@ -170,3 +170,82 @@ describe('getRoundRobinQueue with spent trivia rounds', () => {
     expect(result).toContain(246)
   })
 })
+
+/**
+ * A battle is dealt under its own reserved id, not under either fighter.
+ *
+ * Its row carries a real userId — the challenger's — because the fight needs
+ * to know who is in it. Deal on that and being challenged buys a free turn:
+ * the opponent sings the battle, is still recorded as never having sung, and
+ * the rotation hands them their own song immediately afterwards.
+ */
+describe('getRoundRobinQueue with a battle', () => {
+  // alice (1) challenged bob (2). alice has songs 2 and 3 left, bob has 4 and 5.
+  const withBattle = (
+    order: number[],
+    history: number[] = [],
+    queueId: number | null = null,
+    nextUserId: number | null = null,
+  ) => ({
+    queue: {
+      isLoading: false,
+      result: order,
+      entities: {
+        ...ENTITIES,
+        7: { queueId: 7, type: 'battle', songId: 20, userId: 1, opponentUserId: 2, prevQueueId: null },
+      },
+      pausedUserIds: [] as number[],
+    },
+    status: { historyJSON: JSON.stringify(history), queueId, isAtQueueEnd: false, nextUserId },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  }) as any
+
+  it('takes a turn as itself rather than as the challenger', () => {
+    // alice, bob and the battle are three participants, so the fight lands
+    // between them rather than displacing alice's own next song. Asserted as
+    // the whole order: dealt as the challenger the battle comes out last,
+    // which still satisfies any "it is in there somewhere" check.
+    expect(getRoundRobinQueue(withBattle([1, 2, 3, 4, 5, 7])).result)
+      .toEqual([1, 4, 7, 2, 5, 3])
+  })
+
+  /* The lock-in is the other half of the rotation id, and the half that bites.
+   *
+   * PlayerController pins the row it has committed to so the rotation cannot
+   * move it. Both sides have to name that row the same way: the battle's
+   * userId is the challenger's, so matching on it finds one of the
+   * challenger's own songs in raw queue order and pins that instead — and the
+   * fight slips one slot on every advance until it is last in the queue, which
+   * is exactly what dealing it under its own id was meant to prevent. */
+  it('keeps its slot when the player has locked it in', () => {
+    expect(getRoundRobinQueue(withBattle([1, 2, 3, 4, 5, 7], [1], 1, -1)).result)
+      .toEqual([1, 7, 4, 2, 5, 3])
+  })
+
+  it('does not let a lock-in on the challenger displace it', () => {
+    // alice is locked in; the row that gets pinned must be one of alice's
+    // songs, and the battle must not be pushed behind it
+    const result = getRoundRobinQueue(withBattle([1, 2, 3, 4, 5, 7], [1], 1, 1)).result
+
+    expect(result.indexOf(7)).toBeLessThan(result.indexOf(3))
+  })
+
+  it('leaves both fighters exactly where they would have been', () => {
+    // The fight has been fought — alice and bob both sang in it. The strongest
+    // statement of "the battle was its own turn" is that what follows is the
+    // identical rotation to a queue that never had a battle in it: being in
+    // one neither costs a fighter their place nor buys them a better one.
+    const after = getRoundRobinQueue(withBattle([7, 1, 2, 3, 4, 5], [7], 7)).result
+    const baseline = getRoundRobinQueue(state()).result
+
+    expect(after[0]).toBe(7)
+    expect(after.slice(1)).toEqual(baseline)
+  })
+
+  it('leaves with a challenger who sits out', () => {
+    const paused = { ...withBattle([1, 2, 3, 4, 5, 7]) }
+    paused.queue.pausedUserIds = [1]
+
+    expect(getRoundRobinQueue(paused).result).not.toContain(7)
+  })
+})

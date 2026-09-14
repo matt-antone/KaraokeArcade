@@ -76,7 +76,7 @@ export const requestScanStop = createAsyncThunk(
 // ------------------------------------
 // Reducer
 // ------------------------------------
-interface PrefsState {
+export interface PrefsState {
   isFirstRun?: boolean
   /** http://<LAN IPv4>:<port>/ — the address guests can actually reach. */
   serverUrl?: string

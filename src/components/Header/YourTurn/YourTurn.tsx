@@ -129,8 +129,8 @@ const YourTurn = ({
   const pauseLabel = isPaused ? 'Resume my songs' : 'Pause my songs'
 
   const battleLabel = isBattleEnabled
-    ? 'Challenge someone to a battle'
-    : 'Battles are switched off for this room'
+    ? 'Start a singer battle'
+    : 'Singer battles are switched off for this room'
 
   return (
     <div className={clsx(styles.container, inHeader && styles.inHeader, isUpNow && !isPaused && styles.onStage, isStandby && styles.standby, isPaused && styles.paused, className)}>

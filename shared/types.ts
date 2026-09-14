@@ -45,6 +45,38 @@ export const isTriviaItem = (item?: { type?: QueueItemType }): boolean => item?.
  *  difference ask. */
 export const isBattleItem = (item?: { type?: QueueItemType }): boolean => item?.type === 'battle'
 
+/** The rotation's reserved singers.
+ *
+ * A trivia round and a singer battle each take a turn in the round-robin as
+ * themselves rather than as a person, so each needs an id of its own to be
+ * dealt under. A round already had one by accident — it is inserted with no
+ * user at all and arrives as 0 — and that was fine while it was the only
+ * thing in the queue that was not somebody's song.
+ *
+ * A battle cannot borrow the same trick. Its row *does* carry a real userId,
+ * the challenger's, because the fight needs to know who is in it; deal on that
+ * and the battle spends the challenger's turn while the opponent sings for
+ * free, still recorded as never having sung, and the rotation hands them their
+ * own song immediately after. So the battle is dealt under a reserved id of
+ * its own instead, and comes round once per lap the way a round does — the
+ * challenger's userId stays on the row for everything that actually needs it.
+ *
+ * Negative because every real userId is a positive autoincrement and 0 is
+ * already spoken for, so these can never collide with a person.
+ */
+const TRIVIA_ROTATION_ID = 0
+const BATTLE_ROTATION_ID = -1
+
+/** Which singer a queue row takes its turn as. A person for an ordinary song,
+ *  and one of the reserved ids above for the two kinds of row that are the
+ *  room's turn rather than anyone's. */
+export const rotationIdOf = (item: { type?: QueueItemType, userId: number }): number => {
+  if (isTriviaItem(item)) return TRIVIA_ROTATION_ID
+  if (isBattleItem(item)) return BATTLE_ROTATION_ID
+
+  return item.userId
+}
+
 export interface QueueItem {
   queueId: number
   type: QueueItemType
@@ -321,15 +353,31 @@ export interface TriviaResult {
  *  predict. The judging beats are longer because a crowd needs a moment to
  *  work out that it is being asked for something. */
 export const BATTLE_VERSUS_MS = 5000
-export const BATTLE_INTRO_MS = 5000
+export const BATTLE_INTRO_MS = 12000
 export const BATTLE_JUDGE_MS = 5000
 export const BATTLE_METER_MS = 15000
 export const BATTLE_WINNER_MS = 15000
 
-/** How long the room has to vote. Longer than a metering beat because a phone
- *  has to be got out of a pocket, woken and read before it can be tapped,
- *  where shouting takes as long as drawing breath. */
-export const BATTLE_BALLOT_MS = 20000
+/** How long the ask holds the stage when the room is voting on its phones.
+ *
+ *  On the ballot path the ask and the voting are the same beat, because a vote
+ *  has nothing to look at while it happens — the question, the two names and
+ *  the filling ballot row are one screen. That makes this beat the whole
+ *  judging section, and it is the two metering beats added together (15 + 15)
+ *  so the two paths cost a night about the same.
+ *
+ *  About, not exactly: the crowd path pays a 5s `judge` ask on top of its two
+ *  meters, because there the question and the measuring are separate beats and
+ *  a room needs a moment to work out it is being asked for something. A ballot
+ *  has that moment built in — the question is on screen for the whole thirty
+ *  seconds you are voting. */
+export const BATTLE_JUDGE_BALLOT_MS = BATTLE_METER_MS * 2
+
+/** How long a challenge stands before it lapses. Invites do not sit open all
+ *  night: the room moves on, and a challenge nobody answered should stop being
+ *  a thing the challenger is waiting on. Counted by the server — a phone that
+ *  slept through it comes back to a lapsed invite, not a live one. */
+export const BATTLE_INVITE_MS = 45000
 
 /** How much of each song gets sung. Two minutes is about a verse, a chorus and
  *  out — long enough to be a performance, short enough that the other fighter
@@ -345,15 +393,15 @@ export const BATTLE_SING_MS = 120000
  *  - `sing1`    the challenger sings the song their opponent chose
  *  - `intro2`   the opponent alone
  *  - `sing2`    the opponent sings the song the challenger chose
- *  - `judge`    the ask: who wins
- *  - `ballot`   the room votes on its phones
+ *  - `judge`    the ask: who wins. On the ballot path this beat *is* the vote
  *  - `meter1`   the room is heard for the challenger
  *  - `meter2`   the room is heard for the opponent
  *  - `winner`   the verdict, with both grades
  *
- *  Exactly one judging beat happens, and which one is BattleTurn.judging:
- *  `ballot` for a silent vote, `meter1`/`meter2` for the microphone, and
- *  neither when the room asked for the microphone and the player has none. */
+ *  The judging section is `judge` alone under `ballot` and `judge meter1
+ *  meter2` under `crowd`; a room whose player cannot hear it gets the short
+ *  `judge` and no metering at all. There is no separate `ballot` phase: asking
+ *  the room and counting the room are one screen, so they are one beat. */
 export type BattlePhase
   = | 'versus'
     | 'intro1'
@@ -361,7 +409,6 @@ export type BattlePhase
     | 'intro2'
     | 'sing2'
     | 'judge'
-    | 'ballot'
     | 'meter1'
     | 'meter2'
     | 'winner'
@@ -408,6 +455,13 @@ export interface BattleTurn {
   opponentUserId: number
   opponentName: string
   opponentDateUpdated: number
+  /** Who each of them is singing *as* — a roster id from BATTLE_SINGERS, which
+   *  is client-side art rather than anything the server holds a copy of. The
+   *  server carries the string and nothing else; the stage looks up the
+   *  drawing. Empty on a battle started before the roster shipped, which
+   *  battleSingerOrDefault covers. */
+  challengerSingerId: string
+  opponentSingerId: string
   /** What each fighter sings, already resolved to artist and title so the
    *  splash does not have to reach into the library. */
   challengerSong: BattleSong
@@ -419,6 +473,22 @@ export interface BattleTurn {
    *  a ballot in progress is silent, or it is not a ballot. */
   challengerScore: number
   opponentScore: number
+  /** How many phones have voted, and how many could. Not the split, and never
+   *  the split: one number for the whole room, which is exactly what both the
+   *  TV's ballot row and the phone's draw — every filled cell identical, no
+   *  matter which way it went.
+   *
+   *  The distinction is the whole design. A room that cannot see voting
+   *  happening thinks the feature is broken and stops. A room that can see who
+   *  is winning stops voting on who sang and starts voting with the crowd, and
+   *  the late half of the room decides the fight. Showing the count and hiding
+   *  the split is the only arrangement that avoids both.
+   *
+   *  `ballotsOf` is measured once, as the battle starts, and is the room minus
+   *  the two fighters — they hold phones like everyone else but neither of
+   *  them votes. Both are 0 on every path but `ballot`. */
+  ballotsIn: number
+  ballotsOf: number
 }
 
 export interface BattleSong {
@@ -453,9 +523,43 @@ export interface BattleInvite {
   songId: number
   artist: string
   title: string
+  /** Who the challenger is singing as, chosen before the invite went out. The
+   *  opponent's invite draws this fighter full-bleed behind the ask, and their
+   *  own select grid marks the tile TAKEN — two people cannot sing as the same
+   *  fighter in one battle. */
+  challengerSingerId: string
+  /** Who the opponent picked. Empty until they accept, because picking is part
+   *  of accepting. */
+  opponentSingerId: string
+  /** Epoch ms this challenge lapses. Server-authoritative: the phone counts
+   *  down to it for the clock on screen, and the server is what actually ends
+   *  it. See BATTLE_INVITE_MS. */
+  expiresAt: number
   /** Set once the opponent accepts and is choosing the challenger's song. */
   isAccepted: boolean
 }
+
+/**
+ * Why a challenge stopped existing.
+ *
+ * The server sends one of these every time an invite is cleared, because the
+ * four ways a challenge can end are one message on the wire and four different
+ * screens on a phone — and two of them, `declined` and `expired`, are the pair
+ * a person actually asks about. "They said no" and "they never picked their
+ * phone up" feel nothing alike to the challenger, and a screen that cannot
+ * tell them apart says the unkind one to somebody who was in the toilet.
+ *
+ * `matched` is the happy ending — both songs are settled and the row exists —
+ * and it comes through the same clear, which is why it needs a name too: a
+ * missing one would read as a decline the instant a battle was successfully
+ * arranged.
+ *
+ * One emitter has no reason to give: stopping a room clears every invite in it
+ * from server/Rooms/transport.ts, and a room being shut is not an outcome of
+ * the negotiation. That arrives without a reason and leaves the phone showing
+ * nothing, which is correct — nobody decided anything.
+ */
+export type BattleInviteEnd = 'declined' | 'cancelled' | 'expired' | 'matched'
 
 /** The server's answer to "run this row's battle".
  *  - `started`      it just began; wait for it

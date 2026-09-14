@@ -34,7 +34,7 @@ const nameOf = (turn: BattleTurn, side: BattleSide) =>
 const caption = (turn: BattleTurn, side: BattleSide | null): { legend: string, line: string } => {
   switch (turn.phase) {
     case 'versus':
-      return { legend: 'battle', line: `${turn.challengerName} vs ${turn.opponentName}` }
+      return { legend: 'singer battle', line: `${turn.challengerName} vs ${turn.opponentName}` }
     case 'intro1':
     case 'intro2': {
       const at = side ?? 1
@@ -47,7 +47,7 @@ const caption = (turn: BattleTurn, side: BattleSide | null): { legend: string, l
       return { legend: 'singing', line: `${nameOf(turn, at)} — ${song.title}` }
     }
     case 'judge':
-      return { legend: 'battle', line: 'The room decides' }
+      return { legend: 'singer battle', line: 'The room decides' }
     case 'meter1':
     case 'meter2':
       return { legend: 'cheer for', line: nameOf(turn, side ?? 1) }

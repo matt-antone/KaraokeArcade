@@ -27,3 +27,17 @@ node_modules/
 scratch
 .agents/skills/*
 skills-lock
+# The artist's raw sprite drop: sheets for loops nothing plays yet, proof GIFs,
+# per-fighter contact sheets and alternate views. What ships is copied into
+# assets/battle/fighters/, so this is the same kind of local reference the
+# design handoff below is.
+assets/sprites/
+
+# Full-resolution originals of the word art and lockup that ship downscaled
+# under assets/battle/. Same reasoning: the repo carries what is served.
+docs/originals/
+
+# Singer Battle design handoff — 16MB of prototypes, stills and art briefs.
+# The art itself is committed at assets/battle/; the bundle it came in stays a
+# local reference, so the repo carries what ships and not what it was drawn from.
+docs/singer-battle/

@@ -323,10 +323,10 @@ class Queue {
    */
   static get (roomId: number): { result: number[], entities: Record<number, QueueItem>, pausedUserIds: number[] } {
     const result: number[] = []
-    const entities: Record<number, any> = {}
-    const map = new Map()
+    const entities: Record<number, QueueItem> = {}
+    /** prevQueueId -> the row that follows it. */
+    const next = new Map<number, number>()
     const pathData = new Map()
-    let curQueueId = null
 
     // LEFT joins because a trivia round has no singer, no song and no media.
     // The INNER joins used to double as a filter — a song whose media has gone
@@ -395,24 +395,51 @@ class Queue {
       return pathData.get(pathId)?.prefs
     }
 
+    const present = new Set<number>()
+
     for (const row of rows) {
       entities[row.queueId] = shapeRow(row, prefsForPath, relPath => this.getType(relPath))
+      present.add(row.queueId)
 
-      if (row.prevQueueId === null) {
-        // found the first item
-        result.push(row.queueId)
-        curQueueId = row.queueId
-      } else {
-        // map indexed by prevQueueId
-        map.set(row.prevQueueId, row.queueId)
+      if (row.prevQueueId !== null) next.set(row.prevQueueId, row.queueId)
+    }
+
+    // The chain is walked from every row that has nothing in front of it,
+    // rather than from the one row whose prevQueueId is NULL.
+    //
+    // It can have holes. A song whose media went away in a re-scan is not
+    // playable and is filtered out by the query above, but the row after it
+    // still points at it — so the walk reaches a queueId that is in nobody's
+    // `rows`. The old loop read `entities[undefined].queueId` there, and threw
+    // inside a socket handler, which takes the server down rather than the
+    // request. The same hole opens whenever a row leaves the table without
+    // remove() relinking its successor.
+    //
+    // A hole therefore starts a new segment instead of ending the queue, and
+    // segments are walked in queueId order, which is the order the rows were
+    // added in. A healthy queue has exactly one segment and this is the walk it
+    // always was.
+    const seen = new Set<number>()
+
+    const walkFrom = (queueId: number) => {
+      let id: number | undefined = queueId
+
+      while (id !== undefined && !seen.has(id)) {
+        seen.add(id)
+        result.push(id)
+        id = next.get(id)
       }
     }
 
-    while (result.length < rows.length) {
-      // get the item whose prevQueueId references the current one
-      const nextQueueId = entities[map.get(curQueueId)].queueId
-      result.push(nextQueueId)
-      curQueueId = nextQueueId
+    for (const row of rows) {
+      if (row.prevQueueId === null || !present.has(row.prevQueueId)) walkFrom(row.queueId)
+    }
+
+    // Anything left is in a cycle — no row in it is anybody's head — and is
+    // kept in insertion order. Dropping it would hide songs somebody is
+    // waiting on, and the loop above would never reach it.
+    for (const row of rows) {
+      if (!seen.has(row.queueId)) walkFrom(row.queueId)
     }
 
     return { result, entities, pausedUserIds: this.getPausedUserIds(roomId) }

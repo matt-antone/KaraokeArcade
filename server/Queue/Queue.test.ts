@@ -208,3 +208,69 @@ describe('key change', () => {
     expect(entities[result[2]].keyChange).toBe(-1)
   })
 })
+
+/* A queue is a linked list: every row names the one in front of it. Reading it
+   back used to assume the chain covered exactly the rows that came out of the
+   query, and a hole in it threw inside a socket handler — which is the server
+   process, not the request. */
+describe('a queue whose chain has a hole in it', () => {
+  beforeEach(() => {
+    close()
+    open({ file: ':memory:', ro: false })
+
+    db.run('INSERT INTO rooms (roomId, name, status) VALUES (?, ?, ?)', [ROOM_ID, 'Room', 'play'])
+    db.run(`INSERT INTO users (userId, username, password, name, roleId)
+      VALUES (?, ?, ?, ?, (SELECT roleId FROM roles WHERE name = 'standard'))`, [ALICE, 'alice', 'x', 'Alice'])
+    db.run('INSERT INTO artists (artistId, name, nameNorm) VALUES (1, ?, ?)', ['Eurythmics', 'eurythmics'])
+    db.run('INSERT INTO paths (pathId, path, priority, data) VALUES (1, ?, 1, ?)', ['/media', '{}'])
+
+    for (const songId of [10, 11, 12]) {
+      db.run('INSERT INTO songs (songId, artistId, title, titleNorm) VALUES (?, 1, ?, ?)',
+        [songId, `Song ${songId}`, `song ${songId}`])
+      db.run(`INSERT INTO media (mediaId, songId, pathId, relPath, duration, isPreferred)
+        VALUES (?, ?, 1, ?, 60, 1)`, [songId * 10, songId, `${songId}.mp4`])
+      Queue.add({ roomId: ROOM_ID, songId, userId: ALICE })
+    }
+  })
+
+  afterEach(close)
+
+  it('reads back in order while the chain is whole', () => {
+    expect(Queue.get(ROOM_ID).result).toEqual([1, 2, 3])
+  })
+
+  /* The one that happens on its own: a re-scan drops the media for a queued
+     song, so the row is no longer playable and the query filters it out. The
+     row behind it still points at it. */
+  it('skips a row whose media has gone, and keeps the rest in order', () => {
+    db.run('DELETE FROM media WHERE songId = 11')
+
+    expect(Queue.get(ROOM_ID).result).toEqual([1, 3])
+  })
+
+  /* And the same hole from the other direction: the row itself is gone without
+     remove() having relinked the one behind it. The foreign key stops this
+     from inside the app, so this is the shape it arrives in from outside —
+     the sqlite3 CLI does not turn foreign keys on. */
+  it('survives a row deleted out from under the chain', () => {
+    db.exec('PRAGMA foreign_keys = OFF')
+    db.run('DELETE FROM queue WHERE queueId = 2')
+    db.exec('PRAGMA foreign_keys = ON')
+
+    expect(Queue.get(ROOM_ID).result).toEqual([1, 3])
+  })
+
+  it('still returns the tail when the head is the row that has gone', () => {
+    db.run('DELETE FROM media WHERE songId = 10')
+
+    expect(Queue.get(ROOM_ID).result).toEqual([2, 3])
+  })
+
+  /* Nothing in a cycle is anybody's head, so the walk never reaches it. Songs
+     somebody is waiting on are worth more than a tidy order. */
+  it('keeps rows that point at each other rather than dropping them', () => {
+    db.run('UPDATE queue SET prevQueueId = 3 WHERE queueId = 2')
+
+    expect(Queue.get(ROOM_ID).result.slice().sort()).toEqual([1, 2, 3])
+  })
+})

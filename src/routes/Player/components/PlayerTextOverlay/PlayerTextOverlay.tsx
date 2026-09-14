@@ -9,7 +9,7 @@ import Icon from 'components/Icon/Icon'
 import UserImage from 'components/UserImage/UserImage'
 import VuMeter from 'components/VuMeter/VuMeter'
 import useNow from 'lib/useNow'
-import { isTriviaItem, type QueueItem } from 'shared/types'
+import { isBattleItem, isTriviaItem, type QueueItem } from 'shared/types'
 import styles from './PlayerTextOverlay.css'
 
 /** How long the "on stage" panel names the singer at the top of a song. */
@@ -69,7 +69,15 @@ const Intermission = ({
   // TRIVIA on the nameplate. So the page stands down and leaves the clock: a
   // headline naming a singer nobody is waiting for, over the top of a card
   // saying the same thing, was two screens for one handover.
-  if (isTriviaItem(nextQueueItem)) {
+  //
+  // A battle stands the page down for the same reason and a stronger one. Its
+  // own `versus` beat opens by naming both fighters and both songs, which is
+  // this page's whole content and better drawn — and this page can only name
+  // one of the two, so it introduces a duel as though it were a solo. The
+  // singer who *is* waiting for this screen is the one after the battle, and
+  // that is where it now runs; see the battle row's ending in
+  // PlayerController.
+  if (isTriviaItem(nextQueueItem) || isBattleItem(nextQueueItem)) {
     return (
       <PlayerHeadline key={secondsLeft} className={styles.leadInCountdown}>
         {secondsLeft}
@@ -154,7 +162,9 @@ const overlayState = ({ isQueueEmpty, isAtQueueEnd, nextQueueItem, queueItem, is
   if (!queueItem || (isAtQueueEnd && nextQueueItem)) return 'idle'
   if (isErrored) return 'errored'
   if (intermissionEndsAt) return 'intermission'
-  if (isSongEnding && nextQueueItem) return 'upNextTease'
+  // Not before a battle: the corner panel names one singer, and a battle is two
+  // of them. The stage is about to draw the pair properly.
+  if (isSongEnding && nextQueueItem && !isBattleItem(nextQueueItem)) return 'upNextTease'
 
   return 'upNow'
 }

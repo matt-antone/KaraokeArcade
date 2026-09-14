@@ -1,4 +1,4 @@
-import { BATTLE_VERSUS_MS } from 'shared/types'
+import { BATTLE_INVITE_MS, BATTLE_VERSUS_MS } from 'shared/types'
 import type { BattleInvite, BattleSinger, BattleTurn } from 'shared/types'
 
 /**
@@ -24,6 +24,10 @@ export const battleTurn = (over: Partial<BattleTurn> = {}): BattleTurn => ({
   opponentUserId: 2,
   opponentName: 'Barf',
   opponentDateUpdated: 1700000001,
+  // the two fighters with finished art, so a test that renders a stage renders
+  // the case the room will actually see rather than two locked question marks
+  challengerSingerId: 'p1',
+  opponentSingerId: 'p2',
   // each fighter sings what the other picked, which is the whole point
   challengerSong: { songId: 10, artist: 'Heart', title: 'Barracuda' },
   opponentSong: { songId: 11, artist: 'Toto', title: 'Africa' },
@@ -31,6 +35,10 @@ export const battleTurn = (over: Partial<BattleTurn> = {}): BattleTurn => ({
   // 0 until the judging beat has finished
   challengerScore: 0,
   opponentScore: 0,
+  // Both 0 on every path but `ballot`, and the default here is a crowd-judged
+  // fight — a ballot test sets its own room size along with `judging`.
+  ballotsIn: 0,
+  ballotsOf: 0,
   ...over,
 })
 
@@ -47,6 +55,11 @@ export const battleInvite = (over: Partial<BattleInvite> = {}): BattleInvite => 
   songId: 11,
   artist: 'Toto',
   title: 'Africa',
+  challengerSingerId: 'p1',
+  // empty, matching the unaccepted default: the opponent picks their fighter
+  // on the way to saying yes, so an invite still being asked has no answer yet
+  opponentSingerId: '',
+  expiresAt: Date.now() + BATTLE_INVITE_MS,
   isAccepted: false,
   ...over,
 })

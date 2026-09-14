@@ -1,294 +1,1028 @@
-/* The one screen in the app that speaks 8-bit fighting game, drawn entirely
-   inside DECK's rules rather than around them.
+/* Singer Battle: the TV stage, nine beats, one geometry.
+ *
+ * This file is the one place in the app that speaks arcade rather than DECK,
+ * and src/styles/deck-rules.test.ts exempts it by path so that stays a single
+ * reversible decision. What it buys: raw hex from the battle palette, hard
+ * black type shadows, Michroma at display sizes, and art dimmed with opacity.
+ * The one DECK rule that still binds is the hover ban, which needs no
+ * exemption here — nobody points at a television.
+ *
+ * ------------------------------------------------------------------------
+ * The unit system, which is the only thing in here worth understanding first
+ * ------------------------------------------------------------------------
+ *
+ * The stage is 384 x 224 *design units* — the dive bar plate's own 12:7 — and
+ * every dimension below is `calc(N * var(--px))`, where --px is one unit as a
+ * fraction of the stage's own width. The stage is a container, so --px is a
+ * container query unit and the entire screen — type, bands, sprite positions,
+ * bar heights — rescales as one piece on any TV, projector or window with no
+ * breakpoints, no font-size ladder and no media queries anywhere in this file.
+ *
+ * Re-derive any of these numbers in px or rem and you have to re-derive them
+ * again for the next display, and the design document stops describing what is
+ * on screen. Every N here is lifted straight from
+ * docs/singer-battle/design/TV-MAIN-SCREEN.md and can be read back against it.
+ *
+ * --px is declared on .stage and only ever *used* by its descendants, which is
+ * what makes the container unit resolve against .stage rather than its parent.
+ */
 
-   Everything an arcade pastiche normally reaches for is banned here — glow,
-   neon, outlined type, frosted panels — so the read comes from the four things
-   the deck already allows and which turn out to be the whole effect: scale
-   (--display-xl is 11vh, and a versus screen is two faces and one enormous
-   word), motion in steps rather than eases, Michroma tracked wide, and
-   image-rendering: pixelated on the portraits.
-
-   Colour is the two answer keys, unchanged: crimson is always the challenger
-   and moss is always the opponent, on every beat, so the room learns which
-   side is which in the first five seconds and never has to be told again. */
-
-.container {
-  font-family: var(--font-body);
+.well {
   position: absolute;
   top: 0;
   left: 0;
+  display: grid;
+  place-items: center;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3vh;
-  color: var(--ink);
-  /* Opaque: this covers the whole stage and the thread field behind it stops
-     drawing while it does. A wash would leave the field burning CPU for a
-     five-minute battle. */
-  background: var(--chassis-deep);
-  text-align: center;
 }
 
-/* the two fighter colours, as one name each beat can reach for */
-.sideOne {
-  --fighter: var(--ans-1-hi);
-  --fighter-lo: var(--ans-1-lo);
-}
-
-.sideTwo {
-  --fighter: var(--ans-2-hi);
-  --fighter-lo: var(--ans-2-lo);
-}
-
-/* --- type ----------------------------------------------------------- */
-
-/* The one place Michroma is allowed at this size, and the reason this file
-   lives under routes/Player rather than in components/. */
-.headline {
-  font-family: var(--font-display);
-  font-size: var(--display-xl);
-  line-height: 1;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.subhead {
-  font-family: var(--font-display);
-  font-size: var(--display-l);
-  line-height: 1.1;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.silk {
-  font-size: var(--text-xs);
-  letter-spacing: var(--silkscreen-tracking);
-  text-transform: uppercase;
-  color: var(--ink-2);
-}
-
-.song {
-  font-size: 2.6vh;
-  line-height: 1.25;
-  max-width: 30ch;
-  text-wrap: pretty;
-}
-
-.songArtist {
-  color: var(--ink-2);
-}
-
-/* --- versus ---------------------------------------------------------- */
-
-/* the wedges and the word, drawn by versusSting. Everything readable sits on
-   top of it as real text. */
-.sting {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.fighters {
+/* 12:7 against a 16:9 screen leaves about 1.8% of pillarbox either side. That
+   is the honest trade: the plate art, the sprite positions and every number in
+   the design share one aspect ratio, and stretching the stage to the panel
+   would put the fighters' feet through the floor. The strips are unpainted so
+   the beats that let the karaoke video through can let it through there too. */
+.stage {
+  --px: 0.2604cqw;
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4vw;
-  width: 100%;
-  padding: 0 5vw;
-}
-
-.fighter {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.5vh;
-  min-width: 0;
-  flex: 1;
-}
-
-/* --- portraits -------------------------------------------------------- */
-
-/* One line, and the whole 8-bit read: an avatar shot on a phone, scaled up to
-   a quarter of the screen with nearest-neighbour sampling, is a sprite. The
-   frame is the fighter's own colour so a portrait is identifiable with the
-   sound off and the names unread. */
-.portrait {
-  width: 24vh;
-  border: 0.6vh solid var(--fighter);
+  container-type: inline-size;
+  aspect-ratio: 12 / 7;
+  overflow: hidden;
+  background: #0d0e0f;
+  color: #e6e4de;
+  font-family: var(--font-body);
 
   img {
+    display: block;
     image-rendering: pixelated;
   }
 }
 
-.portraitSolo {
-  width: 38vh;
+/* The two singing beats are the only ones with something behind them: the real
+   karaoke player is mounted underneath this whole component, so the stage
+   ground has to come off or the video never reaches the room. */
+.stageOpen {
+  background: transparent;
 }
 
-.name {
-  font-family: var(--font-display);
-  font-size: 3.2vh;
-  letter-spacing: 0.06em;
+/* --- the two fighter colours ----------------------------------------- */
+
+/* One name each beat reaches for, so no beat has to know which side it is
+   drawing. Crimson is always the challenger and moss is always the opponent,
+   on every beat, which is how the room learns the sides in the first five
+   seconds and is never told again. */
+.sideOne {
+  --side: #c01723;
+  --side-ink: #ff8a8a;
+  --side-glow: rgba(192, 23, 35, 0.5);
+}
+
+.sideTwo {
+  --side: #0d7039;
+  --side-ink: #7fe3a5;
+  --side-glow: rgba(13, 112, 57, 0.5);
+}
+
+/* --- the stage plate -------------------------------------------------- */
+
+/* The plate is 3:1 and the stage is 12:7, so it is sized off height and
+   centred: the extra width is headroom for panning, and the crop is deliberate.
+   The box exists so the filter and the video cut-out below measure against the
+   stage rather than against the oversized image. */
+.plateBox {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.plate {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  height: 100%;
+  width: auto;
+  transform: translateX(-50%);
+}
+
+/* How far back the plate sits on each beat. The singing beats are the only
+   ones where the room is meant to be looking at the bar; everywhere else it is
+   scenery behind something brighter, and a plate at full brightness under a
+   scrim reads as fog rather than as a room. */
+.toneSing { filter: brightness(1); }
+.toneIntro { filter: brightness(0.7); }
+.toneDark { filter: brightness(0.5); }
+.toneDrained { filter: brightness(0.5) saturate(0.5); }
+
+/* The video cut-out.
+ *
+ * The karaoke player is mounted beneath this component and cannot be moved
+ * from here, so the panel is a hole in the plate rather than a frame the video
+ * is placed inside. evenodd is what makes the second ring subtract instead of
+ * add, and both rings have to close on their own first point — a polygon that
+ * runs the outer ring straight into the inner one is a single self-intersecting
+ * outline, and evenodd of that is a wedge across the stage rather than a hole.
+ * The four numbers are the panel rect from TV-MAIN-SCREEN.md and have to stay
+ * in step with .panel below, or the bezel stops lining up with the glass. */
+.holeOne {
+  clip-path: polygon(evenodd,
+    0 0, 100% 0, 100% 100%, 0 100%, 0 0,
+    calc(132 * var(--px)) calc(63 * var(--px)),
+    calc(132 * var(--px)) calc(100% - 31 * var(--px)),
+    calc(100% - 28 * var(--px)) calc(100% - 31 * var(--px)),
+    calc(100% - 28 * var(--px)) calc(63 * var(--px)),
+    calc(132 * var(--px)) calc(63 * var(--px))
+  );
+}
+
+.holeTwo {
+  clip-path: polygon(evenodd,
+    0 0, 100% 0, 100% 100%, 0 100%, 0 0,
+    calc(28 * var(--px)) calc(63 * var(--px)),
+    calc(28 * var(--px)) calc(100% - 31 * var(--px)),
+    calc(100% - 132 * var(--px)) calc(100% - 31 * var(--px)),
+    calc(100% - 132 * var(--px)) calc(63 * var(--px)),
+    calc(28 * var(--px)) calc(63 * var(--px))
+  );
+}
+
+/* --- sprites ---------------------------------------------------------- */
+
+/* One element, one background image, swapped per frame. The design prototype
+   stacked every frame as an <img> and cross-faded them on opacity because that
+   was cheap to prototype, and the handoff bans shipping it: eight or sixteen
+   full-size PNGs composited every frame is a real cost on the Pi-class box a
+   player usually is, and a cross-fade between two drawings of the same body is
+   a blur where the art has hard alpha edges and nothing else.
+   contain + bottom-anchored so a loop whose frames are not all the same height
+   keeps the fighter's feet on one line. */
+.sprite {
+  position: absolute;
+  background-repeat: no-repeat;
+  background-position: 50% 100%;
+  background-size: contain;
+  image-rendering: pixelated;
+}
+
+/* Every fighter is drawn facing left, so the one looking right is the one that
+   gets flipped. Side 1 stands on the left and looks across at side 2. */
+.spriteFlip {
+  transform: scaleX(-1);
+}
+
+/* --- shared chrome ---------------------------------------------------- */
+
+/* Silkscreen micro-labels. The tracking is the whole reason this face is here:
+   set tight it reads as a bitmap font used by accident. */
+.silk {
+  font-family: var(--font-arcade);
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  max-width: 100%;
+}
+
+/* Display only, and never for digits — Michroma's numerals are the same width
+   as its letters and a clock set in it jitters on every tick. */
+.display {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+}
+
+/* A portrait chip: the fighter's own colour as a hard ring, which is what makes
+   a 26-unit face identifiable across a room with the names unread. */
+.chip {
+  flex: none;
+  background: #17181a;
+  box-shadow: 0 0 0 calc(1 * var(--px)) var(--side);
+}
+
+/* One line, ellipsised. Said once here because six places want it and every
+   one of them is a name or a song title that will eventually be too long. */
+.oneLine {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* --- versus ----------------------------------------------------------- */
+
+/* Two gradient wedges meeting at a diagonal. Each is 58% wide and goes
+   transparent at 62.4% of itself, so the overlap is the plate showing through
+   the seam rather than a third colour. */
+.field {
+  position: absolute;
+  inset: 0;
+}
+
+.wedgeOne,
+.wedgeTwo {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 58%;
+  opacity: 0.8;
+}
+
+.wedgeOne {
+  left: 0;
+  background: linear-gradient(100deg, rgba(192, 23, 35, 0.95) 0%, rgba(125, 15, 23, 0.88) 62%, transparent 62.4%);
+}
+
+.wedgeTwo {
+  right: 0;
+  background: linear-gradient(-100deg, rgba(13, 112, 57, 0.95) 0%, rgba(7, 61, 31, 0.88) 62%, transparent 62.4%);
+}
+
+/* bottom rather than nothing: .sprite is absolute with no offsets, so without
+   this the pair hangs from the top of the stage and the fighters float a third
+   of the way up it. 28 puts their feet into the top of the name band, which is
+   where the handoff's still has them standing. Judge overrides it to 22 below;
+   this pair is the only thing on the stage that sets its size here and its
+   place there, because Judge borrows the component. */
+.pairSprite {
+  bottom: calc(28 * var(--px));
+  width: calc(148 * var(--px));
+  height: calc(148 * var(--px));
+}
+
+.pairOne { left: calc(2 * var(--px)); }
+.pairTwo { right: calc(2 * var(--px)); }
+
+/* The largest type on the screen, and the only word on it. */
+.vsWord {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(40 * var(--px));
+  margin-inline: auto;
+  width: fit-content;
+  font-size: calc(52 * var(--px));
+  line-height: 1;
+  text-shadow: calc(4 * var(--px)) calc(4 * var(--px)) 0 #0d0e0f;
+}
+
+/* Both name plates in one band across the foot of the stage. Each half reads
+   outward from the centre — left-aligned on the left, right on the right — so
+   the two names sit under the two fighters rather than in a centred pair the
+   room has to match up. */
+.vsBand {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  gap: calc(10 * var(--px));
+  padding: calc(6 * var(--px)) calc(9 * var(--px));
+  box-sizing: border-box;
+  background: rgba(13, 14, 15, 0.93);
+}
+
+.vsHalf {
+  flex: 1;
+  min-width: 0;
+}
+
+.vsHalfTwo {
+  text-align: right;
+}
+
+.vsName {
+  font-size: calc(8 * var(--px));
+  color: var(--side-ink);
+}
+
+.vsSings {
+  font-size: calc(5 * var(--px));
+  color: #8b8d92;
+  margin-top: calc(5 * var(--px));
+}
+
+.vsSong {
+  font-family: var(--font-mono);
+  font-size: calc(7 * var(--px));
+  margin-top: calc(2 * var(--px));
 }
 
 /* --- intro ------------------------------------------------------------ */
 
-/* One fighter, alone, at the size the far sofa reads. The band is their colour
-   at full width so the beat is a colour change as much as a name change. */
-.solo {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2vh;
-  padding: 3vh 6vw;
-  border-radius: var(--radius-panel);
-  background: linear-gradient(180deg, var(--fighter) 0%, var(--fighter-lo) 100%);
-  box-shadow: var(--bevel);
-  animation: slam 160ms steps(4, end);
+/* A spotlight from the front of the stage in the fighter's own colour. The
+   ellipse is anchored at 96% rather than 100% so the pool of light sits on the
+   boards in front of them instead of appearing to come from under the floor. */
+.soloField {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 62% 74% at 50% 96%, var(--side-glow) 0%, rgba(13, 14, 15, 0.5) 62%, rgba(13, 14, 15, 0.9) 100%);
 }
 
-/* Slam, hold, cut — steps(n, end) is the arcade tell, and TriviaDialog already
-   uses the same easing for the same reason. Declared here rather than reused
-   from variables.css: css-loader scopes animation names per module, so a
-   global keyframe name silently resolves to nothing. */
-@keyframes slam {
-  from { transform: scale(1.5); }
-  to { transform: scale(1); }
+/* Centred by margin between two zeroed edges rather than by left:50% and a
+   transform. It matters for anything that shrink-wraps: with only a left edge
+   pinned, the available width is the half of the stage to the right of it, and
+   a name plate that should span most of the screen wraps at the midpoint
+   instead. */
+.introPlate {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(3 * var(--px));
+  margin-inline: auto;
+  width: fit-content;
+  max-width: 94%;
+  box-sizing: border-box;
+  padding: calc(6 * var(--px)) calc(20 * var(--px));
+  text-align: center;
+  background: rgba(13, 14, 15, 0.9);
+  border-top: calc(3 * var(--px)) solid var(--side);
+  border-bottom: calc(3 * var(--px)) solid var(--side);
 }
 
-/* The --dur-* tokens go to 0ms under reduced motion but a hard-coded duration
-   does not, so the animation needs switching off by name as well. */
-@media (prefers-reduced-motion: reduce) {
-  .solo,
-  .verdict {
-    animation: none;
-  }
+.introRole {
+  font-size: calc(7 * var(--px));
+  letter-spacing: 0.3em;
+  color: #ffd166;
+}
+
+.introName {
+  font-size: calc(23 * var(--px));
+  line-height: 1.1;
+  margin-top: calc(5 * var(--px));
+  text-shadow: calc(3 * var(--px)) calc(3 * var(--px)) 0 #0d0e0f;
+  text-wrap: pretty;
+}
+
+.introSprite {
+  left: 50%;
+  bottom: calc(26 * var(--px));
+  width: calc(182 * var(--px));
+  height: calc(182 * var(--px));
+  margin-left: calc(-91 * var(--px));
+}
+
+.introSong {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(3 * var(--px));
+  margin-inline: auto;
+  width: fit-content;
+  max-width: 90%;
+  box-sizing: border-box;
+  padding: calc(4 * var(--px)) calc(12 * var(--px));
+  text-align: center;
+  background: rgba(13, 14, 15, 0.9);
+}
+
+.pickedBy {
+  font-size: calc(5 * var(--px));
+  letter-spacing: 0.12em;
+  color: #8b8d92;
+}
+
+.songTitle {
+  font-family: var(--font-mono);
+  font-size: calc(8 * var(--px));
+  font-weight: var(--weight-bold);
+  margin-top: calc(3 * var(--px));
 }
 
 /* --- singing ---------------------------------------------------------- */
 
-/* The overlay gets out of the way: during a singing beat the media is the
-   screen and this is a corner card, the same size and place the rest of the
-   player's furniture uses. Lower left, because the QR panel owns lower right. */
-.corner {
+/* The band fades out rather than ending on a line: the plate behind it is a
+   photograph of a room and a hard edge across it reads as a bug. */
+.hud {
   position: absolute;
-  left: 2vh;
-  bottom: 2vh;
+  z-index: 4;
+  left: 0;
+  top: 0;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  gap: calc(8 * var(--px));
+  padding: calc(6 * var(--px)) calc(8 * var(--px));
+  background: linear-gradient(180deg, rgba(13, 14, 15, 0.92) 0%, rgba(13, 14, 15, 0.7) 70%, transparent 100%);
+}
+
+.hudWho {
+  flex: none;
+  max-width: 34%;
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: var(--gap-4);
-  padding: var(--gap-3) var(--gap-4);
-  border-radius: var(--radius-panel);
-  background: var(--faceplate);
-  box-shadow: var(--bevel);
-  font-family: var(--font-body);
-  color: var(--ink);
-  text-align: left;
-  max-width: 46vw;
+  gap: calc(5 * var(--px));
 }
 
-/* a fat bar of the fighter's colour: which side is up, readable at a glance
-   from across the room and from the corner of an eye mid-song */
-.cornerBar {
-  flex: 0 0 auto;
-  align-self: stretch;
-  width: 0.9vh;
-  border-radius: var(--radius-key);
-  background: var(--fighter);
+.hudPortrait {
+  width: calc(26 * var(--px));
+  height: calc(26 * var(--px));
 }
 
-.cornerText {
+.hudName {
+  font-size: calc(8 * var(--px));
+  text-shadow: 0 calc(1 * var(--px)) 0 #000;
+}
+
+.hudRole {
+  font-size: calc(5 * var(--px));
+  color: var(--side-ink);
+  margin-top: calc(3 * var(--px));
+}
+
+.hudSong {
+  flex: 1;
   min-width: 0;
+  text-align: center;
 }
 
-.cornerName {
-  font-family: var(--font-display);
-  font-size: 2.4vh;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.hudClock {
+  flex: none;
+  text-align: right;
 }
 
-.cornerSong {
-  font-size: 1.8vh;
-  color: var(--ink-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* the two-minute cut, counted down in the one place the room can find it */
-.cornerClock {
-  flex: 0 0 auto;
+/* Amber, the size of a scoreboard, and the one number on this beat the room
+   cannot work out by looking. */
+.clockBig {
   font-family: var(--font-mono);
-  font-size: 3.4vh;
-  font-variant-numeric: tabular-nums;
-  color: var(--vu);
+  font-size: calc(19 * var(--px));
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  color: #ffd166;
+  text-shadow: 0 calc(2 * var(--px)) 0 #000;
 }
+
+.hudCut {
+  font-size: calc(5 * var(--px));
+  color: #b9bcc1;
+  margin-top: calc(3 * var(--px));
+}
+
+.songBar {
+  position: absolute;
+  z-index: 4;
+  left: calc(8 * var(--px));
+  right: calc(8 * var(--px));
+  top: calc(36 * var(--px));
+  height: calc(6 * var(--px));
+  box-sizing: border-box;
+  padding: calc(1 * var(--px));
+  background: #0d0e0f;
+  box-shadow: inset 0 0 0 calc(1 * var(--px)) #4a4e54;
+}
+
+/* Linear and slow enough to read as a bar filling rather than as a value
+   jumping, which is what a song position reported four times a second does. */
+.songFill {
+  height: 100%;
+  background: var(--side);
+  transition: width 0.25s linear;
+}
+
+/* The bezel, drawn around the hole cut in the plate above, and sitting just
+   inside it so it covers the seam.
+
+   A border rather than padding over a background, which is what it looked like
+   it wanted to be: a background fills the whole box including the part the
+   screen sits over, and the karaoke video behind never reaches the room —
+   which is the exact bug this panel exists to avoid. A border paints the frame
+   and leaves the middle alone. */
+.panel {
+  position: absolute;
+  z-index: 1;
+  top: calc(63 * var(--px));
+  bottom: calc(31 * var(--px));
+  box-sizing: border-box;
+  border: calc(3 * var(--px)) solid #1e1f21;
+  box-shadow:
+    0 0 0 calc(1 * var(--px)) #000,
+    calc(2 * var(--px)) calc(2 * var(--px)) 0 rgba(0, 0, 0, 0.55);
+}
+
+.panelOne {
+  left: calc(132 * var(--px));
+  right: calc(28 * var(--px));
+}
+
+.panelTwo {
+  left: calc(28 * var(--px));
+  right: calc(132 * var(--px));
+}
+
+/* The glass. Also unpainted, for the same reason — the only marks on it are the
+   black inner ring, the lip where the bezel catches light, and the vignette
+   that makes it read as a screen rather than as a cut-out. */
+.screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  box-shadow:
+    inset 0 0 0 calc(1 * var(--px)) #000,
+    inset 0 calc(1 * var(--px)) 0 rgba(255, 255, 255, 0.14),
+    inset 0 0 calc(16 * var(--px)) rgba(0, 0, 0, 0.75);
+}
+
+.live {
+  position: absolute;
+  left: calc(4 * var(--px));
+  top: calc(4 * var(--px));
+  display: flex;
+  align-items: center;
+  gap: calc(3 * var(--px));
+}
+
+.liveDot {
+  width: calc(4 * var(--px));
+  height: calc(4 * var(--px));
+  border-radius: 50%;
+  background: #ff4444;
+  animation: pulse 1.1s ease-in-out infinite;
+}
+
+.liveLabel {
+  font-size: calc(4 * var(--px));
+  color: #6a6f75;
+}
+
+/* The fighter keeps the outer third and the video takes the rest, so nothing
+   of the singer ever crosses the lyrics. The negative left on side 1 and the
+   241 on side 2 are not symmetrical because the two sprite sheets carry
+   different amounts of transparent padding. */
+.singSprite {
+  z-index: 3;
+  bottom: calc(31 * var(--px));
+  width: calc(167 * var(--px));
+  height: calc(167 * var(--px));
+}
+
+.singSpriteOne { left: calc(-18 * var(--px)); }
+.singSpriteTwo { left: calc(241 * var(--px)); }
 
 /* --- judging ---------------------------------------------------------- */
 
-.meter {
-  width: 70vw;
+.scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(13, 14, 15, 0.55);
 }
 
-/* --- verdict ---------------------------------------------------------- */
-
-.verdict {
-  animation: slam 160ms steps(4, end);
+.judgeHead {
+  position: absolute;
+  left: 50%;
+  top: calc(26 * var(--px));
+  transform: translateX(-50%);
+  width: 100%;
+  text-align: center;
 }
 
-.grades {
+.judgeWord {
+  font-size: calc(30 * var(--px));
+  line-height: 1;
+  color: #ffd166;
+  text-shadow: calc(4 * var(--px)) calc(4 * var(--px)) 0 #0d0e0f;
+}
+
+.judgeLede {
+  font-size: calc(7 * var(--px));
+  letter-spacing: 0.18em;
+  color: #e6e4de;
+  margin-top: calc(8 * var(--px));
+}
+
+.judgeBand {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: calc(6 * var(--px)) calc(10 * var(--px));
+  text-align: center;
+  background: rgba(13, 14, 15, 0.94);
+  font-size: calc(6 * var(--px));
+  color: #8b8d92;
+}
+
+/* Both fighters sit lower here than on the versus card, because the ballot
+   chrome lands across the middle of the stage and they have to clear it. */
+.judgeSprite {
+  bottom: calc(22 * var(--px));
+}
+
+/* Lifted clear of the scrim, on the ballot path only. */
+.judgeSpriteLit {
+  z-index: 5;
+}
+
+/* --- the silent ballot ------------------------------------------------ */
+
+.ballot {
+  position: absolute;
+  left: 50%;
+  top: calc(60 * var(--px));
+  transform: translateX(-50%);
+  width: 84%;
+  text-align: center;
+}
+
+.ballotCards {
   display: flex;
   align-items: stretch;
-  justify-content: center;
-  gap: var(--gap-4);
-  width: 100%;
-  padding: 0 5vw;
+  gap: calc(6 * var(--px));
 }
 
-.grade {
+/* Both names read toward the centre so the two keys a voter presses are the
+   two things closest together on the screen. */
+.ballotCard {
   flex: 1;
-  max-width: 34vw;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: calc(5 * var(--px)) calc(4 * var(--px));
+  background: rgba(13, 14, 15, 0.9);
+  border-bottom: calc(3 * var(--px)) solid var(--side);
+  text-align: right;
+}
+
+.ballotCardTwo {
+  text-align: left;
+}
+
+.ballotPress {
+  font-size: calc(5 * var(--px));
+  color: var(--side-ink);
+}
+
+.ballotName {
+  font-size: calc(9 * var(--px));
+  margin-top: calc(3 * var(--px));
+}
+
+/* One cell per phone in the room, and every filled one identical. See
+   BallotRow in battleBeats.tsx: the count is the whole point and the split is
+   the whole danger. */
+.ballotRow {
+  display: flex;
+  gap: calc(2 * var(--px));
+  justify-content: center;
+  margin-top: calc(9 * var(--px));
+}
+
+.ballotCell {
+  width: calc(7 * var(--px));
+  height: calc(9 * var(--px));
+  background: #222528;
+  box-shadow: inset 0 0 0 calc(1 * var(--px)) rgba(0, 0, 0, 0.6);
+}
+
+.ballotCellIn {
+  background: #ffd166;
+}
+
+.ballotCount {
+  font-family: var(--font-mono);
+  font-size: calc(15 * var(--px));
+  font-weight: var(--weight-bold);
+  text-transform: uppercase;
+  margin-top: calc(7 * var(--px));
+  text-shadow: calc(2 * var(--px)) calc(2 * var(--px)) 0 #0d0e0f;
+}
+
+.sealed {
+  font-size: calc(5 * var(--px));
+  letter-spacing: 0.12em;
+  color: #8b8d92;
+  margin-top: calc(3 * var(--px));
+}
+
+/* A room of two has nobody to poll, so the row and the count above this come
+   off and it takes their top margin rather than sitting under the cards. */
+.sealedAlone {
+  margin-top: calc(9 * var(--px));
+}
+
+.ballotBar {
+  width: calc(150 * var(--px));
+  height: calc(4 * var(--px));
+  margin: calc(7 * var(--px)) auto 0;
+  background: #222528;
+}
+
+.ballotBarFill {
+  height: 100%;
+  background: #ffd166;
+}
+
+.ballotCloses {
+  font-size: calc(5 * var(--px));
+  letter-spacing: 0.12em;
+  color: #ffd166;
+  margin-top: calc(4 * var(--px));
+}
+
+.judgeClock {
+  position: absolute;
+  right: calc(8 * var(--px));
+  top: calc(8 * var(--px));
+  font-family: var(--font-mono);
+  font-size: calc(17 * var(--px));
+  font-weight: var(--weight-bold);
+  color: #ffd166;
+  text-shadow: 0 calc(2 * var(--px)) 0 #000;
+}
+
+/* --- the crowd meter -------------------------------------------------- */
+
+.meterHead {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: calc(7 * var(--px));
+  padding: calc(7 * var(--px)) calc(9 * var(--px));
+}
+
+.meterPortrait {
+  width: calc(28 * var(--px));
+  height: calc(28 * var(--px));
+}
+
+.meterWho {
+  flex: 1;
+  min-width: 0;
+}
+
+.meterCheer {
+  font-size: calc(5 * var(--px));
+  letter-spacing: 0.12em;
+  color: #ffd166;
+}
+
+.meterName {
+  font-size: calc(13 * var(--px));
+  margin-top: calc(3 * var(--px));
+  text-shadow: 0 calc(2 * var(--px)) 0 #000;
+}
+
+.meterClock {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: calc(17 * var(--px));
+  font-weight: var(--weight-bold);
+  color: #ffd166;
+}
+
+.meterBar {
+  position: absolute;
+  left: calc(9 * var(--px));
+  right: calc(9 * var(--px));
+  top: calc(52 * var(--px));
+  height: calc(30 * var(--px));
+  display: flex;
+  gap: calc(2 * var(--px));
+}
+
+.meterCell {
+  flex: 1;
+  box-shadow: inset 0 0 0 calc(1 * var(--px)) rgba(13, 14, 15, 0.85);
+}
+
+.meterScale {
+  position: absolute;
+  left: calc(9 * var(--px));
+  right: calc(9 * var(--px));
+  top: calc(86 * var(--px));
+  display: flex;
+  justify-content: space-between;
+  font-size: calc(5 * var(--px));
+  color: #63666b;
+}
+
+/* The one label on the stage that has to say a microphone is open. It pulses
+   because a room being recorded should never have to wonder. */
+.meterMic {
+  color: var(--side-ink);
+  animation: pulse 1.1s ease-in-out infinite;
+}
+
+.meterRead {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(8 * var(--px));
+  margin-inline: auto;
+  width: fit-content;
+  text-align: center;
+}
+
+.meterNow {
+  font-family: var(--font-mono);
+  font-size: calc(40 * var(--px));
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  color: #e6e4de;
+  text-shadow: calc(3 * var(--px)) calc(3 * var(--px)) 0 #0d0e0f;
+}
+
+.meterFoot {
+  font-size: calc(5 * var(--px));
+  letter-spacing: 0.14em;
+  color: #8b8d92;
+  margin-top: calc(2 * var(--px));
+}
+
+.meterSprite {
+  bottom: calc(26 * var(--px));
+  width: calc(136 * var(--px));
+  height: calc(136 * var(--px));
+}
+
+.meterSpriteOne { left: calc(2 * var(--px)); }
+.meterSpriteTwo { left: calc(253 * var(--px)); }
+
+/* --- the verdict ------------------------------------------------------ */
+
+.winScrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(13, 14, 15, 0.4);
+}
+
+.winHead {
+  position: absolute;
+  left: 50%;
+  top: calc(12 * var(--px));
+  transform: translateX(-50%);
+  width: 100%;
+  text-align: center;
+}
+
+.winName {
+  font-size: calc(24 * var(--px));
+  line-height: 1.1;
+  color: #ffd166;
+  text-shadow: calc(3 * var(--px)) calc(3 * var(--px)) 0 #0d0e0f;
+}
+
+.winVerb {
+  font-size: calc(12 * var(--px));
+  letter-spacing: 0.3em;
+  margin-top: calc(5 * var(--px));
+  text-shadow: calc(2 * var(--px)) calc(2 * var(--px)) 0 #0d0e0f;
+}
+
+.winSprite {
+  left: 50%;
+  bottom: calc(52 * var(--px));
+  width: calc(150 * var(--px));
+  height: calc(150 * var(--px));
+  margin-left: calc(-75 * var(--px));
+}
+
+.winBand {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: calc(10 * var(--px));
+  padding: calc(7 * var(--px)) calc(10 * var(--px));
+  background: rgba(13, 14, 15, 0.95);
+}
+
+/* Side 2's half is reversed so both blocks read outward from the margin in the
+   middle, which is the number the room actually argues about. */
+.winSide {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: calc(6 * var(--px));
+}
+
+.winSideTwo {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.winPortrait {
+  width: calc(24 * var(--px));
+  height: calc(24 * var(--px));
+}
+
+.winSideName {
+  font-size: calc(5 * var(--px));
+  color: var(--side-ink);
+}
+
+.winScore {
+  font-family: var(--font-mono);
+  font-size: calc(15 * var(--px));
+  font-weight: var(--weight-bold);
+  margin-top: calc(2 * var(--px));
+}
+
+.winMargin {
+  flex: none;
+  font-size: calc(6 * var(--px));
+  color: #63666b;
+}
+
+/* --- holding ---------------------------------------------------------- */
+
+/* No beat on stage: either the server has not answered yet, which is a blink,
+   or a beat arrived and then stopped, which is the twenty seconds before
+   PlayerController gives the row back. The lockup is the one non-pixel asset
+   in the set and has to be told not to sample like one. */
+.holding {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5vh;
-  padding: 2vh var(--gap-4);
-  border-radius: var(--radius-panel);
-  background: var(--faceplate);
-  box-shadow: var(--well);
-  border-bottom: 0.6vh solid var(--fighter);
+  justify-content: center;
+  gap: calc(9 * var(--px));
+  background: #0d0e0f;
 }
 
-.gradeScore {
+.lockup {
+  width: calc(210 * var(--px));
+  height: auto;
+  image-rendering: auto;
+}
+
+.holdWord {
+  font-size: calc(6 * var(--px));
+  letter-spacing: 0.35em;
+  color: #ffd166;
+}
+
+/* --- motion ----------------------------------------------------------- */
+
+/* The only keyframe the stage uses, on the two things that have to look alive:
+   the LIVE dot on the video panel and the label saying the microphone is open.
+   Declared here rather than in variables.css because css-loader scopes
+   animation names per module, and a global name silently resolves to nothing. */
+@keyframes pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+/* Both of these say "this is happening right now" and both have a word beside
+   them that says the same thing, so stopping them costs the room nothing. */
+@media (prefers-reduced-motion: reduce) {
+  .liveDot,
+  .meterMic {
+    animation: none;
+  }
+}
+
+/* --- the handover ------------------------------------------------------ */
+
+/* Directly on top of the score band, sharing its left inset so the two read
+   as one block of chrome rather than two things that happen to be at the
+   bottom. Sized off the band's own 44 units, so moving the band moves this. */
+.winNext {
+  position: absolute;
+  left: 0;
+  bottom: calc(44 * var(--px));
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: baseline;
+  gap: calc(6 * var(--px));
+  padding: calc(4 * var(--px)) calc(10 * var(--px));
+  background: rgba(13, 14, 15, 0.9);
+  border-top: 1px solid var(--arc-hair, #26282b);
+}
+
+.winNextLabel {
+  flex: none;
+  font-size: calc(5 * var(--px));
+  color: #ffd166;
+}
+
+.winNextName {
+  flex: none;
+  max-width: 45%;
+  font-size: calc(8 * var(--px));
+}
+
+/* Takes what is left and gives it up first: a long title may be cut, a
+   singer's name may not. */
+.winNextSong {
+  flex: 1;
+  min-width: 0;
   font-family: var(--font-mono);
-  font-size: 8vh;
-  font-weight: var(--weight-bold);
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  color: var(--vu);
+  font-size: calc(7 * var(--px));
+  color: #8b8d92;
 }
 
-.gradeName {
-  font-family: var(--font-display);
-  font-size: 2.2vh;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* The handover strip is 19 units of chrome stacked on the score band, and the
+   winner stands 8 units clear of whatever chrome is at the bottom — that is
+   the relationship TV-MAIN-SCREEN.md's `bottom: 52` encodes against the band
+   alone. Raising the fighter by the strip's own height keeps it, rather than
+   cutting them off at the shins. The design has no strip, so this is the one
+   number on this beat the handoff cannot be read back against; 52 is still
+   what runs at the end of the queue, where there is nobody to hand over to. */
+.winSpriteRaised {
+  bottom: calc(71 * var(--px));
 }

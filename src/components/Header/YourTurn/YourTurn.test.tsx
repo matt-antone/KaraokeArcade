@@ -170,7 +170,7 @@ describe('YourTurn', () => {
   it('carries a battle key that names itself', () => {
     render(<YourTurn songCount={2} isBattleEnabled onBattle={() => {}} />)
 
-    const key = screen.getByRole('button', { name: 'Challenge someone to a battle' })
+    const key = screen.getByRole('button', { name: 'Start a singer battle' })
     expect(key.hasAttribute('disabled')).toBe(false)
   })
 
@@ -190,16 +190,16 @@ describe('YourTurn', () => {
   it('leaves the key dead, and says why, when the room has battles off', () => {
     render(<YourTurn songCount={2} onBattle={() => {}} />)
 
-    const key = screen.getByRole('button', { name: 'Battles are switched off for this room' })
+    const key = screen.getByRole('button', { name: 'Singer battles are switched off for this room' })
     expect(key.hasAttribute('disabled')).toBe(true)
-    expect(key.getAttribute('title')).toBe('Battles are switched off for this room')
+    expect(key.getAttribute('title')).toBe('Singer battles are switched off for this room')
   })
 
   it('opens the roster on a press', () => {
     const onBattle = vi.fn()
     render(<YourTurn songCount={2} isBattleEnabled onBattle={onBattle} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Challenge someone to a battle' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start a singer battle' }))
     expect(onBattle).toHaveBeenCalledTimes(1)
   })
 })

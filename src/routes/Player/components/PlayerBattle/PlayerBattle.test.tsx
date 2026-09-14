@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { battleTurn } from 'lib/battleFixtures'
 import {
   BATTLE_INTRO_MS,
+  BATTLE_JUDGE_BALLOT_MS,
   BATTLE_JUDGE_MS,
   BATTLE_METER_MS,
   BATTLE_SING_MS,
@@ -14,22 +15,30 @@ import {
 } from 'shared/types'
 import type { BattlePhase, BattleTurn } from 'shared/types'
 import PlayerBattle from './PlayerBattle'
+import type { BattleUpNext } from './battleBeats'
 
 /**
- * Nine beats, walked in order at the times the server would send them.
+ * Every beat, walked in order at the times the server would send them.
  *
  * This exists because a battle is the one screen in the app where being wrong
- * is silent. Every beat renders *something* plausible, so a component that
- * shows the challenger's name over the opponent's song, or leaves the last
- * beat's splash up over the next singer, or draws a crowd meter on a player
- * that cannot hear the room, looks fine in isolation and is only wrong in
- * sequence. Driving the real payloads through the real clock correction is the
- * only way to see it.
+ * is silent. Every beat renders *something* plausible, so a stage that shows
+ * the challenger's name over the opponent's song, or puts the video panel on
+ * the side the singer is standing on, or draws a crowd meter on a player that
+ * cannot hear the room, looks fine in isolation and is only wrong in sequence.
+ * Driving the real payloads through the real clock correction is the only way
+ * to see it.
  *
- * happy-dom because UserImage builds its src from document.baseURI during
- * render. No afterEach(cleanup): nothing is mounted — renderToStaticMarkup
- * returns a string and runs no effects, which is also what keeps the canvas
- * sting and the microphone out of a test that has neither.
+ * Class names are asserted in a few places and that is deliberate rather than
+ * lazy: the mirrored halves of the two singing beats and the hole cut in the
+ * plate for the karaoke video are pure geometry, with no text to check them by,
+ * and getting them the wrong way round puts the fighter on top of the lyrics.
+ * config/vitest.config.ts hands back the CSS module key, so `panelOne` in the
+ * markup really is .panelOne in PlayerBattle.css.
+ *
+ * happy-dom because the sprite preloader builds an Image. No afterEach(cleanup)
+ * and no cleanup of it either: nothing is mounted — renderToStaticMarkup
+ * returns a string and runs no effects, which is also what keeps the microphone
+ * and a hundred PNG fetches out of a test that wants neither.
  */
 
 const SERVER_T0 = 1_700_000_000_000
@@ -45,7 +54,7 @@ const beat = (phase: BattlePhase, from: number, ms: number, over: Partial<Battle
 
 /** Just enough store for useBattleStage and useCrowdMic's dispatch. The state
  *  object is kept whole so useSelector's identity check does not spin. */
-const screen = (turn: BattleTurn | null, queueId = 7) => {
+const screen = (turn: BattleTurn | null, queueId = 7, upNext: BattleUpNext | null = null) => {
   const state = { battle: { turn } }
   const store = {
     getState: () => state,
@@ -55,7 +64,13 @@ const screen = (turn: BattleTurn | null, queueId = 7) => {
 
   return renderToStaticMarkup(
     <Provider store={store}>
-      <PlayerBattle queueId={queueId} getAudioCtx={() => null} width={1280} height={720} />
+      <PlayerBattle
+        queueId={queueId}
+        getAudioCtx={() => null}
+        upNext={upNext}
+        width={1280}
+        height={720}
+      />
     </Provider>,
   )
 }
@@ -65,90 +80,173 @@ afterEach(() => {
 })
 
 describe('a battle, beat by beat', () => {
-  it('draws each of the nine beats and only that beat', () => {
+  it('draws each beat and only that beat', () => {
     vi.useFakeTimers()
 
     // --- versus: both fighters, both songs, before a note is played
-    const versus = beat('versus', 0, BATTLE_VERSUS_MS)
     at(0)
-    const one = screen(versus)
-    expect(one).toContain('Dot Matrix')
-    expect(one).toContain('Barf')
-    expect(one).toContain('Barracuda')
-    expect(one).toContain('Africa')
+    const versus = screen(beat('versus', 0, BATTLE_VERSUS_MS))
+    expect(versus).toContain('VS')
+    expect(versus).toContain('Dot Matrix')
+    expect(versus).toContain('Barf')
+    expect(versus).toContain('Barracuda')
+    expect(versus).toContain('Africa')
+    // the colour wedges and both fighters in key art rather than a loop
+    expect(versus).toContain('wedgeOne')
+    expect(versus).toContain('wedgeTwo')
+    expect(versus).toContain('p1-key.png')
+    expect(versus).toContain('p2-key.png')
 
-    // --- intro1: the challenger alone, with the song their opponent chose
+    // --- intro1: the challenger alone, with the song their opponent chose.
+    // Naming the picker is the point of the beat, so unlike the rest of this
+    // walk the other fighter's name is expected here.
     at(BATTLE_VERSUS_MS)
     const intro1 = screen(beat('intro1', BATTLE_VERSUS_MS, BATTLE_INTRO_MS))
-    expect(intro1).toContain('challenger')
+    expect(intro1).toContain('Singer 1')
     expect(intro1).toContain('Dot Matrix')
     expect(intro1).toContain('Barracuda')
-    expect(intro1).not.toContain('Barf')
+    expect(intro1).toContain('Picked by Barf')
+    expect(intro1).toContain('p1-dance-')
+    expect(intro1).not.toContain('Africa')
 
-    // --- sing1: the overlay gets out of the way. A corner card, the media
-    //     behind it, and the two-minute cut counting down.
+    // --- sing1: the fighter keeps the left third, the video takes the rest
     at(10_000)
     const sing1 = screen(beat('sing1', 10_000, BATTLE_SING_MS))
     expect(sing1).toContain('Dot Matrix')
     expect(sing1).toContain('Barracuda')
+    expect(sing1).toContain('p1-sing-')
     // a clock, not a score: two minutes opens at 2:00, not at 120
     expect(sing1).toContain('2:00')
-    // the opponent's half of the row is not on screen while the first one sings
+    // the panel and the hole in the plate behind it are on the same side, and
+    // it is the side the singer is not standing on
+    expect(sing1).toContain('panelOne')
+    expect(sing1).toContain('holeOne')
+    expect(sing1).toContain('singSpriteOne')
+    // and the stage ground is off, or the karaoke player never reaches the room
+    expect(sing1).toContain('stageOpen')
     expect(sing1).not.toContain('Africa')
-    // and the stage is not covered: the corner card is the whole overlay
-    expect(sing1).not.toContain('container')
 
     // --- intro2: the other fighter, the other colour, the other song
     at(130_000)
     const intro2 = screen(beat('intro2', 130_000, BATTLE_INTRO_MS))
-    expect(intro2).toContain('opponent')
+    expect(intro2).toContain('Singer 2')
     expect(intro2).toContain('Barf')
     expect(intro2).toContain('Africa')
-    expect(intro2).not.toContain('Dot Matrix')
+    expect(intro2).toContain('Picked by Dot Matrix')
+    expect(intro2).toContain('p2-dance-')
 
-    // --- sing2: the corner card follows the microphone
+    // --- sing2: the whole beat mirrors, panel and hole with it
     at(135_000)
     const sing2 = screen(beat('sing2', 135_000, BATTLE_SING_MS))
     expect(sing2).toContain('Barf')
     expect(sing2).toContain('Africa')
+    expect(sing2).toContain('p2-sing-')
+    expect(sing2).toContain('panelTwo')
+    expect(sing2).toContain('holeTwo')
+    expect(sing2).toContain('singSpriteTwo')
     expect(sing2).not.toContain('Barracuda')
 
-    // --- judge: the ask, and nothing else
+    // --- judge, crowd path: the ask, five seconds, and nothing to vote on
     at(255_000)
     const judge = screen(beat('judge', 255_000, BATTLE_JUDGE_MS))
-    expect(judge).toContain('Who wins')
-    expect(judge).toContain('Dot Matrix')
-    expect(judge).toContain('Barf')
+    expect(judge).toContain('Who wins?')
+    expect(judge).toContain('The room decides')
+    expect(judge).toContain('Get loud for the one you liked')
+    // Both fighters are on stage and neither is named: the room has just heard
+    // them and the question is about the singing, not about reading a caption.
+    expect(judge).toContain('p1-key.png')
+    expect(judge).toContain('p2-key.png')
+    expect(judge).not.toContain('Dot Matrix')
+    expect(judge).not.toContain('ballotCard')
 
     // --- meter1: the room is heard for the challenger
     at(260_000)
     const meter1 = screen(beat('meter1', 260_000, BATTLE_METER_MS))
-    expect(meter1).toContain('make some noise for')
+    expect(meter1).toContain('Cheer for')
     expect(meter1).toContain('Dot Matrix')
+    expect(meter1).toContain('Onboard mic listening')
     expect(meter1).toContain('role="meter"')
+    expect(meter1).toContain('p1-dance-')
 
-    // nothing to beat yet on the first one: the challenger is the first thing
-    // measured, and a target invented here would be a number the battle does
-    // not use
-    expect(meter1).not.toContain('to beat')
-
-    // --- meter2: and for the opponent, who has a number to beat
+    // --- meter2: and for the opponent
     at(275_000)
-    const meter2 = screen(beat('meter2', 275_000, BATTLE_METER_MS, { challengerScore: 61 }))
+    const meter2 = screen(beat('meter2', 275_000, BATTLE_METER_MS))
     expect(meter2).toContain('Barf')
     expect(meter2).toContain('role="meter"')
-    expect(meter2).toContain('to beat')
-    expect(meter2).toContain('61')
+    expect(meter2).toContain('p2-dance-')
 
-    // --- winner: the verdict and both grades
+    // --- winner: the verdict, both grades, and the margin between them
     at(290_000)
     const winner = screen(beat('winner', 290_000, BATTLE_WINNER_MS, {
       challengerScore: 41,
       opponentScore: 88,
     }))
-    expect(winner).toContain('Barf wins')
+    expect(winner).toContain('Barf')
+    expect(winner).toContain('Takes it')
     expect(winner).toContain('>88<')
     expect(winner).toContain('>41<')
+    expect(winner).toContain('By 47')
+  })
+
+  it('zero-pads a single-digit grade rather than letting the band shift', () => {
+    vi.useFakeTimers()
+    at(0)
+
+    const winner = screen(beat('winner', 0, BATTLE_WINNER_MS, {
+      challengerScore: 9,
+      opponentScore: 12,
+    }))
+
+    expect(winner).toContain('>09<')
+    expect(winner).toContain('>12<')
+  })
+
+  /* The handover the room would otherwise have lost.
+   *
+   * The page that names the next singer is stood down before a battle, because
+   * it can only name one of two fighters — so the verdict beat carries it, and
+   * nobody waits through a second countdown to find out whose turn it is. It
+   * belongs to that beat alone: a fight still being fought must not be
+   * advertising what comes after it. */
+  describe('the handover on the verdict beat', () => {
+    const upNext: BattleUpNext = {
+      singer: 'Lone Starr',
+      songArtist: 'Toto',
+      songTitle: 'Rosanna',
+    }
+
+    it('names the next singer and their song on the verdict', () => {
+      vi.useFakeTimers()
+      at(290_000)
+
+      const winner = screen(beat('winner', 290_000, BATTLE_WINNER_MS), 7, upNext)
+
+      expect(winner).toContain('Up next')
+      expect(winner).toContain('Lone Starr')
+      expect(winner).toContain('Rosanna')
+      expect(winner).toContain('Toto')
+    })
+
+    it('says nothing when there is nobody after the fight', () => {
+      vi.useFakeTimers()
+      at(290_000)
+
+      expect(screen(beat('winner', 290_000, BATTLE_WINNER_MS), 7, null))
+        .not.toContain('Up next')
+    })
+
+    it('stays off every other beat', () => {
+      vi.useFakeTimers()
+
+      at(0)
+      expect(screen(beat('versus', 0, BATTLE_VERSUS_MS), 7, upNext)).not.toContain('Lone Starr')
+
+      at(30_000)
+      expect(screen(beat('sing1', 30_000, BATTLE_SING_MS), 7, upNext)).not.toContain('Lone Starr')
+
+      at(280_000)
+      expect(screen(beat('judge', 280_000, BATTLE_JUDGE_MS), 7, upNext)).not.toContain('Lone Starr')
+    })
   })
 
   it('calls it a draw rather than picking one, when both were heard the same', () => {
@@ -161,7 +259,64 @@ describe('a battle, beat by beat', () => {
     }))
 
     expect(drawn).toContain('Draw')
-    expect(drawn).not.toContain('wins')
+    expect(drawn).toContain('Nobody wins')
+    expect(drawn).toContain('Dead heat')
+    expect(drawn).not.toContain('Takes it')
+  })
+})
+
+describe('the silent ballot', () => {
+  /**
+   * There is no ballot beat: asking the room and counting the room are one
+   * screen, because a vote has nothing to look at while it happens. The same
+   * `judge` phase runs for thirty seconds instead of five and grows the two
+   * vote cards.
+   */
+  it('holds the vote on the judge beat, and never shows the room the split', () => {
+    vi.useFakeTimers()
+    at(255_000)
+
+    const ballot = screen(beat('judge', 255_000, BATTLE_JUDGE_BALLOT_MS, {
+      judging: 'ballot',
+      ballotsIn: 7,
+      ballotsOf: 18,
+    }))
+
+    expect(ballot).toContain('Who wins?')
+    expect(ballot).toContain('Silent ballot')
+    expect(ballot).toContain('Press 1')
+    expect(ballot).toContain('Press 2')
+    expect(ballot).toContain('Dot Matrix')
+    expect(ballot).toContain('Barf')
+    expect(ballot).toContain('One vote each')
+    expect(ballot).toContain('Sealed until time')
+    expect(ballot).toContain('7 of 18 in')
+    // thirty seconds, and the crowd path's call to action is not on this one
+    expect(ballot).toContain('Ballot closes in 30s')
+    expect(ballot).not.toContain('Get loud')
+
+    // One cell per phone, seven of them filled, and the filled ones carry no
+    // mark of which way they went. The count is the point and the split is the
+    // danger; see BallotRow.
+    expect(ballot.split('ballotCell').length - 1).toBe(18 + 7)
+    expect(ballot).not.toContain('winScore')
+  })
+
+  it('drops the row and the count in a room with nobody left to poll', () => {
+    vi.useFakeTimers()
+    at(255_000)
+
+    // a battle between the only two people in the venue: 0 OF 0 IN reads as a
+    // fault in the count rather than as an empty room
+    const ballot = screen(beat('judge', 255_000, BATTLE_JUDGE_BALLOT_MS, {
+      judging: 'ballot',
+      ballotsIn: 0,
+      ballotsOf: 0,
+    }))
+
+    expect(ballot).toContain('Sealed until time')
+    expect(ballot).not.toContain('ballotCell')
+    expect(ballot).not.toContain('of 0 in')
   })
 })
 
@@ -183,7 +338,7 @@ describe('a player that cannot hear the room', () => {
     at(0)
     const verdict = screen(beat('winner', 0, BATTLE_WINNER_MS, { judging: 'none' }))
     expect(verdict).toContain('Draw')
-    expect(verdict).toContain('cannot hear the room')
+    expect(verdict).toContain('No microphone on this player')
   })
 })
 
@@ -195,7 +350,7 @@ describe('a beat that is not ours', () => {
     // the last beat of the previous row, still in the store as this one starts
     const stale = screen(beat('winner', 0, BATTLE_WINNER_MS), 9)
 
-    expect(stale).toContain('Battle')
+    expect(stale).toContain('Getting ready')
     expect(stale).not.toContain('Dot Matrix')
   })
 
@@ -205,19 +360,20 @@ describe('a beat that is not ours', () => {
     // first sight caches the clock correction, exactly as a real arrival does
     const judge = beat('judge', 0, BATTLE_JUDGE_MS)
     at(0)
-    expect(screen(judge)).toContain('Who wins')
+    expect(screen(judge)).toContain('Who wins?')
 
-    // the beat's deadline passes and the next one is still on the wire
+    // the beat's deadline passes and the next one is still on the wire. This
+    // row has been seen, so the wait reads as a stall rather than as a start.
     at(BATTLE_JUDGE_MS + 1)
     const gap = screen(judge)
-    expect(gap).toContain('Battle')
-    expect(gap).not.toContain('Who wins')
+    expect(gap).toContain('Hold on')
+    expect(gap).not.toContain('Who wins?')
   })
 
   it('holds the stage when there is no battle at all yet', () => {
     vi.useFakeTimers()
     at(0)
 
-    expect(screen(null)).toContain('Battle')
+    expect(screen(null)).toContain('Getting ready')
   })
 })

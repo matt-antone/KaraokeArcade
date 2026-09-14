@@ -1,0 +1,289 @@
+/* Choosing who you sing as. See BattleSingerSelect.tsx. */
+
+/* Every screen inside the frame is one of these: a column that owns the rest
+   of the phone and pins its own footer to the bottom. It arrives on a slam out
+   of the point the thumb just left, which is the same origin the iris is
+   growing from — the two are one motion, not two. */
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--arc-ground);
+  transform-origin: var(--fx-x) var(--fx-y);
+  animation: battle-select-slam 260ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+.masthead {
+  flex: none;
+  padding: 16px 14px 12px;
+  text-align: center;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: 21px;
+  line-height: 1.15;
+  text-shadow: 3px 3px 0 #000;
+}
+
+.lede {
+  margin-top: 10px;
+  font-family: var(--font-arcade);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  color: var(--arc-muted);
+}
+
+/* The grid is the only thing on this screen that scrolls. The masthead and the
+   footer chip are pinned, so the pick and the key that acts on it are both
+   visible however far down the roster somebody is. */
+.scroller {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden auto;
+  padding: 0 12px 12px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--arc-rule) var(--arc-card);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: stretch;
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+  padding: 0;
+  border: none;
+  background-color: var(--arc-tile);
+  box-shadow: inset 0 0 0 1px var(--arc-rule);
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: -4px;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.tileOn {
+  background-color: var(--arc-rule);
+  box-shadow: inset 0 0 0 2px var(--arc-mine);
+}
+
+.tilePending {
+  background-color: var(--arc-card);
+}
+
+.art {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* An unpicked fighter is present but not lit. Dimming art is the one thing
+   this cabinet does that the deck forbids, and it is right here: there is
+   nothing underneath a tile to ghost through, and a grid where the pick is the
+   only figure at full strength reads in one glance. */
+.tileArt {
+  opacity: 0.72;
+}
+
+.tileOn .tileArt {
+  opacity: 1;
+}
+
+/* Spoken for by the other side. Still legible as a figure, plainly not
+   available. */
+.tileArtTaken {
+  opacity: 0.3;
+}
+
+.locked {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: 26px;
+  color: var(--arc-rule);
+}
+
+.name {
+  position: relative;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 4px 3px;
+  background-color: var(--arc-ground);
+  font-family: var(--font-arcade);
+  font-size: 8px;
+  letter-spacing: 0.04em;
+  color: var(--arc-muted);
+  text-align: center;
+}
+
+.tileOn .name {
+  background-color: var(--arc-mine);
+  color: var(--arc-ground);
+}
+
+.tilePending .name {
+  color: var(--arc-quiet);
+}
+
+/* The third reading of the selection, and the one that survives a phone held
+   at arm's length in a dark room: a cursor sitting on the tile, blinking on a
+   step so it never looks like a fade. */
+.cursor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: battle-select-cursor 620ms steps(1) infinite;
+}
+
+/* One corner drawn, then reflected into the other three. The bars are the
+   corner span's own two pseudo-elements anchored to its top left, so a flip
+   about either axis lands them on the matching corner — eight elements and
+   eight sets of offsets is the version that goes wrong when the bar size
+   changes. */
+.cornerTL,
+.cornerTR,
+.cornerBL,
+.cornerBR {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    background-color: var(--arc-mine);
+  }
+
+  &::before {
+    width: 13px;
+    height: 4px;
+  }
+
+  &::after {
+    width: 4px;
+    height: 13px;
+  }
+}
+
+.cornerTL {
+  left: 0;
+  top: 0;
+}
+
+.cornerTR {
+  right: 0;
+  top: 0;
+  transform: scaleX(-1);
+}
+
+.cornerBL {
+  left: 0;
+  bottom: 0;
+  transform: scaleY(-1);
+}
+
+.cornerBR {
+  right: 0;
+  bottom: 0;
+  transform: scale(-1);
+}
+
+/* LAST or TAKEN. Both are facts about the tile rather than states of it, so
+   both are the same stamp in the same corner — two shapes here would read as
+   two different kinds of thing. */
+.tag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 3px 4px;
+  background-color: var(--arc-one);
+  font-family: var(--font-arcade);
+  font-size: 7px;
+  letter-spacing: 0.04em;
+  color: var(--arc-ground);
+}
+
+.footer {
+  flex: none;
+  padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+  background-color: var(--arc-panel);
+  border-top: 1px solid var(--arc-rule);
+}
+
+.chipRow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+/* The pick, carried down here out of the grid. It is the same object that flew
+   in, and it is what takes off again on the next step — see the flyer in
+   BattleSetup. */
+.chip {
+  position: relative;
+  flex: none;
+  width: 46px;
+  height: 46px;
+  overflow: hidden;
+  background-color: var(--arc-ground);
+  box-shadow: inset 0 0 0 2px var(--arc-mine);
+}
+
+.chipText {
+  flex: 1;
+  min-width: 0;
+}
+
+.chipLegend {
+  font-family: var(--font-arcade);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  color: var(--arc-muted);
+}
+
+.chipName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 5px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  color: var(--arc-mine);
+}
+
+.next {
+  margin-top: 12px;
+}
+
+@keyframes battle-select-slam {
+  0% { transform: scale(1.9); opacity: 0; }
+  40% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes battle-select-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}

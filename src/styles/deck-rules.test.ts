@@ -21,6 +21,37 @@ import { describe, expect, it } from 'vitest'
 
 const SRC = join(__dirname, '..')
 
+/**
+ * Singer Battle speaks arcade, not DECK, and does so on purpose.
+ *
+ * A battle is the one thing in this product that is a spectacle rather than a
+ * control surface: a fighting-game stage on the TV, and — since the redesign —
+ * the same language carried onto the three phone screens around it, so the
+ * room is looking at one thing from four places rather than at a deck that
+ * happens to mention a fight. That language is hard black type shadows, its
+ * own crimson/moss/gold palette, Michroma at display sizes and art dimmed by
+ * opacity, every one of which DECK bans for good reasons that do not apply to
+ * a screen nobody is operating.
+ *
+ * The exemption is a path list rather than a per-rule allowance so it stays
+ * one decision somebody can reverse in one line, and so the rules below keep
+ * their full force everywhere else — which is the whole point of this file.
+ * The values these screens are held to instead are in
+ * docs/singer-battle/design/, and are just as closed.
+ */
+const ARCADE = [
+  'routes/Player/components/PlayerBattle/',
+  'components/BattleStage/',
+  'components/BattleSetup/',
+  'components/BattleInvite/',
+  'components/BattleVote/',
+  'components/Header/BattleStrip/',
+  'routes/Queue/components/QueueBattleItem/',
+]
+
+/** True for a "path:line:text" row, or a bare path, inside Singer Battle. */
+const isArcade = (line: string): boolean => ARCADE.some(dir => line.startsWith(dir))
+
 /** Files matching a glob, repo-relative. */
 function files (glob: string): string[] {
   return execFileSync('grep', ['-rlE', '-e', '', SRC, '--include', glob], { encoding: 'utf8' })
@@ -161,10 +192,13 @@ describe('DECK rules', () => {
       '^routes/Player/components/PlayerTextOverlay/PlayerHeadline/PlayerHeadline\\.css:'
       + '\\d+:\\s*text-shadow: 0 2px 12px rgba\\(0, 0, 0, \\.8\\);$')
 
-    expect(search('filter:\\s*drop-shadow', '*.css')).toEqual([])
+    expect(search('filter:\\s*drop-shadow', '*.css').filter(l => !isArcade(l))).toEqual([])
     expect(search('text-shadow:', '*.css')
       .filter(l => !/text-shadow:\s*none/.test(l))
-      .filter(l => !LEGIBILITY_SHADOW.test(l))).toEqual([])
+      .filter(l => !LEGIBILITY_SHADOW.test(l))
+      // Singer Battle's hard offset drop (3px 3px 0 #000) is arcade chrome,
+      // not a glow — it bleeds no light, it stamps the type onto the stage.
+      .filter(l => !isArcade(l))).toEqual([])
   })
 
   it('has no frosted glass', () => {
@@ -192,6 +226,8 @@ describe('DECK rules', () => {
       .filter(l => !l.startsWith('styles/variables.css'))
       // data: URIs carry encoded SVG markup, not palette
       .filter(l => !/url\("data:/.test(l))
+      // Singer Battle carries its own closed palette, in its own files
+      .filter(l => !isArcade(l))
     expect(hex).toEqual([])
   })
 
@@ -204,6 +240,9 @@ describe('DECK rules', () => {
       // YourTurn's wait is the one sanctioned exception: "the one number in
       // the app set in Michroma", readable at arm's length in a dark room
       .filter(l => !l.startsWith('components/Header/YourTurn/'))
+      // Singer Battle is display type throughout — fighter names, VS, WHO
+      // WINS?, the verdict. It is the arcade cabinet, not the deck.
+      .filter(l => !isArcade(l))
     expect(uses).toEqual([])
   })
 
@@ -217,6 +256,11 @@ describe('DECK rules', () => {
     const dims: string[] = []
 
     for (const file of new Set(search('opacity:\\s*0?\\.[0-9]', '*.css').map(l => l.split(':')[0]))) {
+      // Singer Battle dims art, not rows: an unpicked fighter at .72, a taken
+      // one at .3, a spent lockup at .4. There is nothing underneath to ghost
+      // through, and the whole read of the select grid is built on it.
+      if (isArcade(file)) continue
+
       const text = readFileSync(join(SRC, file), 'utf8')
       let block = ''
       let inKeyframes = false

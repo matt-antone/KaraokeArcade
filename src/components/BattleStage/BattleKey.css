@@ -1,0 +1,79 @@
+/* The three keys both negotiating phones are built from. See BattleKey.tsx. */
+.key {
+  display: block;
+  width: 100%;
+  border: none;
+  font: inherit;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: -4px;
+  }
+}
+
+/* The bevel is two hard inset rings, never a blur: a moulded plastic key lit
+   from above, which is the one depth cue this whole cabinet uses. */
+.primary {
+  min-height: 54px;
+  border-radius: 3px;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.45), inset 0 -3px 0 rgba(0, 0, 0, 0.3);
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  color: var(--arc-ground);
+
+  &:active {
+    box-shadow: inset 0 3px 0 rgba(0, 0, 0, 0.3), inset 0 -2px 0 rgba(255, 255, 255, 0.25);
+  }
+
+  /* Flat, unlit and the same grey as an unselected tile: nothing about it
+     should read as a key waiting to be pressed harder. */
+  &:disabled {
+    background-color: var(--arc-tile);
+    box-shadow: inset 0 0 0 1px var(--arc-rule);
+    color: var(--arc-muted);
+    cursor: default;
+  }
+}
+
+.mine {
+  background-color: var(--arc-mine);
+}
+
+.one {
+  background-color: var(--arc-one);
+}
+
+.gold {
+  background-color: var(--arc-gold);
+}
+
+.ghost {
+  min-height: 44px;
+  border-radius: 3px;
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--arc-rule);
+  font-family: var(--font-arcade);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--arc-muted);
+
+  &:active {
+    box-shadow: inset 0 0 0 1px var(--arc-muted);
+  }
+}
+
+/* An edit, not a decision: no key face, because pressing it changes what is on
+   screen rather than what is agreed. */
+.link {
+  width: auto;
+  min-height: 36px;
+  padding: 0 8px;
+  background: none;
+  font-family: var(--font-arcade);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-decoration: underline;
+  color: var(--arc-mine);
+}

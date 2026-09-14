@@ -11,8 +11,13 @@
  *    row that produced a lone MAX(), and a second plain join would have made
  *    that MAX() range over both songs' media at once — a battle playing one
  *    singer's file to the other singer's name, with nothing in any log;
- *  - and the beats have to skip the judging ones on a player that cannot hear
- *    the room, rather than grading thirty seconds of silence.
+ *  - the beats have to skip the judging ones on a player that cannot hear
+ *    the room, rather than grading thirty seconds of silence;
+ *  - and a challenge has to stop existing by itself. The map holds one per
+ *    room, so a challenge thrown at somebody who has gone to the bar locks
+ *    the whole room out of starting a battle, and the challenger will not
+ *    cancel it because their screen says "waiting" and waiting is what they
+ *    believe they are doing.
  *
  * Battle.stopRoom is called in both setup and teardown: the module's maps
  * outlive the :memory: database between tests, which is the same reason the
@@ -28,6 +33,7 @@ import {
   BATTLE_TURN,
   BATTLE_TURN_CLEAR,
 } from '../../shared/actionTypes.js'
+import { BATTLE_INVITE_MS } from '../../shared/types.js'
 import type { BattlePhase, BattleTurn } from '../../shared/types.js'
 
 const ROOM_ID = 1
@@ -129,12 +135,21 @@ function teardownRoom () {
 /**
  * Run the whole negotiation: Alice challenges Bob to sing `opponentSongId`,
  * Bob accepts and hands Alice `challengerSongId` back. `queueId` is the row
- * Alice puts up as the slot to fight in.
+ * Alice puts up as the slot to fight in, and the two singer ids are the roster
+ * fighters each of them is singing as.
  */
-async function negotiate (io, { queueId, opponentSongId = RAIN, challengerSongId = MISSIONARY } = {} as {
+async function negotiate (io, {
+  queueId,
+  opponentSongId = RAIN,
+  challengerSongId = MISSIONARY,
+  challengerSingerId = 'p1',
+  opponentSingerId = 'p2',
+} = {} as {
   queueId: number
   opponentSongId?: number
   challengerSongId?: number
+  challengerSingerId?: string
+  opponentSingerId?: string
 }) {
   await Battle.challenge(io, {
     roomId: ROOM_ID,
@@ -142,8 +157,9 @@ async function negotiate (io, { queueId, opponentSongId = RAIN, challengerSongId
     opponentUserId: BOB,
     songId: opponentSongId,
     queueId,
+    singerId: challengerSingerId,
   })
-  await Battle.accept(io, ROOM_ID, BOB)
+  await Battle.accept(io, ROOM_ID, BOB, opponentSingerId)
   await Battle.pick(io, ROOM_ID, BOB, challengerSongId)
 }
 
@@ -185,7 +201,96 @@ describe('the challenge', () => {
     await Battle.clearInvite(io, ROOM_ID, BOB)
 
     expect(Battle.getInvite(ROOM_ID)).toBeNull()
-    expect(io.emitted.filter(e => e.type === BATTLE_INVITE_CLEAR)).toHaveLength(3)
+
+    const cleared = io.emitted.filter(e => e.type === BATTLE_INVITE_CLEAR)
+
+    expect(cleared).toHaveLength(3)
+    // Bob is the opponent, so this is a refusal rather than Alice backing out.
+    // Same action either way, and the two leave the other person looking at
+    // different screens.
+    expect(cleared.map(e => (e.payload as { reason: string }).reason))
+      .toEqual(['declined', 'declined', 'declined'])
+  })
+
+  it('tells the challenger backing out from the opponent refusing', async () => {
+    const io = fakeIo()
+
+    await Battle.challenge(io, {
+      roomId: ROOM_ID, challengerUserId: ALICE, opponentUserId: BOB, songId: RAIN, queueId: 0,
+    })
+    await Battle.clearInvite(io, ROOM_ID, ALICE)
+
+    expect(io.emitted.find(e => e.type === BATTLE_INVITE_CLEAR)?.payload)
+      .toEqual({ reason: 'cancelled' })
+  })
+
+  it('lapses on its own and says so, rather than standing all night', async () => {
+    vi.useFakeTimers()
+
+    try {
+      const io = fakeIo()
+
+      await Battle.challenge(io, {
+        roomId: ROOM_ID, challengerUserId: ALICE, opponentUserId: BOB, songId: RAIN, queueId: 0,
+      })
+
+      await vi.advanceTimersByTimeAsync(BATTLE_INVITE_MS - 1000)
+      expect(Battle.getInvite(ROOM_ID)).not.toBeNull()
+
+      await vi.advanceTimersByTimeAsync(2000)
+
+      // gone, and both phones told why. 'expired' rather than 'declined'
+      // matters to the person who threw it: Bob was in the toilet, he did not
+      // say no, and the map holding one challenge per room means somebody else
+      // is locked out of starting a battle until this goes away by itself.
+      expect(Battle.getInvite(ROOM_ID)).toBeNull()
+      expect(io.emitted.filter(e => e.type === BATTLE_INVITE_CLEAR).map(e => e.payload))
+        .toEqual([{ reason: 'expired' }, { reason: 'expired' }, { reason: 'expired' }])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('stops the clock once the challenge is answered', async () => {
+    vi.useFakeTimers()
+
+    try {
+      const io = fakeIo()
+
+      await Battle.challenge(io, {
+        roomId: ROOM_ID, challengerUserId: ALICE, opponentUserId: BOB, songId: RAIN, queueId: 0,
+      })
+      await Battle.accept(io, ROOM_ID, BOB, 'p2')
+
+      // the forty-five seconds is on the question, and Bob answered it. He is
+      // now in the library choosing what Alice sings, with nothing on screen
+      // that ever warned him he was against a clock.
+      await vi.advanceTimersByTimeAsync(BATTLE_INVITE_MS * 2)
+
+      expect(Battle.getInvite(ROOM_ID)?.isAccepted).toBe(true)
+      expect(Battle.getInvite(ROOM_ID)?.opponentSingerId).toBe('p2')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('files both fighters on the row and calls the match set, not declined', async () => {
+    const io = fakeIo()
+    queueSong(ALICE)
+
+    await negotiate(io, { queueId: 1, challengerSingerId: 'p1', opponentSingerId: 'p2' })
+
+    // the happy ending comes through the same BATTLE_INVITE_CLEAR as a
+    // refusal, so without a reason a successfully arranged battle reads on
+    // both phones as the other person having said no
+    expect(io.emitted.find(e => e.type === BATTLE_INVITE_CLEAR)?.payload)
+      .toEqual({ reason: 'matched' })
+
+    const row = db.get<{ singerId: string, opponentSingerId: string }>(
+      'SELECT singerId, opponentSingerId FROM queue WHERE queueId = 1')
+
+    expect(row.singerId).toBe('p1')
+    expect(row.opponentSingerId).toBe('p2')
   })
 
   it('only lets one challenge be negotiated at a time', async () => {
@@ -323,8 +428,8 @@ describe('the beats', () => {
     vi.useRealTimers()
   })
 
-  /** Start a battle and let every timer run out, collecting the phases. */
-  async function runBattle (io, canHearRoom: boolean) {
+  /** Start a battle and let every timer run out, collecting every beat. */
+  async function runBattle (io, canHearRoom: boolean): Promise<BattleTurn[]> {
     queueSong(ALICE)
     await negotiate(io, { queueId: 1 })
 
@@ -336,27 +441,60 @@ describe('the beats', () => {
 
     return io.emitted
       .filter(e => e.type === BATTLE_TURN)
-      .map(e => (e.payload as BattleTurn).phase as BattlePhase)
+      .map(e => e.payload as BattleTurn)
   }
 
-  it('runs the ballot beat by default, and no metering beat', async () => {
+  const phases = (turns: BattleTurn[]): BattlePhase[] => turns.map(t => t.phase)
+
+  /** How long the judging section held the stage: the ask going up until the
+   *  verdict replaced it. sentAt rather than endsAt, because the beat that
+   *  actually ran is the one that matters and a singing beat can end early. */
+  const judgingSecs = (turns: BattleTurn[]): number => {
+    const judge = turns.find(t => t.phase === 'judge')
+    const winner = turns.find(t => t.phase === 'winner')
+
+    return (winner.sentAt - judge.sentAt) / 1000
+  }
+
+  it('runs seven beats by default, with no metering beat', async () => {
     const io = fakeIo()
 
     // The room pref is absent, which is every room made before there was a
     // choice — and the answer has to be the one that works on a player opened
     // anywhere, not the one that needs the host's own microphone.
-    expect(await runBattle(io, true)).toEqual([
-      'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'judge', 'ballot', 'winner',
+    //
+    // Seven, not eight: asking the room and counting the room are one screen,
+    // so `judge` is the whole judging section here and there is no separate
+    // ballot beat behind it.
+    const turns = await runBattle(io, true)
+
+    expect(phases(turns)).toEqual([
+      'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'judge', 'winner',
     ])
+
+    // and that one beat is exactly the two metering beats it replaces, which
+    // is what lets an operator flip the setting without re-planning the night.
+    // It is also the number every phone's ballot counts down to.
+    expect(judgingSecs(turns)).toBe(30)
   })
 
   it('runs all nine beats when the room asked for crowd noise and the player can hear it', async () => {
     const io = fakeIo()
     setJudging('crowd')
 
-    expect(await runBattle(io, true)).toEqual([
+    const turns = await runBattle(io, true)
+
+    expect(phases(turns)).toEqual([
       'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'judge', 'meter1', 'meter2', 'winner',
     ])
+
+    // thirty seconds of metering, the same as the ballot path's one beat, plus
+    // the five-second ask in front of it that the ballot path folds into its
+    // own beat. Crowd is the longer of the two, which is why getWaits counts
+    // this path: a wait estimate five seconds long beats one five seconds
+    // short, and shortness compounds down the queue.
+    expect(judgingSecs(turns)).toBe(35)
+
     expect(io.emitted.some(e => e.type === BATTLE_TURN_CLEAR)).toBe(true)
     expect(Battle.getTurn(ROOM_ID)).toBeNull()
   })
@@ -369,9 +507,39 @@ describe('the beats', () => {
     // rounding favoured, so the beats simply do not happen — including the
     // question they answer, which on its own is five seconds of asking who
     // wins immediately before announcing a nil-all draw
-    expect(await runBattle(io, false)).toEqual([
+    expect(phases(await runBattle(io, false))).toEqual([
       'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'winner',
     ])
+  })
+
+  it('carries both fighters onto every beat', async () => {
+    const io = fakeIo()
+    queueSong(ALICE)
+    await negotiate(io, { queueId: 1, challengerSingerId: 'p1', opponentSingerId: 'p2' })
+
+    const turn = Battle.startTurn(io, ROOM_ID, 1, false)
+
+    // The invite that carried these was deleted the moment the row was
+    // written, minutes before the stage asked. Read back off the queue row or
+    // the whole battle is drawn as two default fighters.
+    expect(turn?.challengerSingerId).toBe('p1')
+    expect(turn?.opponentSingerId).toBe('p2')
+  })
+
+  it('draws a battle queued before the roster existed with no fighter recorded', async () => {
+    const io = fakeIo()
+    queueSong(ALICE)
+    await negotiate(io, { queueId: 1 })
+
+    // exactly what a row written by an older build holds
+    db.run('UPDATE queue SET singerId = NULL, opponentSingerId = NULL WHERE queueId = 1')
+
+    const turn = Battle.startTurn(io, ROOM_ID, 1, false)
+
+    // empty rather than null or absent: battleSingerOrDefault reads that as
+    // "the first playable fighter" and the row still runs
+    expect(turn?.challengerSingerId).toBe('')
+    expect(turn?.opponentSingerId).toBe('')
   })
 
   it('refuses a row that is not a battle, and never starts two', async () => {
@@ -393,7 +561,7 @@ describe('the beats', () => {
     await negotiate(io, { queueId: 1 })
 
     Battle.startTurn(io, ROOM_ID, 1, false)
-    await vi.advanceTimersByTimeAsync(10000) // versus, intro1
+    await vi.advanceTimersByTimeAsync(17000) // versus, intro1
     expect(Battle.getTurn(ROOM_ID)?.phase).toBe('sing1')
 
     // the opponent's side reported against the challenger's beat is a stale
@@ -411,22 +579,32 @@ describe('the beats', () => {
     await negotiate(io, { queueId: 1 })
 
     Battle.startTurn(io, ROOM_ID, 1, false)
-    await vi.advanceTimersByTimeAsync(265000) // through judge, into the ballot
-    expect(Battle.getTurn(ROOM_ID)?.phase).toBe('ballot')
+    await vi.advanceTimersByTimeAsync(269000) // versus, both intros, both songs
+    expect(Battle.getTurn(ROOM_ID)?.phase).toBe('judge')
 
     io.emitted.length = 0
 
-    Battle.vote(ROOM_ID, 1, CAROL, 2)
-    Battle.vote(ROOM_ID, 1, CAROL, 1) // changed their mind; still one vote
-    Battle.vote(ROOM_ID, 1, ALICE, 1) // a fighter voting for herself: ignored
-    Battle.vote(ROOM_ID, 1, BOB, 2) // and the other one
+    Battle.vote(io, ROOM_ID, 1, CAROL, 2)
+    Battle.vote(io, ROOM_ID, 1, CAROL, 1) // changed their mind; still one vote
+    Battle.vote(io, ROOM_ID, 1, ALICE, 1) // a fighter voting for herself: ignored
+    Battle.vote(io, ROOM_ID, 1, BOB, 2) // and the other one
 
-    // nothing goes out while the ballot is open — a count the room can watch
-    // fill collects the undecided behind whoever is ahead
-    expect(io.emitted).toEqual([])
+    // The count goes out and the split does not — the two facts the whole
+    // design turns on. A room that cannot see the ballot filling decides the
+    // feature is broken; a room that can see who is ahead stops judging who
+    // sang. So every re-send carries a rising ballotsIn and two scores still
+    // reading zero.
+    const open = io.emitted.map(e => e.payload as BattleTurn)
 
-    // out of the ballot and into the verdict, which is shorter than it is
-    await vi.advanceTimersByTimeAsync(20000)
+    // Two re-sends, not four: the two fighters were turned away before they
+    // reached the count, and Carol changing her mind replaced her vote rather
+    // than adding one — so the room is told "one in" twice and never "two".
+    expect(open.map(p => p.ballotsIn)).toEqual([1, 1])
+    expect(open.every(p => p.phase === 'judge')).toBe(true)
+    expect(open.every(p => p.challengerScore === 0 && p.opponentScore === 0)).toBe(true)
+
+    // out of the ask and into the verdict, thirty seconds later
+    await vi.advanceTimersByTimeAsync(31000)
 
     const turn = Battle.getTurn(ROOM_ID)
     expect(turn?.phase).toBe('winner')
@@ -434,8 +612,40 @@ describe('the beats', () => {
     expect(turn?.opponentScore).toBe(0)
 
     // and a vote after the beat has closed is not a vote
-    Battle.vote(ROOM_ID, 1, CAROL, 2)
+    Battle.vote(io, ROOM_ID, 1, CAROL, 2)
     expect(Battle.getTurn(ROOM_ID)?.opponentScore).toBe(0)
+  })
+
+  it('counts the room for the ballot, less the two fighters', async () => {
+    const io = fakeIo()
+    queueSong(ALICE)
+    await negotiate(io, { queueId: 1 })
+
+    // fakeIo holds five sockets: Alice, Bob twice, Carol, and the player
+    // display. getSingers resolves that to three people, and Alice and Bob are
+    // the ones fighting — so one phone in the room can vote.
+    Battle.startTurn(io, ROOM_ID, 1, false, (await Battle.getSingers(io, ROOM_ID, 0)).length)
+    await vi.advanceTimersByTimeAsync(269000)
+
+    const turn = Battle.getTurn(ROOM_ID)
+    expect(turn?.phase).toBe('judge')
+    expect(turn?.ballotsOf).toBe(1)
+    expect(turn?.ballotsIn).toBe(0)
+  })
+
+  it('offers no denominator on the crowd path', async () => {
+    const io = fakeIo()
+    setJudging('crowd')
+    queueSong(ALICE)
+    await negotiate(io, { queueId: 1 })
+
+    // Nobody votes on a phone when the microphone is judging, and a ballot row
+    // drawn with a room size behind it would be a row waiting for taps that
+    // are never coming.
+    Battle.startTurn(io, ROOM_ID, 1, true, (await Battle.getSingers(io, ROOM_ID, 0)).length)
+    await vi.advanceTimersByTimeAsync(269000)
+
+    expect(Battle.getTurn(ROOM_ID)?.ballotsOf).toBe(0)
   })
 
   it('carries both crowd grades into the verdict', async () => {
@@ -445,7 +655,7 @@ describe('the beats', () => {
     await negotiate(io, { queueId: 1 })
 
     Battle.startTurn(io, ROOM_ID, 1, true)
-    await vi.advanceTimersByTimeAsync(265000) // through judge, into meter1
+    await vi.advanceTimersByTimeAsync(275000) // through the ask, into meter1
 
     Battle.score(io, ROOM_ID, 1, 1, 61)
     Battle.score(io, ROOM_ID, 1, 2, 4200) // clamped to the maximum

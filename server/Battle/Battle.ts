@@ -4,8 +4,9 @@ import getLogger from '../lib/Log.js'
 import Rooms, { STATUSES } from '../Rooms/Rooms.js'
 import Queue from '../Queue/Queue.js'
 import {
-  BATTLE_BALLOT_MS,
   BATTLE_INTRO_MS,
+  BATTLE_INVITE_MS,
+  BATTLE_JUDGE_BALLOT_MS,
   BATTLE_JUDGE_MS,
   BATTLE_JUDGING_DEFAULT,
   BATTLE_METER_MS,
@@ -14,6 +15,7 @@ import {
   BATTLE_WINNER_MS,
   clampBattleScore,
   type BattleInvite,
+  type BattleInviteEnd,
   type BattleJudging,
   type BattleJudgingPref,
   type BattlePhase,
@@ -32,7 +34,8 @@ import {
 const log = getLogger('Battle')
 
 /** How long each beat holds the stage. Two of them — the singing beats — are
- *  ceilings rather than durations: the song running out ends them early. */
+ *  ceilings rather than durations: the song running out ends them early. And
+ *  one of them, `judge`, is only the crowd path's length; see beatMs. */
 const BEAT_MS: Record<BattlePhase, number> = {
   versus: BATTLE_VERSUS_MS,
   intro1: BATTLE_INTRO_MS,
@@ -40,11 +43,27 @@ const BEAT_MS: Record<BattlePhase, number> = {
   intro2: BATTLE_INTRO_MS,
   sing2: BATTLE_SING_MS,
   judge: BATTLE_JUDGE_MS,
-  ballot: BATTLE_BALLOT_MS,
   meter1: BATTLE_METER_MS,
   meter2: BATTLE_METER_MS,
   winner: BATTLE_WINNER_MS,
 }
+
+/** How long this beat holds the stage in this fight.
+ *
+ *  `judge` is the one beat whose length is not a property of the beat. Under
+ *  `crowd` it is five seconds of asking a question that two metering beats
+ *  then answer; under `ballot` nothing follows it, so it *is* the answering —
+ *  the question, the two names and the filling ballot row are one screen, and
+ *  it runs for exactly as long as the two meters it replaces. Judging costs a
+ *  room thirty seconds either way, give or take the crowd path's five-second
+ *  ask, which is the only reason an operator can flip the setting without
+ *  re-planning the evening.
+ *
+ *  Under `none` the beat is not in the sequence at all, so the crowd length is
+ *  the harmless reading. */
+const beatMs = (phase: BattlePhase, judging: BattleJudging): number => (
+  phase === 'judge' && judging === 'ballot' ? BATTLE_JUDGE_BALLOT_MS : BEAT_MS[phase]
+)
 
 /** The beats a battle always runs, in order. The judging beats are spliced in
  *  before the last one — see JUDGING_BEATS. */
@@ -52,20 +71,21 @@ const BEATS: BattlePhase[] = ['versus', 'intro1', 'sing1', 'intro2', 'sing2', 'w
 
 /** What each way of deciding a fight costs in beats.
  *
- *  `crowd` is two meters, one fighter at a time, because a room cannot shout
- *  for two people at once and a microphone cannot tell them apart if it does.
- *  `ballot` is one: every phone holds both names and answers whenever it is
- *  ready. `none` is the room having asked for a microphone the player has not
- *  got — metering a silent input would hand every battle to whoever the
- *  rounding favoured, so nothing is metered and the verdict is a draw.
+ *  `crowd` is three: the ask, then two meters, one fighter at a time, because
+ *  a room cannot shout for two people at once and a microphone cannot tell
+ *  them apart if it does. `ballot` is one — asking the room and counting the
+ *  room are the same screen, so they are the same beat, and a phone holding
+ *  both names has nothing to watch that would be worth a beat of its own.
+ *  `none` is the room having asked for a microphone the player has not got —
+ *  metering a silent input would hand every battle to whoever the rounding
+ *  favoured, so nothing is metered and the verdict is a draw.
  *
- *  `judge` leads both of the deciding modes rather than sitting in BEATS,
- *  because it is the question they answer. Under `none` there is nothing to
- *  answer it with, and five seconds of asking "who wins" immediately before
- *  announcing a nil-all draw reads as a screen that has crashed rather than as
- *  a rule. */
+ *  `judge` sits here rather than in BEATS because under `none` there is
+ *  nothing to answer it with, and five seconds of asking "who wins"
+ *  immediately before announcing a nil-all draw reads as a screen that has
+ *  crashed rather than as a rule. */
 const JUDGING_BEATS: Record<BattleJudging, BattlePhase[]> = {
-  ballot: ['judge', 'ballot'],
+  ballot: ['judge'],
   crowd: ['judge', 'meter1', 'meter2'],
   none: [],
 }
@@ -73,7 +93,8 @@ const JUDGING_BEATS: Record<BattleJudging, BattlePhase[]> = {
 /** Everything about a fight that is settled before the first beat and does not
  *  change during it. The per-beat payload is built by spreading this, which is
  *  what keeps every emit a fresh object — see the comment on advance. */
-type BattleFighters = Omit<BattleTurn, 'phase' | 'endsAt' | 'sentAt' | 'challengerScore' | 'opponentScore'>
+type BattleFighters = Omit<BattleTurn,
+  'phase' | 'endsAt' | 'sentAt' | 'challengerScore' | 'opponentScore' | 'ballotsIn' | 'ballotsOf'>
 
 interface ActiveBattle {
   queueId: number
@@ -88,6 +109,12 @@ interface ActiveBattle {
    *  vote, and so changing your mind replaces your vote instead of adding
    *  one. Discarded with the battle: a ballot is about one fight. */
   votes: Map<number, BattleSide>
+  /** How many phones could vote: the room as it stood when the battle began,
+   *  less the two fighters. Measured once rather than per beat because the
+   *  count is drawn as a denominator a room reads at a glance, and one that
+   *  crept up every time somebody's phone reconnected would make the ballot
+   *  look like it was losing votes it had already collected. */
+  ballotsOf: number
   /** The payload the room is currently looking at, for a client that joins
    *  part-way through and for matching an early end to the right beat. */
   turn: BattleTurn | null
@@ -100,9 +127,24 @@ interface ActiveBattle {
 const battles = new Map<number, ActiveBattle>()
 
 /** roomId to the challenge thrown in it and not yet answered, plus the queue
- *  row the challenger offered up when they threw it. One per room — two
- *  negotiations at once would race for the same row and the same stage. */
-const invites = new Map<number, { invite: BattleInvite, queueId: number }>()
+ *  row the challenger offered up when they threw it and the timer that ends
+ *  it. One per room — two negotiations at once would race for the same row and
+ *  the same stage. */
+const invites = new Map<number, {
+  invite: BattleInvite
+  queueId: number
+  timer: ReturnType<typeof setTimeout>
+}>()
+
+/** A roster id as the wire may present it: some client's idea of which fighter
+ *  somebody is singing as.
+ *
+ *  The server never looks one up — the roster is client-side art — so this
+ *  cannot validate the value, only refuse to carry a hostile one. It is
+ *  written to the queue row and read back out to every phone in the room, so
+ *  an unbounded string from a socket is somebody else's problem later; the cap
+ *  is generous next to the two characters a real id is. */
+const toSingerId = (id: unknown): string => (typeof id === 'string' ? id.slice(0, 32) : '')
 
 /**
  * Emit to every socket belonging to these people, and to nobody else.
@@ -162,6 +204,31 @@ function getSong (songId: number): { songId: number, artist: string, title: stri
 }
 
 /**
+ * File who each fighter is singing as onto the row that was just written.
+ *
+ * A second statement rather than two more arguments on Queue.setBattle and
+ * Queue.addBattle. Those two are the queue's business — a turn, a singer, a
+ * song — and the roster is the battle's alone: nothing outside this module
+ * reads these columns or knows what the strings mean. Keeping the widening
+ * here also means the two Queue methods, which are already a matched pair with
+ * identical parameter lists, do not have to stay matched through a third
+ * concern.
+ *
+ * The row exists for an instant without them, which costs nothing: it is not
+ * in anybody's queue payload yet, and getFighters reads an absent id as the
+ * default fighter rather than as a failure.
+ */
+function setSingerIds (queueId: number, challengerSingerId: string, opponentSingerId: string): void {
+  const query = sql`
+    UPDATE queue
+    SET singerId = ${challengerSingerId},
+      opponentSingerId = ${opponentSingerId}
+    WHERE queueId = ${queueId}
+  `
+  db.run(String(query), query.parameters)
+}
+
+/**
  * Both fighters and both songs for a queue row, or null if the row is not a
  * runnable battle in this room.
  *
@@ -169,6 +236,11 @@ function getSong (songId: number): { songId: number, artist: string, title: stri
  * for the row to be unrunnable — a singer deleted, a song lost to a rescan —
  * and a single INNER-joined row that either comes back whole or does not come
  * back at all is the validation.
+ *
+ * The two singer ids are the exception to that: they are COALESCEd rather than
+ * joined or required, because a battle queued before 017 ran has none and a
+ * battle is perfectly runnable without one. An empty string here is what
+ * battleSingerOrDefault turns into the first playable fighter.
  */
 function getFighters (roomId: number, queueId: number): BattleFighters | null {
   const query = sql`
@@ -179,6 +251,8 @@ function getFighters (roomId: number, queueId: number): BattleFighters | null {
       opponent.userId AS opponentUserId,
       opponent.name AS opponentName,
       opponent.dateUpdated AS opponentDateUpdated,
+      COALESCE(queue.singerId, '') AS challengerSingerId,
+      COALESCE(queue.opponentSingerId, '') AS opponentSingerId,
       challengerSong.songId AS challengerSongId,
       challengerSong.title AS challengerTitle,
       challengerArtist.name AS challengerArtist,
@@ -204,6 +278,8 @@ function getFighters (roomId: number, queueId: number): BattleFighters | null {
     opponentUserId: number
     opponentName: string
     opponentDateUpdated: number
+    challengerSingerId: string
+    opponentSingerId: string
     challengerSongId: number
     challengerTitle: string
     challengerArtist: string
@@ -222,6 +298,8 @@ function getFighters (roomId: number, queueId: number): BattleFighters | null {
     opponentUserId: row.opponentUserId,
     opponentName: row.opponentName,
     opponentDateUpdated: row.opponentDateUpdated,
+    challengerSingerId: row.challengerSingerId,
+    opponentSingerId: row.opponentSingerId,
     challengerSong: {
       songId: row.challengerSongId,
       artist: row.challengerArtist,
@@ -304,13 +382,21 @@ class Battle {
    * Throws rather than returning null: unlike a beat that quietly fails
    * mid-party, somebody is holding a phone waiting for an answer to this one,
    * and "nothing happened" is the worst of the possible answers.
+   *
+   * The challenge is born with a deadline. Nothing in the room is blocked
+   * while one stands, but the map holds exactly one per room, so a challenge
+   * thrown at somebody who has gone to the bar locks everybody else out of
+   * starting a battle until the challenger notices and cancels — which they
+   * will not, because their screen says "waiting" and waiting is what they
+   * expect to be doing. The timer is the thing that unblocks the room.
    */
-  static async challenge (io, { roomId, challengerUserId, opponentUserId, songId, queueId }: {
+  static async challenge (io, { roomId, challengerUserId, opponentUserId, songId, queueId, singerId }: {
     roomId: number
     challengerUserId: number
     opponentUserId: number
     songId: number
     queueId: number
+    singerId?: unknown
   }): Promise<BattleInvite> {
     if (!this.getPrefs(roomId).isEnabled) throw new Error('Battles are switched off in this room')
     if (challengerUserId === opponentUserId) throw new Error('You can\'t battle yourself')
@@ -333,10 +419,18 @@ class Battle {
       songId: song.songId,
       artist: song.artist,
       title: song.title,
+      challengerSingerId: toSingerId(singerId),
+      // the opponent has not been asked yet; picking is part of accepting
+      opponentSingerId: '',
+      expiresAt: Date.now() + BATTLE_INVITE_MS,
       isAccepted: false,
     }
 
-    invites.set(roomId, { invite, queueId })
+    invites.set(roomId, {
+      invite,
+      queueId,
+      timer: setTimeout(() => { void this.expireInvite(io, roomId) }, BATTLE_INVITE_MS),
+    })
 
     await emitToUsers(io, roomId, [challengerUserId, opponentUserId], {
       type: BATTLE_INVITE,
@@ -347,14 +441,49 @@ class Battle {
   }
 
   /**
+   * Nobody answered: take the challenge away and say so.
+   *
+   * Re-reads the map rather than closing over the invite it was armed with.
+   * The timer is cleared by every path that ends a challenge, but a timer
+   * already in the callback queue when clearTimeout runs still fires, and
+   * firing against a stale closure would clear whatever challenge had been
+   * thrown since. Matching on the map and comparing the deadline is what makes
+   * a late timer a no-op instead of somebody else's cancelled fight.
+   */
+  private static async expireInvite (io, roomId: number): Promise<void> {
+    const pending = invites.get(roomId)
+    if (!pending || pending.invite.expiresAt > Date.now()) return
+
+    const { challengerUserId, opponentUserId } = pending.invite
+
+    clearTimeout(pending.timer)
+    invites.delete(roomId)
+
+    await emitToUsers(io, roomId, [challengerUserId, opponentUserId], {
+      type: BATTLE_INVITE_CLEAR,
+      payload: { reason: 'expired' satisfies BattleInviteEnd },
+    })
+  }
+
+  /**
    * The opponent said yes. Both phones are told again with isAccepted set: the
    * opponent's goes to the library to choose what the challenger sings, and
    * the challenger's says it is waiting for them.
    *
+   * singerId is who they are singing as, chosen on the way to saying yes:
+   * picking a fighter is part of accepting on the opponent's phone, so it
+   * arrives here rather than needing a round trip of its own.
+   *
+   * Accepting stops the clock. The forty-five seconds is on the question, and
+   * the question has been answered — leaving it armed would take the fight
+   * away from somebody thirty seconds into choosing the challenger's song,
+   * with the library open in front of them and nothing on screen having warned
+   * them they were against a clock.
+   *
    * Accepting twice is a no-op rather than an error — a double tap on a phone
    * that has not repainted yet is not a mistake worth a red banner.
    */
-  static async accept (io, roomId: number, userId: number): Promise<void> {
+  static async accept (io, roomId: number, userId: number, singerId?: unknown): Promise<void> {
     const pending = invites.get(roomId)
 
     if (!pending || pending.invite.opponentUserId !== userId) {
@@ -363,10 +492,16 @@ class Battle {
 
     if (pending.invite.isAccepted) return
 
+    clearTimeout(pending.timer)
+
     // a new object rather than a mutation: the same invite is about to be sent
     // again, and a client holding the previous one has to be able to tell them
     // apart by identity
-    pending.invite = { ...pending.invite, isAccepted: true }
+    pending.invite = {
+      ...pending.invite,
+      opponentSingerId: toSingerId(singerId),
+      isAccepted: true,
+    }
 
     await emitToUsers(io, roomId, [pending.invite.challengerUserId, userId], {
       type: BATTLE_INVITE,
@@ -378,6 +513,11 @@ class Battle {
    * Call the challenge off. Either fighter may, at any point before the row
    * exists — declining and backing out are the same operation seen from the
    * two ends, so they are one method with two action types pointing at it.
+   *
+   * Which end it came from is the one thing the two phones cannot work out for
+   * themselves, so it rides out on the clear: the opponent saying no and the
+   * challenger changing their mind leave the other person looking at different
+   * screens, and both are different again from the invite that simply ran out.
    */
   static async clearInvite (io, roomId: number, userId: number): Promise<void> {
     const pending = invites.get(roomId)
@@ -389,10 +529,14 @@ class Battle {
       throw new Error('That isn\'t your challenge')
     }
 
+    clearTimeout(pending.timer)
     invites.delete(roomId)
 
     await emitToUsers(io, roomId, [challengerUserId, opponentUserId], {
       type: BATTLE_INVITE_CLEAR,
+      payload: {
+        reason: (userId === challengerUserId ? 'cancelled' : 'declined') satisfies BattleInviteEnd,
+      },
     })
   }
 
@@ -418,9 +562,16 @@ class Battle {
 
     if (!getSong(songId)) throw new Error('That song is no longer in the library')
 
-    const { challengerUserId, opponentUserId, songId: opponentSongId } = pending.invite
+    const {
+      challengerUserId,
+      opponentUserId,
+      songId: opponentSongId,
+      challengerSingerId,
+      opponentSingerId,
+    } = pending.invite
     const { queueId } = pending
 
+    clearTimeout(pending.timer)
     invites.delete(roomId)
 
     const battle = {
@@ -434,10 +585,17 @@ class Battle {
     // In place where the challenger has a turn to spend, appended where they
     // do not — or where the row they offered has since been sung, moved out of
     // the room or removed, which is the same thing from here.
-    if (!Queue.setBattle({ ...battle, queueId })) Queue.addBattle(battle)
+    const rowId = Queue.setBattle({ ...battle, queueId }) ? queueId : Queue.addBattle(battle)
+
+    // The invite is about to stop existing and it is the only place either
+    // fighter choice was ever written down. The row is where the stage reads
+    // them from five minutes later, so this is the last moment they can be
+    // saved at all.
+    setSingerIds(rowId, challengerSingerId, opponentSingerId)
 
     await emitToUsers(io, roomId, [challengerUserId, opponentUserId], {
       type: BATTLE_INVITE_CLEAR,
+      payload: { reason: 'matched' satisfies BattleInviteEnd },
     })
 
     io.to(Rooms.prefix(roomId)).emit('action', {
@@ -467,7 +625,11 @@ class Battle {
    * The player has reached a battle row: run it.
    *
    * canHearRoom is the player's own answer to "can you hear this room" — it is
-   * the machine with the microphone, so it is the only one that knows. It only
+   * the machine with the microphone, so it is the only one that knows.
+   * roomSize arrives the same way and for the same reason: counting the room
+   * means asking the socket server, which is I/O, and the guard and the store
+   * below are one uninterruptible synchronous stretch on purpose. Measured by
+   * the caller before it gets here, so nothing awaits in the middle. It only
    * matters to a room set to crowd scoring, and a no there drops both metering
    * beats rather than running them against silence — along with the question
    * they answer. A room on the default silent ballot never asks the player for
@@ -482,7 +644,7 @@ class Battle {
    * Failure is silence. A row that is not a runnable battle logs and returns
    * null, the player moves on, and the room never sees an error mid-party.
    */
-  static startTurn (io, roomId: number, queueId: number, canHearRoom: boolean): BattleTurn | null {
+  static startTurn (io, roomId: number, queueId: number, canHearRoom: boolean, roomSize = 0): BattleTurn | null {
     if (battles.has(roomId)) return null
 
     const fighters = getFighters(roomId, queueId)
@@ -503,6 +665,9 @@ class Battle {
       challengerScore: 0,
       opponentScore: 0,
       votes: new Map(),
+      // the two fighters hold phones like everyone else and neither of them
+      // votes, so the denominator the room reads is never the room
+      ballotsOf: Math.max(0, roomSize - 2),
       turn: null,
       timer: null,
     })
@@ -540,7 +705,7 @@ class Battle {
       return null
     }
 
-    const ms = BEAT_MS[phase]
+    const ms = beatMs(phase, active.fighters.judging)
 
     active.turn = {
       ...active.fighters,
@@ -549,6 +714,8 @@ class Battle {
       sentAt: Date.now(),
       challengerScore: active.challengerScore,
       opponentScore: active.opponentScore,
+      ballotsIn: active.votes.size,
+      ballotsOf: active.fighters.judging === 'ballot' ? active.ballotsOf : 0,
     }
     active.timer = setTimeout(() => this.advance(io, roomId), ms)
 
@@ -577,23 +744,31 @@ class Battle {
   }
 
   /**
-   * One phone's vote, during the ballot beat.
+   * One phone's vote, during the judging beat of a fight the room is voting on.
    *
-   * Nothing is emitted. A ballot the room can watch filling is not a ballot —
-   * the fighter three votes ahead on the screen collects the undecided, and
-   * the room ends up voting for whoever was quickest rather than for whoever
-   * sang. The tally rides out on the verdict beat like any other grade, which
-   * is also why this needs no re-send race the way score does: the counting is
-   * finished before the beat that shows it is built.
+   * Both halves of that guard matter. The beat is `judge` because asking the
+   * room and counting it are one screen now; and `judge` is also the beat a
+   * crowd-judged fight opens its metering with, where a phone tapping a name
+   * would overwrite a grade the microphone is in the middle of measuring.
+   *
+   * The count goes out, the split does not. Those are different facts and the
+   * design turns on the difference: the room has to see the ballot filling or
+   * it decides the feature is broken and stops voting, but a room that can see
+   * who is ahead stops judging who sang — the fighter three votes up collects
+   * the undecided, and the late half of the room votes with the crowd. So the
+   * beat is re-sent carrying ballotsIn and two scores still reading zero, and
+   * every cell it lights is identical to every other.
+   *
+   * The tally itself rides out on the verdict beat like any other grade.
    *
    * Silent on a refusal for the same reason score is: this is a tap on a phone
    * in a dark room, and a red banner for a vote that landed a half-second
    * after the beat closed is worse than the vote quietly not counting.
    */
-  static vote (roomId: number, queueId: number, userId: number, side: BattleSide): void {
+  static vote (io, roomId: number, queueId: number, userId: number, side: BattleSide): void {
     const active = battles.get(roomId)
     if (!active || active.queueId !== queueId) return
-    if (active.turn?.phase !== 'ballot') return
+    if (active.turn?.phase !== 'judge' || active.fighters.judging !== 'ballot') return
 
     // Neither fighter votes. They are in the room holding phones like everyone
     // else, and a ballot nobody can see is exactly where voting for yourself
@@ -613,6 +788,18 @@ class Battle {
 
     active.challengerScore = clampBattleScore(challenger)
     active.opponentScore = clampBattleScore(opponent)
+
+    // A fresh object rather than an edit of the one on stage, for the reason
+    // advance() spells out: clients cache a clock-drift offset in a WeakMap
+    // keyed on the payload, and a reused object is drawn against an offset
+    // measured minutes ago. sentAt moves with it; endsAt deliberately does
+    // not, because nothing about the deadline has changed.
+    active.turn = { ...active.turn, sentAt: Date.now(), ballotsIn: active.votes.size }
+
+    io.to(Rooms.prefix(roomId)).emit('action', {
+      type: BATTLE_TURN,
+      payload: active.turn,
+    })
   }
 
   /**
@@ -660,6 +847,11 @@ class Battle {
   static stopRoom (roomId: number): void {
     const active = battles.get(roomId)
     if (active?.timer) clearTimeout(active.timer)
+
+    // and the challenge's own deadline, which outlives its room the same way
+    // and would come back to clear an invite thrown after the room restarted
+    const pending = invites.get(roomId)
+    if (pending) clearTimeout(pending.timer)
 
     battles.delete(roomId)
     invites.delete(roomId)

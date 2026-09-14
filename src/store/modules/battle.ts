@@ -169,7 +169,7 @@ export function reportBattleScore (queueId: number, side: BattleSide, score: num
 // ------------------------------------
 // Reducer
 // ------------------------------------
-interface BattleState {
+export interface BattleState {
   /** Everyone else in the room, as of the last time this device asked. */
   singers: BattleSinger[]
   /** The opponent this device has chosen but not yet challenged. Local only,

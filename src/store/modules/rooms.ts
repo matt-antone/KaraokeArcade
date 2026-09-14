@@ -133,7 +133,7 @@ export const requestScoresReset = createAction(TRIVIA_SCORES_RESET, (roomId: num
 // ------------------------------------
 // Reducer
 // ------------------------------------
-interface RoomsState {
+export interface RoomsState {
   result: number[]
   entities: Record<number, Room>
   filterStatus: boolean | string

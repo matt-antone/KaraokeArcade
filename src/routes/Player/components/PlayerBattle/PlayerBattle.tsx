@@ -127,7 +127,7 @@ const beatContent = (
     case 'meter2':
       return <Meter turn={turn} at={at} level={crowd.level} grade={crowd.grade} msLeft={msLeft} />
     case 'winner':
-      return <Winner turn={turn} upNext={upNext} />
+      return <Winner turn={turn} msLeft={msLeft} upNext={upNext} />
   }
 }
 

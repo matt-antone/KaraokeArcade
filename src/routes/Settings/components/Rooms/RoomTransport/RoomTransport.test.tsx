@@ -3,6 +3,10 @@ import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import RoomTransport from './RoomTransport'
+// vi.mock is hoisted above this, so the binding is already the mock. A top-level
+// `await import` would read the same thing but needs a module target this repo
+// does not compile tests with.
+import { setRoomStatus } from 'store/modules/rooms'
 
 const dispatch = vi.fn()
 
@@ -13,8 +17,6 @@ vi.mock('store/hooks', () => ({
 vi.mock('store/modules/rooms', () => ({
   setRoomStatus: vi.fn(arg => ({ type: 'rooms/SET_STATUS', payload: arg })),
 }))
-
-const { setRoomStatus } = await import('store/modules/rooms')
 
 const renderTransport = (status: 'play' | 'paused' | 'stopped' = 'play') =>
   render(<RoomTransport roomId={7} name='LOVESHACK' status={status} />)

@@ -36,7 +36,7 @@ export const setFilterStr = createAction(LIBRARY_FILTER_STRING, (payload: string
 // ------------------------------------
 type LibraryTab = 'artists' | 'songs'
 
-interface LibraryState {
+export interface LibraryState {
   isLoading: boolean
   version: number
   filterStr: string

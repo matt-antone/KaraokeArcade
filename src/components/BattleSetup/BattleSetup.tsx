@@ -473,7 +473,7 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
         <div className={styles.songCard}>
           <img
             className={styles.songArt}
-            src={battleSingerPortrait(battleSingerOrDefault(invite.opponentSingerId), 34)}
+            src={battleSingerPortrait(battleSingerOrDefault(invite.opponentSingerId))}
             alt=''
           />
           <div className={styles.songText}>

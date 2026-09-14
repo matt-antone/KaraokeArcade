@@ -8,7 +8,7 @@ import {
   battleSingerOrDefault,
   battleSingerPortrait,
 } from 'lib/battleSingers'
-import type { RosterSinger } from 'lib/battleSingers'
+import type { BattleSingerLoop, RosterSinger } from 'lib/battleSingers'
 import type { BattleSide, BattleSong, BattleTurn } from 'shared/types'
 import styles from './PlayerBattle.css'
 
@@ -53,10 +53,8 @@ const songLine = (song: BattleSong) => `${song.title} — ${song.artist}`
 const roleOf = (side: BattleSide) => (side === 1 ? 'Singer 1' : 'Singer 2')
 
 /** battleSingerOrDefault never hands back a fighter with no art, so the key
- *  pose always exists. The fallback is here because the signature allows a
- *  null and `background-image: url('')` re-fetches the page itself. */
-const keyArtOf = (singer: RosterSinger) =>
-  battleSingerKeyArt(singer) ?? battleSingerPortrait(singer, 80)
+ *  pose always exists and the null the signature allows cannot arrive here. */
+const keyArtOf = (singer: RosterSinger) => battleSingerKeyArt(singer)!
 
 /** Who chose the song this fighter has to sing, which is always the other one.
  *  It is the whole shape of the format and the room needs telling. */
@@ -71,7 +69,7 @@ const progress = (turn: BattleTurn, msLeft: number) =>
 
 /** A fighter's portrait chip, ringed in their own colour. */
 const Portrait = ({ singer, className }: { singer: RosterSinger, className: string }) => (
-  <img className={clsx(styles.chip, className)} src={battleSingerPortrait(singer, 34)} alt='' />
+  <img className={clsx(styles.chip, className)} src={battleSingerPortrait(singer)} alt='' />
 )
 
 /* --- versus ----------------------------------------------------------- */
@@ -475,23 +473,68 @@ export interface BattleUpNext {
   songArtist?: string
 }
 
-export const Winner = ({ turn, upNext }: { turn: BattleTurn, upNext?: BattleUpNext | null }) => {
+/** One of the two fighters as the lights come up.
+ *
+ *  A component rather than two useSpriteFrame calls inside Winner because the
+ *  set differs per side, and a hook cannot be called from a map.
+ *
+ *  Both one-shots are played from how far into the beat the room is, so the
+ *  knockdown and the celebration land together on every screen and neither
+ *  replays if a display remounts halfway through the verdict. */
+const WinFighter = ({ turn, at, set, elapsedMs, isRaised }: {
+  turn: BattleTurn
+  at: BattleSide
+  set: BattleSingerLoop
+  elapsedMs: number
+  isRaised?: boolean
+}) => {
+  const frame = useSpriteFrame(singerOf(turn, at), set, elapsedMs)
+
+  return (
+    <BattleLoop
+      src={frame}
+      facing={facingOf(at)}
+      className={clsx(
+        styles.winSprite,
+        at === 1 ? styles.winSpriteOne : styles.winSpriteTwo,
+        isRaised && styles.winSpriteRaised,
+      )}
+    />
+  )
+}
+
+export const Winner = ({ turn, msLeft, upNext }: {
+  turn: BattleTurn
+  msLeft: number
+  upNext?: BattleUpNext | null
+}) => {
   const isDraw = turn.challengerScore === turn.opponentScore
   const at: BattleSide = turn.challengerScore > turn.opponentScore ? 1 : 2
-  const singer = singerOf(turn, at)
-  // Still a loop rather than a pose, and still the winner's on a draw:
-  // somebody has to be standing on the stage when the lights come up, and an
-  // empty stage under the word DRAW reads as a crash.
-  const frame = useSpriteFrame(singer, 'sing')
+  // Both stamps are the server's, so their difference is the beat's true
+  // length whatever this box's clock says; msLeft has already been through
+  // serverNow. The pair is what makes this the one figure the whole room
+  // agrees on.
+  const elapsedMs = (turn.endsAt - turn.sentAt) - msLeft
+
+  /** The winner celebrates and the loser goes down. On a draw nobody won, so
+   *  nobody gets the victory: both take the knockdown, which is the only pair
+   *  of poses that does not name one of them the winner. */
+  const setFor = (side: BattleSide): BattleSingerLoop =>
+    (!isDraw && side === at ? 'victory' : 'ko')
 
   return (
     <>
       <div className={styles.winScrim} />
-      <BattleLoop
-        src={frame}
-        facing={facingOf(at)}
-        className={clsx(styles.winSprite, upNext && styles.winSpriteRaised)}
-      />
+      {([1, 2] as BattleSide[]).map(side => (
+        <WinFighter
+          key={side}
+          turn={turn}
+          at={side}
+          set={setFor(side)}
+          elapsedMs={elapsedMs}
+          isRaised={!!upNext}
+        />
+      ))}
       <div className={styles.winHead}>
         <div className={clsx(styles.display, styles.winName)} translate='no'>
           {isDraw ? 'Draw' : nameOf(turn, at)}

@@ -78,7 +78,7 @@ const headerHeightChange = createAction<number>(HEADER_HEIGHT_CHANGE)
 // ------------------------------------
 export type QueueTab = 'queue' | 'me' | 'history'
 
-interface UIState {
+export interface UIState {
   isErrored: boolean
   errorMessage: string | null
   footerHeight: number

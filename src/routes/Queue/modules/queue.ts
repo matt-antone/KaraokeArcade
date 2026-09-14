@@ -28,7 +28,7 @@ export const queueSong = createAction(QUEUE_ADD, (songId: number) => ({
 // ------------------------------------
 // Reducer
 // ------------------------------------
-interface QueueState {
+export interface QueueState {
   isLoading: boolean
   result: number[] // queueIds
   entities: Record<number, QueueItem | OptimisticQueueItem>

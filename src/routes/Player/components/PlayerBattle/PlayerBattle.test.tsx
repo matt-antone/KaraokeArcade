@@ -94,8 +94,8 @@ describe('a battle, beat by beat', () => {
     // the colour wedges and both fighters in key art rather than a loop
     expect(versus).toContain('wedgeOne')
     expect(versus).toContain('wedgeTwo')
-    expect(versus).toContain('p1-key.png')
-    expect(versus).toContain('p2-key.png')
+    expect(versus).toContain('fighters/belter/key.png')
+    expect(versus).toContain('fighters/crooner/key.png')
 
     // --- intro1: the challenger alone, with the song their opponent chose.
     // Naming the picker is the point of the beat, so unlike the rest of this
@@ -106,7 +106,7 @@ describe('a battle, beat by beat', () => {
     expect(intro1).toContain('Dot Matrix')
     expect(intro1).toContain('Barracuda')
     expect(intro1).toContain('Picked by Barf')
-    expect(intro1).toContain('p1-dance-')
+    expect(intro1).toContain('fighters/belter/dance.png')
     expect(intro1).not.toContain('Africa')
 
     // --- sing1: the fighter keeps the left third, the video takes the rest
@@ -114,7 +114,7 @@ describe('a battle, beat by beat', () => {
     const sing1 = screen(beat('sing1', 10_000, BATTLE_SING_MS))
     expect(sing1).toContain('Dot Matrix')
     expect(sing1).toContain('Barracuda')
-    expect(sing1).toContain('p1-sing-')
+    expect(sing1).toContain('fighters/belter/sing.png')
     // a clock, not a score: two minutes opens at 2:00, not at 120
     expect(sing1).toContain('2:00')
     // the panel and the hole in the plate behind it are on the same side, and
@@ -133,14 +133,14 @@ describe('a battle, beat by beat', () => {
     expect(intro2).toContain('Barf')
     expect(intro2).toContain('Africa')
     expect(intro2).toContain('Picked by Dot Matrix')
-    expect(intro2).toContain('p2-dance-')
+    expect(intro2).toContain('fighters/crooner/dance.png')
 
     // --- sing2: the whole beat mirrors, panel and hole with it
     at(135_000)
     const sing2 = screen(beat('sing2', 135_000, BATTLE_SING_MS))
     expect(sing2).toContain('Barf')
     expect(sing2).toContain('Africa')
-    expect(sing2).toContain('p2-sing-')
+    expect(sing2).toContain('fighters/crooner/sing.png')
     expect(sing2).toContain('panelTwo')
     expect(sing2).toContain('holeTwo')
     expect(sing2).toContain('singSpriteTwo')
@@ -154,8 +154,8 @@ describe('a battle, beat by beat', () => {
     expect(judge).toContain('Get loud for the one you liked')
     // Both fighters are on stage and neither is named: the room has just heard
     // them and the question is about the singing, not about reading a caption.
-    expect(judge).toContain('p1-key.png')
-    expect(judge).toContain('p2-key.png')
+    expect(judge).toContain('fighters/belter/key.png')
+    expect(judge).toContain('fighters/crooner/key.png')
     expect(judge).not.toContain('Dot Matrix')
     expect(judge).not.toContain('ballotCard')
 
@@ -166,14 +166,14 @@ describe('a battle, beat by beat', () => {
     expect(meter1).toContain('Dot Matrix')
     expect(meter1).toContain('Onboard mic listening')
     expect(meter1).toContain('role="meter"')
-    expect(meter1).toContain('p1-dance-')
+    expect(meter1).toContain('fighters/belter/dance.png')
 
     // --- meter2: and for the opponent
     at(275_000)
     const meter2 = screen(beat('meter2', 275_000, BATTLE_METER_MS))
     expect(meter2).toContain('Barf')
     expect(meter2).toContain('role="meter"')
-    expect(meter2).toContain('p2-dance-')
+    expect(meter2).toContain('fighters/crooner/dance.png')
 
     // --- winner: the verdict, both grades, and the margin between them
     at(290_000)
@@ -186,6 +186,72 @@ describe('a battle, beat by beat', () => {
     expect(winner).toContain('>88<')
     expect(winner).toContain('>41<')
     expect(winner).toContain('By 47')
+    // Both fighters are on the verdict, and which set each plays is the whole
+    // reading of it: side 2 won, so the crooner celebrates and the belter is
+    // on the floor. Swapping these draws the loser taking a bow.
+    expect(winner).toContain('fighters/crooner/victory.png')
+    expect(winner).toContain('fighters/belter/ko.png')
+  })
+
+  /**
+   * A ko ends with the fighter on the floor and a victory with their arm up.
+   * Neither drawing returns to where it started, so both play once and stop
+   * rather than cycling — a looped ko stands the loser back up to be knocked
+   * down again every two seconds, in front of the room.
+   */
+  describe('the verdict one-shots', () => {
+    /** One payload, watched as time passes over it — which is the only way to
+     *  drive this. serverNow pins its correction to the first render of a
+     *  given turn object, so a fresh one always reads as just-sent and the
+     *  animation never leaves frame 0. */
+    const watch = () => {
+      const turn = beat('winner', 290_000, BATTLE_WINNER_MS, {
+        challengerScore: 41,
+        opponentScore: 88,
+      })
+
+      return (intoBeatMs: number) => {
+        at(290_000 + intoBeatMs)
+
+        return screen(turn)
+      }
+    }
+
+    it('starts both fighters on their first frame', () => {
+      vi.useFakeTimers()
+      at(290_000)
+
+      expect(watch()(0)).toContain('background-position:0% 0%')
+    })
+
+    it('walks the animation and then holds its last frame', () => {
+      vi.useFakeTimers()
+      at(290_000)
+      const verdict = watch()
+
+      // 4fps, eight frames: the last is reached at 1.75s and has to still be
+      // the one on screen for the rest of a fifteen-second beat.
+      expect(verdict(0)).toContain('background-position:0% 0%')
+      expect(verdict(750)).toContain('background-position:42.857142857142854% 0%')
+      expect(verdict(1_750)).toContain('background-position:100% 0%')
+      expect(verdict(14_000)).toContain('background-position:100% 0%')
+    })
+
+    it('knocks both fighters down on a draw and stands neither up', () => {
+      vi.useFakeTimers()
+      at(290_000)
+
+      const drawn = screen(beat('winner', 290_000, BATTLE_WINNER_MS, {
+        challengerScore: 50,
+        opponentScore: 50,
+      }))
+
+      expect(drawn).toContain('Draw')
+      expect(drawn).toContain('Nobody wins')
+      expect(drawn).toContain('fighters/belter/ko.png')
+      expect(drawn).toContain('fighters/crooner/ko.png')
+      expect(drawn).not.toContain('victory.png')
+    })
   })
 
   it('zero-pads a single-digit grade rather than letting the band shift', () => {

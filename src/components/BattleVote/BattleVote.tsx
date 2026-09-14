@@ -178,7 +178,7 @@ const BattleVote = () => {
             <div className={styles.rosterRow} key={at}>
               <img
                 className={clsx(styles.portrait, at === 1 ? styles.ringOne : styles.ringTwo)}
-                src={battleSingerPortrait(fighter.singer, 34)}
+                src={battleSingerPortrait(fighter.singer)}
                 alt=''
               />
               <div className={styles.rosterText}>
@@ -234,8 +234,12 @@ const BattleVote = () => {
               className={clsx(styles.key, at === 1 ? styles.keyOne : styles.keyTwo)}
               onClick={e => onVote(at, e)}
             >
+              {/* A pose is a 1x1 cell, so this reads the url straight rather than
+                  going through spriteCellBackground: .keyArt here and .heroArt
+                  below each have their own fit, and the sheet sizing that helper
+                  writes would override both. */}
               {art && (
-                <span className={styles.keyArt} style={{ backgroundImage: `url('${art}')` }} />
+                <span className={styles.keyArt} style={{ backgroundImage: `url('${art.url}')` }} />
               )}
               <span className={styles.keyText}>
                 <span className={clsx(styles.keyLabel, at === 1 ? styles.tintOne : styles.tintTwo)}>VOTE</span>
@@ -279,7 +283,7 @@ const BattleVote = () => {
       </div>
 
       <div className={clsx(styles.pick, vote?.side === 2 ? styles.pickTwo : styles.pickOne)}>
-        <img className={styles.pickArt} src={battleSingerPortrait(picked.singer, 34)} alt='' />
+        <img className={styles.pickArt} src={battleSingerPortrait(picked.singer)} alt='' />
         <div className={styles.pickText}>
           <div className={styles.pickLabel}>YOU VOTED</div>
           <div
@@ -324,7 +328,7 @@ const BattleVote = () => {
 
       <div className={styles.hero}>
         {!isDraw && winArt && (
-          <div className={styles.heroArt} style={{ backgroundImage: `url('${winArt}')` }} />
+          <div className={styles.heroArt} style={{ backgroundImage: `url('${winArt.url}')` }} />
         )}
       </div>
 

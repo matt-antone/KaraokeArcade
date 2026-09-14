@@ -131,7 +131,7 @@ async function serverWorker ({ env, startScanner, stopScanner, shutdownHandlers 
   // http request/response logging
   app.use(koaLogger((str, args) => (args.length === 6 && args[3] >= 500) ? log.error(str) : log.debug(str)))
 
-  app.use(koaFavicon(path.join(env.KES_PATH_ASSETS, 'favicon.ico')))
+  app.use(koaFavicon(path.join(env.KES_PATH_ASSETS, 'brand', 'favicon.ico')))
   app.use(koaRange)
   app.use(koaBody({ multipart: true }))
 

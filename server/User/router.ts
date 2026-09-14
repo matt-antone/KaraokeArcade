@@ -142,8 +142,11 @@ router.post('/user/room', async (ctx) => {
 
   const user = User.getById(ctx.user.userId, true)
 
+  // returned, not just thrown: ctx.throw is not typed as never, so without the
+  // return everything below still sees the `false` getById hands back for a
+  // user that does not exist.
   if (!user) {
-    ctx.throw(404)
+    return ctx.throw(404)
   }
 
   const roomId = parseInt(req.body.roomId, 10) || null
@@ -398,7 +401,9 @@ router.put('/user/:userId', async (ctx) => {
 async function assertMaySignUp (
   fail: Fail,
   actor: { userId: number | null },
-  body: { role: string, roomPassword?: string },
+  body: { role?: string, roomPassword?: string },
+  // Not read off the body: it arrives as a multipart string and is parsed once
+  // by the caller, which is the whole of the signup fix.
   roomId: number | null,
 ) {
   // already signed in?

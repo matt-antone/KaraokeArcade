@@ -10,6 +10,7 @@ import serverNow from 'lib/serverNow'
 import useNow from 'lib/useNow'
 import useTriviaStage from 'lib/useTriviaStage'
 import { answerTrivia } from 'store/modules/trivia'
+import type { TriviaScore } from 'shared/types'
 import styles from './TriviaDialog.css'
 
 /**

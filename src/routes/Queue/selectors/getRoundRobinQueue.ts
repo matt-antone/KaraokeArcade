@@ -1,7 +1,7 @@
 import type { RootState } from 'store/store'
 import { ensureState } from 'redux-optimistic-ui'
 import { createSelector } from '@reduxjs/toolkit'
-import { rotationIdOf, type QueueItem } from 'shared/types'
+import { rotationIdOf, type OptimisticQueueItem, type QueueItem } from 'shared/types'
 import getPlayerHistory from './getPlayerHistory'
 
 const getResult = (state: RootState) => ensureState(state.queue).result
@@ -17,7 +17,7 @@ const getPausedUserIds = (state: RootState) => ensureState(state.queue).pausedUs
  */
 function getSettled (
   result: number[],
-  entities: Record<number, QueueItem>,
+  entities: Record<number, QueueItem | OptimisticQueueItem>,
   history: number[],
   curId: number,
   nextUserId: number | null,
@@ -76,7 +76,7 @@ function getSettled (
  */
 function groupBySinger (
   result: number[],
-  entities: Record<number, QueueItem>,
+  entities: Record<number, QueueItem | OptimisticQueueItem>,
   settled: number[],
   pausedUserIds: number[],
 ): Map<number, number[]> {
@@ -161,7 +161,11 @@ const getRoundRobinQueue = createSelector(
   (result, entities, history, curId, nextUserId, pausedUserIds) => {
     const settled = getSettled(result, entities, history, curId, nextUserId, pausedUserIds)
     const map = groupBySinger(result, entities, settled, pausedUserIds)
-    // should be no optimistic items
+    // Nothing settled can be optimistic: an optimistic row is appended to the
+    // end of the queue and has never been played, so it reaches neither the
+    // play history nor the playing row, and the "lock in next singer" pass
+    // above skips it explicitly. Without the assertion this reads off a row
+    // type that has neither a userId nor a type to derive a rotation id from.
     const resultByUser = settled.map(queueId => rotationIdOf(entities[queueId] as QueueItem))
 
     return {

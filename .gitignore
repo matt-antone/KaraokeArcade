@@ -41,3 +41,6 @@ docs/originals/
 # The art itself is committed at assets/battle/; the bundle it came in stays a
 # local reference, so the repo carries what ships and not what it was drawn from.
 docs/singer-battle/
+.vercel/
+docs/public/
+.vercel

@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "hugo",
-  "buildCommand": "hugo --source docs --gc --destination public",
+  "buildCommand": "npm run docs:build",
   "outputDirectory": "docs/public"
 }

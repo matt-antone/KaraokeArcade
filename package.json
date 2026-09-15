@@ -21,7 +21,9 @@
     "bun": ">=1.2"
   },
   "scripts": {
-    "docs:serve": "hugo serve --source docs -b http://localhost:1313 --bind 0.0.0.0",
+    "docs:tokens": "cp src/styles/variables.css docs/assets/css/deck-tokens.css",
+    "docs:serve": "npm run docs:tokens && hugo serve --source docs -b http://localhost:1313 --bind 0.0.0.0",
+    "docs:build": "npm run docs:tokens && hugo --source docs --gc --destination public",
     "dev": "NODE_ENV=development tsx watch server/main.ts -p 3000",
     "dev:test": "KES_PATH_DATA=\"$PWD/.test-data\" npm run dev",
     "lint": "eslint .",

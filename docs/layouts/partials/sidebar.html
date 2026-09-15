@@ -2,8 +2,8 @@
 <div class="sidebar">
   <header>
     <div class="logo">
-      <a href='/'>
-        Karaoke<span class="logo-subtitle">Part<span class="logo-lastChar">y</span></span>
+      <a href='{{ .Site.BaseURL }}'>
+        Karaoke<span class="logo-subtitle">Arcade</span>
       </a>
       <div class="tagline">Open karaoke party system</div>
     </div>
@@ -47,10 +47,11 @@
           <li class="{{ if eq $lastSeg "karaokearcade-app" }} active{{ end }}"><a
               href="{{ .Site.BaseURL }}docs/karaokearcade-app/">KaraokeArcade <span>(the app)</span></a>
             <ul id="karaokearcade-app-toc">
+              <li><a href="{{ .Site.BaseURL }}docs/karaokearcade-app/#status-strip">Status strip</a></li>
               <li><a href="{{ .Site.BaseURL }}docs/karaokearcade-app/#library">Library</a></li>
               <li><a href="{{ .Site.BaseURL }}docs/karaokearcade-app/#queue">Queue</a></li>
-              <li><a href="{{ .Site.BaseURL }}docs/karaokearcade-app/#account">Account</a>
-              </li>
+              <li><a href="{{ .Site.BaseURL }}docs/karaokearcade-app/#my-account">My Account</a></li>
+              <li><a href="{{ .Site.BaseURL }}docs/karaokearcade-app/#settings-admin-only">Settings</a></li>
               <li><a href="{{ .Site.BaseURL }}docs/karaokearcade-app/#player">Player</a></li>
             </ul>
           </li>

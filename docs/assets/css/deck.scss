@@ -1,0 +1,750 @@
+/* The documentation site, built out of the app's own parts.
+
+   KaraokeArcade's interface is DECK: a graphite component-hi-fi faceplate,
+   machined in steps of light rather than hue, with one signal colour. A
+   reader arriving here from the app should recognise the same box — so this
+   sheet builds the page out of the same three objects the app has, and
+   nothing else:
+
+     panel   a faceplate slab, --brush, seam-ruled. Every block of content.
+     key     anything you press. Bevelled face, travels 1px, amber when live.
+     well    anything recessed: code, fields, the search row. Inset shadow.
+
+   The colour, depth, type and spacing values all come from deck-tokens.css,
+   which IS src/styles/variables.css — the build copies it in rather than
+   restating it, so a token changed in the app repaints this site and the two
+   can never drift. Nothing here may invent a colour; if a rule needs one that
+   is not a token, the rule is wrong.
+
+   The one thing the app has that this doesn't is motion: there is nothing to
+   operate on a documentation page, so keys light rather than travel. */
+
+@font-face {
+  font-family: 'Michroma';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/michroma-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Figtree Variable';
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: swap;
+  src: url('/fonts/figtree-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono Variable';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('/fonts/jetbrains-mono-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+/* The app names these families without the "Variable" suffix, because webpack
+   resolves @fontsource's own @font-face rules. Here the faces are declared
+   above, so the stacks are re-pointed at those names — same files, same order,
+   same fallbacks. */
+:root {
+  --font-display: 'Michroma', 'Arial Narrow', sans-serif;
+  --font-body: 'Figtree Variable', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+
+  /* Reading measure. The app's --content-max is a phone-shaped list; a
+     paragraph needs less, and the docs column is the one place this site
+     departs from the app's spacing. */
+  --measure: 46rem;
+  --sidebar-w: 17rem;
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html {
+  /* the chassis is dark and so is everything the browser draws for us:
+     scrollbars, form controls, the flash before the sheet lands */
+  color-scheme: dark;
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: var(--gap-5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+body {
+  margin: 0;
+  background-color: var(--chassis);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+/* ---- silkscreen -------------------------------------------------------
+   Every label printed on the panel. Same rule as the app: if it is language
+   it is Figtree, if it is a label on the metal it is mono, uppercase and
+   tracked. */
+%silkscreen {
+  font-family: var(--font-mono);
+  font-size: var(--silkscreen-size);
+  font-weight: var(--weight-regular);
+  letter-spacing: var(--silkscreen-tracking);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ---- type ------------------------------------------------------------- */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-body);
+  color: var(--ink);
+  line-height: 1.25;
+  margin: var(--gap-6) 0 var(--gap-3);
+  scroll-margin-top: var(--gap-4);
+}
+
+h1 {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-semibold);
+  letter-spacing: .01em;
+  margin-top: 0;
+  padding-bottom: var(--gap-3);
+  border-bottom: var(--seam-rule);
+}
+
+h2 {
+  font-size: 1.25rem;
+  font-weight: var(--weight-semibold);
+}
+
+h3 {
+  font-size: 1.0625rem;
+  font-weight: var(--weight-semibold);
+}
+
+h4, h5, h6 {
+  font-size: var(--text-l);
+  font-weight: var(--weight-medium);
+  color: var(--ink-2);
+}
+
+p { margin: 0 0 var(--gap-4); }
+
+a {
+  color: var(--vu);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+}
+
+a:hover { text-decoration: underline; }
+
+:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 2px;
+}
+
+strong { font-weight: var(--weight-semibold); }
+
+ul, ol {
+  margin: 0 0 var(--gap-4);
+  padding-left: var(--gap-5);
+}
+
+li { margin-bottom: var(--gap-2); }
+
+li > ul,
+li > ol { margin-top: var(--gap-2); }
+
+hr {
+  border: none;
+  border-top: var(--seam-rule);
+  margin: var(--gap-6) 0;
+}
+
+blockquote {
+  margin: 0 0 var(--gap-4);
+  padding-left: var(--gap-4);
+  border-left: 2px solid var(--hairline);
+  color: var(--ink-2);
+}
+
+img { max-width: 100%; }
+
+/* ---- the well: code ---------------------------------------------------- */
+
+code,
+kbd {
+  font-family: var(--font-mono);
+  font-size: .875em;
+  color: var(--ink);
+  background-color: var(--key-well);
+  box-shadow: var(--well);
+  border-radius: var(--radius-key);
+  padding: .1em .4em;
+}
+
+pre {
+  margin: 0 0 var(--gap-4);
+  padding: var(--gap-4);
+  overflow-x: auto;
+  background-color: var(--key-well);
+  box-shadow: var(--well-deep);
+  border-radius: var(--radius-key);
+  font-size: var(--text-m);
+  line-height: 1.55;
+}
+
+pre code {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  font-size: inherit;
+}
+
+/* Syntax highlighting, in the palette the rest of the panel already uses.
+   Code is the one place on this site with more than one kind of thing to tell
+   apart, and a stock theme would answer that with six hues. It gets two: the
+   inks for structure, and teal — the app's second indicator — for the literal
+   values. Amber is not in here on purpose; on a DECK surface amber means live,
+   and nothing in a code sample is. */
+.chroma {
+  .k, .kc, .kd, .kn, .kp, .kr, .kt { color: var(--ink); font-weight: var(--weight-semibold); }
+  .s, .s1, .s2, .sa, .sb, .sc, .sd, .se, .sh, .si, .sx, .sr, .ss { color: var(--standby); }
+  .m, .mb, .mf, .mh, .mi, .il, .mo { color: var(--standby); }
+  .c, .c1, .cm, .cp, .cpf, .cs, .ch { color: var(--ink-4); font-style: italic; }
+  .n, .na, .nb, .nc, .nd, .ni, .ne, .nf, .nl, .nn, .no, .nt, .nv, .py { color: var(--ink-2); }
+  .o, .ow, .p { color: var(--ink-3); }
+  .err { color: var(--alert); }
+  .ln, .lnt { color: var(--ink-5); }
+  .hl { background-color: var(--vu-well); }
+}
+
+.highlight {
+  position: relative;
+  margin-bottom: var(--gap-4);
+}
+
+.highlight pre { margin-bottom: 0; }
+
+.highlight-copy-btn {
+  @extend %silkscreen;
+
+  position: absolute;
+  top: var(--gap-2);
+  right: var(--gap-2);
+  padding: 4px 8px;
+  color: var(--ink-3);
+  background: var(--key-face);
+  border: none;
+  border-radius: var(--radius-key);
+  box-shadow: var(--bevel);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--dur-ui) var(--ease-key);
+}
+
+.highlight:hover .highlight-copy-btn,
+.highlight-copy-btn:focus-visible { opacity: 1; }
+
+.highlight-copy-btn:hover { color: var(--ink); }
+
+/* ---- layout ------------------------------------------------------------ */
+
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: var(--sidebar-w);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--brush);
+  border-right: var(--seam-rule);
+  box-shadow: var(--edge-top);
+  z-index: 2;
+}
+
+.content.container {
+  margin-left: var(--sidebar-w);
+  max-width: calc(var(--measure) + var(--gap-6) * 2);
+  padding: var(--gap-6) var(--gap-6) var(--gap-6);
+}
+
+/* ---- the app header, rebuilt -------------------------------------------
+   The knob and the two-line wordmark, in the same proportions the app's own
+   header uses: KARAOKE in ink over ARCADE in amber, Michroma, tracked wide.
+   The mark is the app icon — the same file the favicon is cut from. */
+
+.sidebar > header {
+  padding: var(--gap-5) var(--gap-4) var(--gap-4);
+  border-bottom: var(--seam-rule);
+}
+
+.logo { margin-bottom: var(--gap-4); }
+
+.logo a {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  align-items: center;
+  column-gap: var(--gap-3);
+  font-family: var(--font-display);
+  font-size: var(--display-s);
+  line-height: 1.5;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.logo a::before {
+  content: '';
+  grid-row: 1 / 3;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-key);
+  background: url('/brand/app-icon.svg') center / contain no-repeat;
+  box-shadow: var(--bevel);
+}
+
+.logo a:hover { text-decoration: none; }
+
+.logo-subtitle {
+  grid-column: 2;
+  color: var(--vu);
+}
+
+/* The old wordmark set the final character apart for the neon tube effect.
+   DECK has no glow, so the character is simply part of the word. */
+.logo-lastChar { color: inherit; }
+
+.tagline {
+  @extend %silkscreen;
+
+  margin-top: var(--gap-3);
+  color: var(--ink-4);
+}
+
+/* ---- keys: the GitHub row ---------------------------------------------- */
+
+.github-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-1);
+}
+
+.github-buttons a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 var(--gap-3);
+  font-family: var(--font-body);
+  font-size: var(--text-s);
+  font-weight: var(--weight-medium);
+  color: var(--ink-2);
+  background: var(--key-face);
+  border-radius: var(--radius-key);
+  box-shadow: var(--bevel);
+  text-decoration: none;
+}
+
+.github-buttons a:hover {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.github-buttons a:active { transform: translateY(1px); }
+
+.github-buttons svg { flex: none; }
+
+/* ---- nav: a stack of keys ---------------------------------------------- */
+
+#btn-nav {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--target);
+  height: var(--target);
+  color: var(--ink-2);
+  background: var(--key-face);
+  border-radius: var(--radius-key);
+  box-shadow: var(--bevel);
+  cursor: pointer;
+}
+
+#btn-nav svg { width: var(--icon-l); }
+
+.sidebar nav {
+  padding: var(--gap-4) var(--gap-3) var(--gap-6);
+}
+
+.sidebar nav ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A nav row is the link plus, sometimes, the little "leaves the site" mark.
+   They sit on one line: the link takes the row and the mark rides at its end,
+   rather than dropping to a line of its own under it. */
+.sidebar nav li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0;
+}
+
+.sidebar nav li > a { flex: 1 1 auto; }
+
+.sidebar nav li > ul { flex: 1 0 100%; }
+
+.sidebar nav a {
+  display: block;
+  padding: 7px var(--gap-3);
+  border-radius: var(--radius-key);
+  font-size: var(--text-m);
+  font-weight: var(--weight-medium);
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.sidebar nav a:hover {
+  color: var(--ink);
+  background-color: var(--faceplate-hi);
+  text-decoration: none;
+}
+
+/* A lit channel, the way the app marks the tab you are on: amber label and an
+   amber edge down the left, no fill and no glow. */
+.sidebar nav li.active > a,
+.sidebar nav a.active {
+  color: var(--vu);
+  box-shadow: inset 2px 0 0 var(--vu);
+  background-color: var(--faceplate-lo);
+}
+
+/* Nested sections step in and quieten, one level per step of light. */
+.sidebar nav ul ul a {
+  padding-left: var(--gap-5);
+  font-size: var(--text-s);
+  color: var(--ink-3);
+}
+
+.sidebar nav ul ul ul a {
+  padding-left: var(--gap-6);
+  color: var(--ink-4);
+}
+
+.sidebar nav span { color: var(--ink-4); }
+
+.icon {
+  width: var(--icon-s);
+  height: var(--icon-s);
+  fill: currentColor;
+  vertical-align: -2px;
+}
+
+.icon.external {
+  width: 12px;
+  height: 12px;
+  margin-left: 4px;
+  color: var(--ink-4);
+}
+
+/* ---- panels ------------------------------------------------------------ */
+
+/* Tables, asides and figures are the three things on this site that are
+   objects rather than prose, so each one is a panel: a faceplate slab with a
+   seam around it and the page's chassis showing through behind. */
+%panel {
+  background: var(--brush);
+  border: var(--seam-rule);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--bevel);
+}
+
+table {
+  @extend %panel;
+
+  width: 100%;
+  margin: 0 0 var(--gap-4);
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  font-size: var(--text-m);
+}
+
+th {
+  @extend %silkscreen;
+
+  text-align: left;
+  padding: var(--gap-3) var(--gap-4);
+  border-bottom: var(--hair-rule);
+  white-space: nowrap;
+}
+
+td {
+  padding: var(--gap-3) var(--gap-4);
+  border-bottom: var(--seam-rule);
+  vertical-align: top;
+}
+
+tr:last-child td { border-bottom: none; }
+
+/* The swipe-action key table on the app page: an icon, a name, what it does.
+   The icons are the app's own, so they are drawn on key faces here too. */
+.button-descriptions td:first-child {
+  width: var(--target);
+  padding-right: 0;
+}
+
+.button-descriptions svg {
+  width: var(--icon-m);
+  height: var(--icon-m);
+  padding: 3px;
+  fill: var(--ink-2);
+  background: var(--key-face);
+  border-radius: var(--radius-key);
+  box-shadow: var(--bevel);
+}
+
+.button-descriptions svg.danger { fill: var(--alert); }
+
+.button-descriptions td:nth-child(2) {
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+/* ---- asides: indicators ------------------------------------------------
+   An aside is a lit indicator beside the prose, and the app has exactly two
+   states to borrow: teal for standby ("worth knowing") and red for a fault
+   ("this will bite you"). */
+aside {
+  @extend %panel;
+
+  display: grid;
+  grid-template-columns: var(--icon-m) 1fr;
+  gap: var(--gap-3);
+  align-items: start;
+  margin: 0 0 var(--gap-4);
+  padding: var(--gap-4);
+  font-size: var(--text-m);
+  color: var(--ink-2);
+}
+
+aside p:last-child { margin-bottom: 0; }
+
+aside svg {
+  width: var(--icon-m);
+  height: var(--icon-m);
+  margin-top: 1px;
+}
+
+aside.info {
+  border-left: 2px solid var(--standby);
+  background: linear-gradient(180deg, var(--standby-well) 0%, var(--faceplate-lo) 100%);
+}
+
+aside.info svg { fill: var(--standby); }
+
+aside.warn {
+  border-left: 2px solid var(--alert);
+  background: linear-gradient(180deg, #211719 0%, var(--faceplate-lo) 100%);
+}
+
+aside.warn svg { fill: var(--alert); }
+
+/* ---- figures: the phone, on the panel ---------------------------------- */
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-4);
+  margin-bottom: var(--gap-5);
+}
+
+.row figure {
+  flex: 1 1 260px;
+  max-width: 320px;
+}
+
+figure {
+  margin: 0 0 var(--gap-4);
+}
+
+figure img {
+  display: block;
+  width: 100%;
+  border-radius: var(--radius-panel);
+  box-shadow: var(--edge-top);
+}
+
+figcaption {
+  @extend %silkscreen;
+
+  margin-top: var(--gap-2);
+}
+
+figcaption p { margin: 0; }
+
+/* A tapped screenshot fills the chassis. The overlay is the room going dark
+   around one lit panel, so it is the chassis colour and nothing else. */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  place-content: center;
+  padding: var(--gap-5);
+  background-color: rgba(13, 14, 15, .94);
+}
+
+.overlay:target { display: grid; }
+
+.overlay img {
+  max-width: 100%;
+  max-height: 92vh;
+  width: auto;
+  margin: 0 auto;
+  border-radius: var(--radius-panel);
+  box-shadow: var(--edge-top);
+}
+
+/* ---- the gallery on the front page ------------------------------------- */
+
+.screenshots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--gap-3);
+  margin: 0 0 var(--gap-5);
+  padding: 0;
+  list-style: none;
+}
+
+.screenshots li { margin: 0; }
+
+.screenshots img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-panel);
+  box-shadow: var(--bevel);
+}
+
+.screenshots .screenshot-link:hover img { box-shadow: var(--focus-ring); }
+
+/* ---- F.A.Q.: each question is a key you press -------------------------- */
+
+details {
+  @extend %panel;
+
+  margin-bottom: var(--gap-2);
+  overflow: hidden;
+}
+
+summary {
+  padding: var(--gap-3) var(--gap-4);
+  font-weight: var(--weight-semibold);
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+}
+
+summary::-webkit-details-marker { display: none; }
+
+summary::before {
+  content: '';
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-right: var(--gap-3);
+  vertical-align: 2px;
+  border-left: 5px solid var(--ink-4);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform var(--dur-ui) var(--ease-key);
+}
+
+details[open] > summary { border-bottom: var(--seam-rule); }
+
+details[open] > summary::before {
+  transform: rotate(90deg);
+  border-left-color: var(--vu);
+}
+
+details[open] > summary { color: var(--vu); }
+
+details > *:not(summary) {
+  padding: 0 var(--gap-4);
+}
+
+details > :last-child { padding-bottom: var(--gap-4); }
+
+/* ---- footer ------------------------------------------------------------ */
+
+.copyright {
+  @extend %silkscreen;
+
+  margin: 0;
+  padding: var(--gap-5) var(--gap-6);
+  margin-left: var(--sidebar-w);
+  border-top: var(--seam-rule);
+  color: var(--ink-4);
+}
+
+.copyright a {
+  color: var(--ink-3);
+  font-weight: var(--weight-regular);
+}
+
+/* ---- narrow: the sidebar becomes the app's header bar ------------------ */
+
+@media (max-width: 52rem) {
+  .sidebar {
+    position: static;
+    width: auto;
+    border-right: none;
+    border-bottom: var(--seam-rule);
+  }
+
+  .sidebar > header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--gap-4);
+    padding: var(--gap-3) var(--gap-4);
+  }
+
+  .logo { margin-bottom: 0; }
+
+  .tagline { display: none; }
+
+  .github-buttons {
+    grid-column: 1 / 2;
+    grid-row: 2;
+  }
+
+  #btn-nav {
+    display: flex;
+    grid-column: 2;
+    grid-row: 1 / 3;
+  }
+
+  .sidebar nav { display: none; }
+
+  .sidebar nav.active { display: block; }
+
+  .content.container,
+  .copyright {
+    margin-left: 0;
+    padding-left: var(--gutter);
+    padding-right: var(--gutter);
+  }
+
+  .content.container { padding-top: var(--gap-5); }
+}

@@ -5,7 +5,10 @@ permalinks:
   page: "/:slug/"
 markup:
   highlight:
-    style: github-dark
+    # Classes, not inline colours: the code palette is defined in deck.scss out
+    # of the app's own inks, so a highlighted block stays inside the system
+    # instead of importing a second one.
+    noClasses: false
   goldmark:
     renderer:
       unsafe: true

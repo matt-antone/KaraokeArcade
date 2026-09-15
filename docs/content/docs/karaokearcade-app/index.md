@@ -17,12 +17,9 @@ resources:
 - src: 'app-settings.png'
   params:
     galleryOrder: 5
-- src: 'app-displayctrl.png'
-  params:
-    galleryOrder: 6
 - src: 'app-player.jpg'
   params:
-    galleryOrder: 7
+    galleryOrder: 6
 ---
 
 KaraokeArcade is a modern mobile browser app that lets everyone join without having to install anything on their phones. It's built for touch, but a mouse is supported in desktop browsers (click and drag to emulate swipe gestures).
@@ -67,7 +64,6 @@ The queue view has three tabs:
 
 <div class="row">
   {{% img "app-queue.png" "Queue view" /%}}
-  {{% img "app-queue-history.png" "History tab" /%}}
 </div>
 
 KaraokeArcade automatically manages the queue using a round-robin method for fairness, without penalizing those joining later in the party. For example, a latecomer will be able to sing right after the next-up singer regardless of how long the queue was when they joined. Singers who have [paused](#status-strip) are skipped until they resume.
@@ -202,10 +198,6 @@ The Player panel is the only place the player is managed from. It shows whether 
 - **Show Join Code**: Displays the room's QR code and link so singers can join from their phones.
 - **ReplayGain (clip-safe)**: [ReplayGain](https://en.wikipedia.org/wiki/ReplayGain){{% icon-external %}} metadata tags allow the player to automatically minimize volume differences between songs, resulting in a better experience for all, and without affecting the dynamic range of each song (no compression). This option should generally only be enabled when you know all of your media is properly tagged. It normally reduces the player's overall volume significantly, so just turn your output up, and/or your mics down.
 - **Display**: The player's display options - CDG size and alpha, MP4 alpha, video background keying, and the visualizer and its sensitivity.
-
-<div class="row">
-  {{% img "app-displayctrl.png" "Display options" /%}}
-</div>
 
 ### Trivia
 

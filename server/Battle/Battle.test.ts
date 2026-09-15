@@ -456,20 +456,20 @@ describe('the beats', () => {
     return (winner.sentAt - judge.sentAt) / 1000
   }
 
-  it('runs seven beats by default, with no metering beat', async () => {
+  it('runs eight beats by default, with no metering beat', async () => {
     const io = fakeIo()
 
     // The room pref is absent, which is every room made before there was a
     // choice — and the answer has to be the one that works on a player opened
     // anywhere, not the one that needs the host's own microphone.
     //
-    // Seven, not eight: asking the room and counting the room are one screen,
+    // Eight, not nine: asking the room and counting the room are one screen,
     // so `judge` is the whole judging section here and there is no separate
     // ballot beat behind it.
     const turns = await runBattle(io, true)
 
     expect(phases(turns)).toEqual([
-      'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'judge', 'winner',
+      'logo', 'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'judge', 'winner',
     ])
 
     // and that one beat is exactly the two metering beats it replaces, which
@@ -478,14 +478,14 @@ describe('the beats', () => {
     expect(judgingSecs(turns)).toBe(30)
   })
 
-  it('runs all nine beats when the room asked for crowd noise and the player can hear it', async () => {
+  it('runs all ten beats when the room asked for crowd noise and the player can hear it', async () => {
     const io = fakeIo()
     setJudging('crowd')
 
     const turns = await runBattle(io, true)
 
     expect(phases(turns)).toEqual([
-      'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'judge', 'meter1', 'meter2', 'winner',
+      'logo', 'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'judge', 'meter1', 'meter2', 'winner',
     ])
 
     // thirty seconds of metering, the same as the ballot path's one beat, plus
@@ -508,7 +508,7 @@ describe('the beats', () => {
     // question they answer, which on its own is five seconds of asking who
     // wins immediately before announcing a nil-all draw
     expect(phases(await runBattle(io, false))).toEqual([
-      'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'winner',
+      'logo', 'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'winner',
     ])
   })
 
@@ -561,7 +561,7 @@ describe('the beats', () => {
     await negotiate(io, { queueId: 1 })
 
     Battle.startTurn(io, ROOM_ID, 1, false)
-    await vi.advanceTimersByTimeAsync(17000) // versus, intro1
+    await vi.advanceTimersByTimeAsync(22000) // logo, versus, intro1
     expect(Battle.getTurn(ROOM_ID)?.phase).toBe('sing1')
 
     // the opponent's side reported against the challenger's beat is a stale
@@ -579,7 +579,7 @@ describe('the beats', () => {
     await negotiate(io, { queueId: 1 })
 
     Battle.startTurn(io, ROOM_ID, 1, false)
-    await vi.advanceTimersByTimeAsync(269000) // versus, both intros, both songs
+    await vi.advanceTimersByTimeAsync(274000) // logo, versus, both intros, both songs
     expect(Battle.getTurn(ROOM_ID)?.phase).toBe('judge')
 
     io.emitted.length = 0
@@ -625,7 +625,7 @@ describe('the beats', () => {
     // display. getSingers resolves that to three people, and Alice and Bob are
     // the ones fighting — so one phone in the room can vote.
     Battle.startTurn(io, ROOM_ID, 1, false, (await Battle.getSingers(io, ROOM_ID, 0)).length)
-    await vi.advanceTimersByTimeAsync(269000)
+    await vi.advanceTimersByTimeAsync(274000)
 
     const turn = Battle.getTurn(ROOM_ID)
     expect(turn?.phase).toBe('judge')
@@ -643,7 +643,7 @@ describe('the beats', () => {
     // drawn with a room size behind it would be a row waiting for taps that
     // are never coming.
     Battle.startTurn(io, ROOM_ID, 1, true, (await Battle.getSingers(io, ROOM_ID, 0)).length)
-    await vi.advanceTimersByTimeAsync(269000)
+    await vi.advanceTimersByTimeAsync(274000)
 
     expect(Battle.getTurn(ROOM_ID)?.ballotsOf).toBe(0)
   })
@@ -655,7 +655,7 @@ describe('the beats', () => {
     await negotiate(io, { queueId: 1 })
 
     Battle.startTurn(io, ROOM_ID, 1, true)
-    await vi.advanceTimersByTimeAsync(275000) // through the ask, into meter1
+    await vi.advanceTimersByTimeAsync(280000) // through the ask, into meter1
 
     Battle.score(io, ROOM_ID, 1, 1, 61)
     Battle.score(io, ROOM_ID, 1, 2, 4200) // clamped to the maximum

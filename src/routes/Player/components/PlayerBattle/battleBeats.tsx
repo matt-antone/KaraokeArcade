@@ -4,6 +4,7 @@ import BattleLoop from './BattleLoop'
 import useSpriteFrame from './useSpriteFrame'
 import { formatDuration } from 'lib/dateTime'
 import {
+  BATTLE_LOCKUP,
   battleSingerKeyArt,
   battleSingerOrDefault,
   battleSingerPortrait,
@@ -13,7 +14,7 @@ import type { BattleSide, BattleSong, BattleTurn } from 'shared/types'
 import styles from './PlayerBattle.css'
 
 /**
- * The seven beats that draw a stage, one component each.
+ * The eight beats that draw a stage, one component each.
  *
  * They are here rather than in PlayerBattle.tsx so that file stays a
  * switchboard you can read in one screen — which beat is up, which fighter it
@@ -70,6 +71,25 @@ const progress = (turn: BattleTurn, msLeft: number) =>
 /** A fighter's portrait chip, ringed in their own colour. */
 const Portrait = ({ singer, className }: { singer: RosterSinger, className: string }) => (
   <img className={clsx(styles.chip, className)} src={battleSingerPortrait(singer)} alt='' />
+)
+
+/* --- the title card --------------------------------------------------- */
+
+/**
+ * The first scene: the lockup over the darkened room, and nothing else.
+ *
+ * Deliberately the emptiest screen in the sequence. It is the only beat with
+ * no name, no song and no fighter on it, which is the whole of its job — the
+ * room looks up, reads one thing, and the versus card that follows lands on
+ * people who are already watching.
+ *
+ * The lockup is the set's one non-pixel asset and is the only image on this
+ * stage told to sample smoothly; `.lockup` carries that, and it is shared with
+ * the holding card rather than restated. */
+export const Logo = () => (
+  <div className={styles.titleCard}>
+    <img className={styles.lockup} src={BATTLE_LOCKUP} alt='Singer Battle' />
+  </div>
 )
 
 /* --- versus ----------------------------------------------------------- */

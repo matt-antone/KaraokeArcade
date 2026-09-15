@@ -11,7 +11,7 @@ import type { BattlePhase, BattleSide, QueueItem } from 'shared/types'
  * screen. That is not a thing to leave untested inside a 600-line component.
  */
 
-/** Which fighter is at the microphone right now, or null on the seven beats
+/** Which fighter is at the microphone right now, or null on the eight beats
  *  that are not somebody singing. Read from the *live* beat rather than the
  *  stored one on purpose: an expired sing1 must stop playing, not run on into
  *  the intro that follows it. */
@@ -94,7 +94,7 @@ export function resolveMedia (queueItem: QueueItem | undefined, battleSide: Batt
  * Whether the media layer covers the stage. It covers it completely when it
  * does, and the thread field behind stops drawing.
  *
- * A battle row shows media on two of its nine beats and an overlay on the
+ * A battle row shows media on two of its ten beats and an overlay on the
  * other seven, so it is visible only while somebody is actually singing.
  */
 export function getIsMediaVisible ({ queueItem, isTriviaRow, isErrored, isAtQueueEnd, intermissionEndsAt, isBattleRow, battleSide }: {
@@ -108,4 +108,21 @@ export function getIsMediaVisible ({ queueItem, isTriviaRow, isErrored, isAtQueu
 }): boolean {
   return !!queueItem && !isTriviaRow && !isErrored && !isAtQueueEnd
     && !intermissionEndsAt && (!isBattleRow || battleSide !== null)
+}
+
+/**
+ * Whether the row still under the player is one the player is still on.
+ *
+ * At the end of the queue there is nothing to move to, so handleLoadNext sets
+ * isAtQueueEnd and leaves queueId where it was: the finished row goes on being
+ * the current one. That is harmless for a song, whose media is already gone,
+ * and is not for the two row types that draw a screen of their own. They keep
+ * answering "this row is mine" for the rest of the night — the battle stage
+ * sits on its Singer Battle lockup, the trivia mark on its sting — and the
+ * end-of-queue page, which is the one thing that should be up, never gets the
+ * stage back. The lead-in card is a screen for the front of a row, and this is
+ * what stops it being the last thing the room sees.
+ */
+export function getIsRowOnStage (isRowType: boolean, isAtQueueEnd: boolean): boolean {
+  return isRowType && !isAtQueueEnd
 }

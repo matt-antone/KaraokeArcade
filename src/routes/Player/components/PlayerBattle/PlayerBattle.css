@@ -1,4 +1,4 @@
-/* Singer Battle: the TV stage, nine beats, one geometry.
+/* Singer Battle: the TV stage, ten beats, one geometry.
  *
  * This file is the one place in the app that speaks arcade rather than DECK,
  * and src/styles/deck-rules.test.ts exempts it by path so that stays a single
@@ -521,16 +521,23 @@
 }
 
 /* The glass. Also unpainted, for the same reason — the only marks on it are the
-   black inner ring, the lip where the bezel catches light, and the vignette
-   that makes it read as a screen rather than as a cut-out. */
+   black inner ring and the lip where the bezel catches light, both hairlines
+   hard against the frame.
+
+   There was a third: a vignette, 16 units of 0.75 black blurred inward from
+   every edge, there to make the panel read as a screen rather than as a
+   cut-out. It was drawn on top of the karaoke video, and the video is what the
+   person at the microphone is reading. On a 130-unit panel it put a wash across
+   the top and bottom eighth of the lyrics and dimmed the picture throughout.
+   A photographic touch on the one rectangle that is not scenery, and worth
+   nothing against the words being legible from across the room. */
 .screen {
   position: relative;
   width: 100%;
   height: 100%;
   box-shadow:
     inset 0 0 0 calc(1 * var(--px)) #000,
-    inset 0 calc(1 * var(--px)) 0 rgba(255, 255, 255, 0.14),
-    inset 0 0 calc(16 * var(--px)) rgba(0, 0, 0, 0.75);
+    inset 0 calc(1 * var(--px)) 0 rgba(255, 255, 255, 0.14);
 }
 
 .live {
@@ -952,6 +959,19 @@
    or a beat arrived and then stopped, which is the twenty seconds before
    PlayerController gives the row back. The lockup is the one non-pixel asset
    in the set and has to be told not to sample like one. */
+/* --- the title card --------------------------------------------------- */
+
+/* The lockup centred on the darkened room, with nothing else drawn.
+   Unpainted, unlike .holding below: this beat has the stage plate behind it at
+   toneDark, and covering a room the design just dimmed with a flat black would
+   throw away the one thing that says which stage the fight is on. */
+.titleCard {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
 .holding {
   position: absolute;
   inset: 0;

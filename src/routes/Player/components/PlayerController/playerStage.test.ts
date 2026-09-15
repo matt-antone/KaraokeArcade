@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { NO_MEDIA, getBattleSide, getIsMediaVisible, resolveMedia } from './playerStage'
+import { NO_MEDIA, getBattleSide, getIsMediaVisible, getIsRowOnStage, resolveMedia } from './playerStage'
 import type { QueueItem } from 'shared/types'
 
 /**
@@ -115,10 +115,32 @@ describe('getIsMediaVisible', () => {
     expect(getIsMediaVisible({ ...playing, ...override })).toBe(false)
   })
 
-  // a battle shows media on two of its nine beats and an overlay on the rest
+  // a battle shows media on two of its ten beats and an overlay on the rest
   it('shows a battle only while somebody is singing', () => {
     expect(getIsMediaVisible({ ...playing, isBattleRow: true, battleSide: null })).toBe(false)
     expect(getIsMediaVisible({ ...playing, isBattleRow: true, battleSide: 1 })).toBe(true)
     expect(getIsMediaVisible({ ...playing, isBattleRow: true, battleSide: 2 })).toBe(true)
+  })
+})
+
+describe('getIsRowOnStage', () => {
+  it('gives a battle row the stage while the player is on it', () => {
+    expect(getIsRowOnStage(true, false)).toBe(true)
+  })
+
+  /* The one that was shipped. handleLoadNext leaves queueId on the finished row
+     when there is nothing to move to, so a battle last in the queue stays the
+     current row for the rest of the night — and PlayerBattle, with no beat to
+     draw, holds the display on the Singer Battle lockup and "Getting ready".
+     The lead-in card is a screen for the front of a fight; here it was the last
+     thing the room saw, with the end-of-queue page never getting the stage
+     back. */
+  it('takes it away once the queue has run out under it', () => {
+    expect(getIsRowOnStage(true, true)).toBe(false)
+  })
+
+  it('never gives it to an ordinary song row', () => {
+    expect(getIsRowOnStage(false, false)).toBe(false)
+    expect(getIsRowOnStage(false, true)).toBe(false)
   })
 })

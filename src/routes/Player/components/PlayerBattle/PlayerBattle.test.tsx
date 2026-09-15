@@ -8,6 +8,7 @@ import {
   BATTLE_INTRO_MS,
   BATTLE_JUDGE_BALLOT_MS,
   BATTLE_JUDGE_MS,
+  BATTLE_LOGO_MS,
   BATTLE_METER_MS,
   BATTLE_SING_MS,
   BATTLE_VERSUS_MS,
@@ -82,6 +83,25 @@ afterEach(() => {
 describe('a battle, beat by beat', () => {
   it('draws each beat and only that beat', () => {
     vi.useFakeTimers()
+
+    // --- logo: the title card, and nothing else. The assertions that matter
+    // here are the absences: this beat is the only one in the sequence with no
+    // fighter, no name and no song on it, and the moment one of those leaks in
+    // it has stopped being a title card and become a second versus screen.
+    at(-BATTLE_LOGO_MS)
+    const logo = screen(beat('logo', -BATTLE_LOGO_MS, BATTLE_LOGO_MS))
+    expect(logo).toContain('logo-singer-battle.png')
+    expect(logo).toContain('titleCard')
+    expect(logo).not.toContain('Dot Matrix')
+    expect(logo).not.toContain('Barf')
+    expect(logo).not.toContain('Barracuda')
+    expect(logo).not.toContain('Africa')
+    expect(logo).not.toContain('fighters/')
+    // and it is a beat, not the holding card the player draws while a payload
+    // is in flight — that one covers the plate with a flat black and says a
+    // word; this one is the lockup over the room the fight is in
+    expect(logo).not.toContain('holding')
+    expect(logo).toContain('plate')
 
     // --- versus: both fighters, both songs, before a note is played
     at(0)
@@ -390,7 +410,7 @@ describe('a player that cannot hear the room', () => {
   it('never draws a crowd meter, and says why the verdict is a draw', () => {
     vi.useFakeTimers()
 
-    // The seven beats such a battle actually has: the server skips meter1 and
+    // The eight beats such a battle actually has: the server skips meter1 and
     // meter2 entirely rather than showing the room two bars that never move.
     const silent: BattlePhase[] = ['versus', 'intro1', 'sing1', 'intro2', 'sing2', 'judge', 'winner']
 

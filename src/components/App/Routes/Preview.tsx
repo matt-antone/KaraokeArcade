@@ -77,6 +77,8 @@ const Preview = ({ scene }: { scene: string }) => {
     } else if (scene === 'trivia-phone-board') {
       dispatch({ type: 'trivia/ROUND', payload: round({ questionNumber: 5 }) })
       dispatch({ type: 'trivia/RESULT', payload: finalResult() })
+    } else if (scene === 'battle-logo') {
+      dispatch({ type: 'battle/TURN', payload: turn('logo') })
     } else if (scene === 'battle-versus') {
       dispatch({ type: 'battle/TURN', payload: turn('versus') })
     } else if (scene === 'battle-ballot') {

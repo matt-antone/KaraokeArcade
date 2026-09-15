@@ -8,6 +8,7 @@ import {
   BATTLE_INVITE_MS,
   BATTLE_JUDGE_BALLOT_MS,
   BATTLE_JUDGE_MS,
+  BATTLE_LOGO_MS,
   BATTLE_JUDGING_DEFAULT,
   BATTLE_METER_MS,
   BATTLE_SING_MS,
@@ -37,6 +38,7 @@ const log = getLogger('Battle')
  *  ceilings rather than durations: the song running out ends them early. And
  *  one of them, `judge`, is only the crowd path's length; see beatMs. */
 const BEAT_MS: Record<BattlePhase, number> = {
+  logo: BATTLE_LOGO_MS,
   versus: BATTLE_VERSUS_MS,
   intro1: BATTLE_INTRO_MS,
   sing1: BATTLE_SING_MS,
@@ -67,7 +69,7 @@ const beatMs = (phase: BattlePhase, judging: BattleJudging): number => (
 
 /** The beats a battle always runs, in order. The judging beats are spliced in
  *  before the last one — see JUDGING_BEATS. */
-const BEATS: BattlePhase[] = ['versus', 'intro1', 'sing1', 'intro2', 'sing2', 'winner']
+const BEATS: BattlePhase[] = ['logo', 'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'winner']
 
 /** What each way of deciding a fight costs in beats.
  *

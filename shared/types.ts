@@ -345,13 +345,24 @@ export interface TriviaResult {
 }
 
 /** How long each beat of a battle holds the stage, in ms. The whole sequence
- *  is nine beats and runs a shade over five minutes, so these are the numbers
+ *  is ten beats and runs a shade over five minutes, so these are the numbers
  *  that decide how much of the night one battle costs.
  *
  *  The three splashes are the same length on purpose: a room reads "something
  *  is about to happen" from the rhythm, and a rhythm needs a beat it can
  *  predict. The judging beats are longer because a crowd needs a moment to
  *  work out that it is being asked for something. */
+/** The title card: the Singer Battle lockup, and nothing else on the screen.
+ *
+ *  Its own beat rather than the gap before one. The lockup used to be drawn
+ *  only by the player's holding card — the thing on screen while the server's
+ *  first payload is in flight — which made the opening scene of a battle a
+ *  race against the network: on a quick room nobody saw it, and the one place
+ *  it reliably stayed up was the end of the queue, where it was stuck. A scene
+ *  the room is meant to see is a beat like any other, sent by the server and
+ *  the same length on every screen watching. */
+export const BATTLE_LOGO_MS = 5000
+
 export const BATTLE_VERSUS_MS = 5000
 export const BATTLE_INTRO_MS = 12000
 export const BATTLE_JUDGE_MS = 5000
@@ -388,6 +399,7 @@ export const BATTLE_SING_MS = 120000
 /** The beats, in order. The player draws one thing per beat and nothing else,
  *  and the server hands out exactly one of these at a time.
  *
+ *  - `logo`     the title card: Singer Battle, and nothing else
  *  - `versus`   both fighters, both songs, before a note is played
  *  - `intro1`   the challenger alone
  *  - `sing1`    the challenger sings the song their opponent chose
@@ -403,7 +415,8 @@ export const BATTLE_SING_MS = 120000
  *  `judge` and no metering at all. There is no separate `ballot` phase: asking
  *  the room and counting the room are one screen, so they are one beat. */
 export type BattlePhase
-  = | 'versus'
+  = | 'logo'
+    | 'versus'
     | 'intro1'
     | 'sing1'
     | 'intro2'

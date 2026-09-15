@@ -18,7 +18,7 @@ import useBattleStage from 'lib/useBattleStage'
 import { requestTriviaRound } from 'store/modules/trivia'
 import { battleSongEnded, requestBattleTurn } from 'store/modules/battle'
 import getSkipEndsAt, { INTERMISSION_MS } from './getSkipEndsAt'
-import { getBattleSide, getIsMediaVisible, resolveMedia } from './playerStage'
+import { getBattleSide, getIsMediaVisible, getIsRowOnStage, resolveMedia } from './playerStage'
 import { SONG_PLAYED } from 'shared/actionTypes'
 import {
   isBattleItem, isTriviaItem, rotationIdOf,
@@ -231,8 +231,9 @@ const PlayerController = (props: PlayerControllerProps) => {
 
   // The current queue row is a trivia round rather than a song. It takes its
   // turn exactly as a singer's row does: the player stops here, asks the
-  // question, and moves on when the round is done.
-  const isTriviaRow = isTriviaItem(queueItem)
+  // question, and moves on when the round is done — and stops owning the stage
+  // the moment the queue runs out under it. See getIsRowOnStage.
+  const isTriviaRow = getIsRowOnStage(isTriviaItem(queueItem), player.isAtQueueEnd)
   const isTriviaOnStage = isTriviaRow && trivia.round?.queueId === player.queueId
 
   // The mark holds the stage for the whole handover: the intermission that
@@ -244,8 +245,8 @@ const PlayerController = (props: PlayerControllerProps) => {
   // The same trio again for battles. A battle row takes its turn exactly as a
   // singer's does — the player stops here, asks the server to run it, and moves
   // on when the verdict is over — but where a trivia round is one screen, a
-  // battle is nine beats, two of which are songs playing.
-  const isBattleRow = isBattleItem(queueItem)
+  // battle is ten beats, two of which are songs playing.
+  const isBattleRow = getIsRowOnStage(isBattleItem(queueItem), player.isAtQueueEnd)
   const isBattleOnStage = isBattleRow && liveBattle.turn?.queueId === player.queueId
 
   const battleSide = getBattleSide(isBattleOnStage, liveBattle.phase)
@@ -612,7 +613,7 @@ const PlayerController = (props: PlayerControllerProps) => {
 
   return (
     <>
-      {/* A battle overlay is opaque on seven of its nine beats and the media
+      {/* A battle overlay is opaque on eight of its ten beats and the media
           covers the other two, so the thread field has to stop for the whole
           row — otherwise it burns a core behind the fight for five minutes. */}
       <PlayerBackdrop isCovered={isMediaVisible || isTriviaLeadIn || isBattleRow} />

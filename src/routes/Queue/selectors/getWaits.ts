@@ -3,6 +3,7 @@ import { createSelector } from '@reduxjs/toolkit'
 import {
   BATTLE_INTRO_MS,
   BATTLE_JUDGE_MS,
+  BATTLE_LOGO_MS,
   BATTLE_METER_MS,
   BATTLE_SING_MS,
   BATTLE_VERSUS_MS,
@@ -18,8 +19,8 @@ const getQueue = (state: RootState) => getRoundRobinQueue(state)
 const getQueueId = (state: RootState) => state.status.queueId
 const getSongs = (state: RootState) => state.songs
 
-/** Everything in a battle that is not singing: the versus splash, both fighter
- *  intros, the judging section and the verdict. Seconds, because every
+/** Everything in a battle that is not singing: the title card, the versus
+ *  splash, both fighter intros, the judging section and the verdict. Seconds, because every
  *  duration in this file is.
  *
  *  The judging section is the crowd path's — a short ask plus two metering
@@ -41,7 +42,8 @@ const getSongs = (state: RootState) => state.songs
  *  A player that cannot hear the room skips metering entirely and the row runs
  *  thirty-five seconds shorter than this. Same trade, same direction. */
 const BATTLE_OVERHEAD_SECS = (
-  BATTLE_VERSUS_MS + (BATTLE_INTRO_MS * 2) + BATTLE_JUDGE_MS + (BATTLE_METER_MS * 2) + BATTLE_WINNER_MS
+  BATTLE_LOGO_MS + BATTLE_VERSUS_MS + (BATTLE_INTRO_MS * 2)
+  + BATTLE_JUDGE_MS + (BATTLE_METER_MS * 2) + BATTLE_WINNER_MS
 ) / 1000
 
 const BATTLE_SING_SECS = BATTLE_SING_MS / 1000
@@ -93,7 +95,7 @@ const getWaits = createSelector(
           // on a battle this over-counts by however much of the first song is
           // already behind us. Left as is: it decays to correct as the row
           // finishes, and the alternative is teaching this selector which of
-          // the nine beats is on screen, which is the player's business.
+          // the ten beats is on screen, which is the player's business.
           nextWait = Math.round(secs - position)
         }
       } else if (i > curIdx) {

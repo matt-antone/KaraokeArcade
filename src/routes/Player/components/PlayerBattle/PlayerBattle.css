@@ -1,4 +1,4 @@
-/* Singer Battle: the TV stage, nine beats, one geometry.
+/* Singer Battle: the TV stage, ten beats, one geometry.
  *
  * This file is the one place in the app that speaks arcade rather than DECK,
  * and src/styles/deck-rules.test.ts exempts it by path so that stays a single
@@ -959,6 +959,19 @@
    or a beat arrived and then stopped, which is the twenty seconds before
    PlayerController gives the row back. The lockup is the one non-pixel asset
    in the set and has to be told not to sample like one. */
+/* --- the title card --------------------------------------------------- */
+
+/* The lockup centred on the darkened room, with nothing else drawn.
+   Unpainted, unlike .holding below: this beat has the stage plate behind it at
+   toneDark, and covering a room the design just dimmed with a flat black would
+   throw away the one thing that says which stage the fight is on. */
+.titleCard {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
 .holding {
   position: absolute;
   inset: 0;

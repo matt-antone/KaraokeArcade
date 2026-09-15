@@ -4,7 +4,7 @@ import useBattleStage, { sideOfPhase } from 'lib/useBattleStage'
 import { useAppSelector } from 'store/hooks'
 import { BATTLE_LOCKUP, BATTLE_STAGE_PLATE } from 'lib/battleSingers'
 import { CHEER, GROAN, playCue, soundCue } from 'lib/soundCue'
-import { Intro, Judge, Meter, Sing, Versus, Winner, type BattleUpNext } from './battleBeats'
+import { Intro, Judge, Logo, Meter, Sing, Versus, Winner, type BattleUpNext } from './battleBeats'
 import useCrowdMic from './useCrowdMic'
 import type { BattlePhase, BattleSide, BattleTurn } from 'shared/types'
 import styles from './PlayerBattle.css'
@@ -18,6 +18,7 @@ import styles from './PlayerBattle.css'
  *  scenery behind something brighter, and a plate at full brightness under a
  *  scrim reads as fog rather than as a room. */
 const PLATE_TONE: Record<BattlePhase, string> = {
+  logo: styles.toneDark,
   versus: styles.toneDark,
   intro1: styles.toneIntro,
   intro2: styles.toneIntro,
@@ -113,6 +114,8 @@ const beatContent = (
   upNext?: BattleUpNext | null,
 ): React.ReactNode => {
   switch (beat) {
+    case 'logo':
+      return <Logo />
     case 'versus':
       return <Versus turn={turn} />
     case 'intro1':
@@ -135,10 +138,10 @@ const beatContent = (
  * A battle on the TV: one stage that changes what it holds as the server hands
  * out one beat at a time.
  *
- * It is not nine screens. Nine beats arrive, each as its own `BattleTurn` with
+ * It is not ten screens. Ten beats arrive, each as its own `BattleTurn` with
  * its own deadline, and this reads the current one off the clock through
  * useBattleStage and draws exactly that — so two players in a room cannot
- * disagree about who is singing. There are seven beats on the silent-ballot
+ * disagree about who is singing. There are eight beats on the silent-ballot
  * path and nine when the room is scored on crowd noise; the server decides
  * which, and this only ever draws what it is sent.
  *

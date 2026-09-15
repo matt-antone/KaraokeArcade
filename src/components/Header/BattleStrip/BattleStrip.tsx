@@ -14,7 +14,7 @@ import styles from './BattleStrip.css'
  * wait that had stopped moving. The television has the spectacle; this is the
  * caption under it.
  *
- * Deliberately not the nine-beat splash the TV draws, and deliberately not a
+ * Deliberately not the ten-beat splash the TV draws, and deliberately not a
  * modal: the arcade language is illegible at this size, and a panel that owns
  * the phone for five minutes is worse than showing nothing. One row in the
  * chrome, in the deck's own language, saying the one thing the room cannot
@@ -33,6 +33,11 @@ const nameOf = (turn: BattleTurn, side: BattleSide) =>
  *  sentence, and everything else on the row is a readout. */
 const caption = (turn: BattleTurn, side: BattleSide | null): { legend: string, line: string } => {
   switch (turn.phase) {
+    /* The title card names nobody on the television, and this row is not the
+       television: a phone that lights up mid-song is being told which fight is
+       starting, and "Starting now" over two names it cannot see is a strip that
+       has stopped saying anything. */
+    case 'logo':
     case 'versus':
       return { legend: 'singer battle', line: `${turn.challengerName} vs ${turn.opponentName}` }
     case 'intro1':

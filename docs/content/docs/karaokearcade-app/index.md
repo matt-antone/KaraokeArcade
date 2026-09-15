@@ -172,7 +172,7 @@ Rooms have a number of options, including:
 - **Users**: Only users with existing accounts can join a room by default. You can optionally allow users to join with new accounts and/or as guests
 - **QR Code**: Displays a QR code in the room's player that will link users to the app, automatically choosing the room and optionally including the room's password if one is set
 - **Trivia**: Plays music trivia rounds between singers. See [Trivia](#trivia)
-- **Battle**: Lets singers challenge each other to a head-to-head turn. See [Battle](#battle)
+- **Battle**: Lets singers challenge each other to a head-to-head turn, and chooses how the winner is decided. See [Battle](#battle)
 
 **Reset for New Night** hands a used room back in the state a new one arrives in: its queue is emptied, paused singers are un-paused, and the player's list of what has been sung is cleared, so the whole library is selectable again. Use it instead of creating a room per session. Each singer's own record of everything they have ever sung is separate and is not touched.
 
@@ -221,21 +221,32 @@ Questions come from the [Open Trivia Database](https://opentdb.com/){{% icon-ext
 
 A battle is one turn with two singers in it, and each of them picks the other's song. Switch it on per room in the room editor.
 
-- **Allow song battles**: Turns battles on for this room
+- **Allow singer battles**: Turns battles on for this room
+- **Judge singer battles by crowd noise**: Swaps the room vote for the microphone. Off by default - see [Deciding the winner](#deciding-the-winner)
 
-Once it's on, a **Battle** key appears in the [status strip](#status-strip) next to the pause key. Tapping it lists everyone else in the room; pick somebody and the app drops you into the library in *picking for them* mode, where the next song you tap is the one **they** will have to sing. Their phone then shows the challenge - who threw it and what they'd be singing - and they can decline it or accept. Accepting puts them into the library the same way, and the song they pick is the one **you** sing. Neither of you sees the other's choice until the battle is on screen.
+Once it's on, a **Battle** key appears in the [status strip](#status-strip) next to the pause key. Tapping it lists everyone else in the room; pick somebody and the app drops you into the library in *picking for them* mode, where the next song you tap is the one **they** will have to sing. Their phone then shows the challenge - who threw it and what they'd be singing - and it stays open for **45 seconds** before it lapses. Accepting puts them into the library the same way, and the song they pick is the one **you** sing. Neither of you sees the other's choice until the battle is on screen.
+
+Both singers also **pick a fighter** - one of eight, and whoever you pick is who the room watches on stage for your turn. Your own fighter is yours to choose; you do not get a say in your opponent's.
+
+The roster is artwork rather than configuration, so it is fixed at eight. If you want your own, [CharacterAssetGenerator](https://github.com/matt-antone/CharacterAssetGenerator){{% icon-external %}} turns a written brief into the sprite sheets a fighter is made of.
 
 The battle takes over the challenger's next queued song, keeping its exact place in the rotation - so a battle costs the challenger the turn they already had rather than adding one, and nobody waiting behind them moves back. If the challenger has nothing queued, it joins the back of the queue as a new turn. Either singer can back out until both songs are in; after that it's a queue row like any other and the usual swipe actions apply.
 
-When the player reaches it, the row runs as one continuous sequence: both fighters and both songs, then each singer introduced and singing in turn, then the verdict. **Each song is capped at two minutes** - it ends at the cap or when the song runs out, whichever comes first - so a whole battle is about five minutes of the night. That's two songs' worth of queue time spent on one turn, which is the trade to know about before switching it on for a room with a long queue.
+When the player reaches it, the TV stops being a lyrics screen and becomes an arcade cabinet: the two fighters square off, the songs are announced, and the row runs as one continuous sequence - each singer introduced and singing in turn, then the verdict. **Each song is capped at two minutes** - it ends at the cap or when the song runs out, whichever comes first - so a whole battle is about five minutes of the night. That's two songs' worth of queue time spent on one turn, which is the trade to know about before switching it on for a room with a long queue.
 
-The winner is decided by the room. After both songs the player listens through the microphone and takes a reading while the room cheers for each singer in turn, and the loudest one wins. The score climbs on screen as it's measured, and the second singer's turn shows the number they have to beat.
+While a battle is on, every phone in the room carries a strip under the status strip saying who's singing and how long is left on their two minutes.
 
-While a battle is on, every phone in the room carries a strip under the status strip saying who's singing, how long is left on their two minutes, and the scores once there are any.
+#### Deciding the winner
+
+The room decides, and there are two ways it can. Which one a room uses is set in the room editor.
+
+**By vote (the default).** After both songs, every phone in the room shows a ballot for thirty seconds: two keys, one per singer. One vote each, and you can vote whether or not you sang or have anything queued. It is silent in both directions - nobody is told who voted for whom, and **nobody sees the count until the verdict**, including the TV. A tally filling up in public collects the undecided behind whoever is ahead, which measures who voted first rather than who sang better.
+
+**By crowd noise.** Switch on **Judge singer battles by crowd noise** and the ballot is replaced by the player listening through the microphone: it takes a reading while the room cheers for each singer in turn, and the loudest one wins. The score climbs on screen as it's measured, and the second singer's turn shows the number they have to beat.
 
 <aside class="info">
   {{% icon-info %}}
-  <p>Crowd scoring only works on a player opened at <code>http://localhost</code>, on the machine running the server - browsers only hand a page the microphone on a secure origin, and a LAN address isn't one. A player opened anywhere else can't hear the room, and its battles are decided as a draw.</p>
+  <p>Crowd scoring needs a microphone, and browsers only hand a page one on a secure origin - so it works on a player opened at <code>http://localhost</code>, on the machine running the server, and not at a LAN address. If a room is set to crowd noise and its player can't hear the room, those battles are decided as a draw. Rooms on the default vote are unaffected: a ballot runs on the phones and needs nothing of the player's machine.</p>
 </aside>
 
 ### Preferences (admin only)

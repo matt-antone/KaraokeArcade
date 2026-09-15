@@ -2,5 +2,17 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "hugo",
   "buildCommand": "npm run docs:build",
-  "outputDirectory": "docs/public"
+  "outputDirectory": "docs/public",
+  "redirects": [
+    {
+      "source": "/repo",
+      "destination": "https://github.com/matt-antone/KaraokeParty",
+      "permanent": false
+    },
+    {
+      "source": "/discord",
+      "destination": "https://discord.gg/PgqVtFq",
+      "permanent": false
+    }
+  ]
 }

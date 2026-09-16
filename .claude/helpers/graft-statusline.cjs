@@ -55,13 +55,14 @@ function best(dirs, name) {
 
 function entry(name) {
   // Cheap candidates first, and only shell out to npm when every one of them misses.
-  const cheap = [BAKED, fromPkg(dir), fromPkg(path.join(path.dirname(process.execPath), '..', 'lib'))];
+  const cheap = [BAKED, fromPkg(path.join(path.dirname(process.execPath), '..', 'lib'))];
   const hit = best(cheap, name);
   if (hit) return path.join(hit, name);
   const gr = globalRoot();
   const global = gr && path.join(gr, '@nanonets', 'graft', 'dist', 'claude');
   if (global && fs.existsSync(path.join(global, name))) return path.join(global, name);
-  return path.join(dir, 'dist', 'claude', name); // last-ditch; import will no-op if absent
+  return null;
 }
 
-import(pathToFileURL(entry("statusline.js")).href).then((m) => m.main()).catch(() => { /* graft unavailable — no-op */ });
+const e = entry("statusline.js");
+if (e) import(pathToFileURL(e).href).then((m) => m.main()).catch(() => { /* graft unavailable — no-op */ });

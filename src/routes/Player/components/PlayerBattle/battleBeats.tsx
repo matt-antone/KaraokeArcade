@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import clsx from 'clsx'
 import BattleLoop from './BattleLoop'
 import useSpriteFrame from './useSpriteFrame'
@@ -76,12 +76,17 @@ const Portrait = ({ singer, className }: { singer: RosterSinger, className: stri
 /* --- the title card --------------------------------------------------- */
 
 /**
- * The first scene: the lockup over the darkened room, and nothing else.
+ * The first scene: the lockup on black, and nothing else.
  *
  * Deliberately the emptiest screen in the sequence. It is the only beat with
  * no name, no song and no fighter on it, which is the whole of its job — the
  * room looks up, reads one thing, and the versus card that follows lands on
  * people who are already watching.
+ *
+ * Three seconds on flat black. Short, because it says one word and a room that
+ * has read it is only waiting; black, because the dimmed stage plate behind it
+ * made the card read as the opening frame of the versus scene rather than as a
+ * title of its own.
  *
  * The lockup is the set's one non-pixel asset and is the only image on this
  * stage told to sample smoothly; `.lockup` carries that, and it is shared with
@@ -105,8 +110,8 @@ const SplitField = () => (
 )
 
 /** Both fighters facing each other across the seam of the two colour wedges,
- *  drawn in key art rather than a loop: this beat is a poster, and five
- *  seconds of two idle loops reads as two people waiting. */
+ *  drawn in key art rather than a loop: this beat is a poster, and a card that
+ *  holds for five seconds on two idle loops reads as two people waiting. */
 const Pair = ({ turn, className }: { turn: BattleTurn, className?: string }) => (
   <>
     {([1, 2] as BattleSide[]).map(side => (
@@ -120,29 +125,45 @@ const Pair = ({ turn, className }: { turn: BattleTurn, className?: string }) => 
   </>
 )
 
-export const Versus = ({ turn }: { turn: BattleTurn }) => (
-  <>
-    <SplitField />
-    <Pair turn={turn} />
-    <div className={clsx(styles.display, styles.vsWord)}>VS</div>
-    <div className={styles.vsBand}>
-      {([1, 2] as BattleSide[]).map(side => (
-        <div
-          key={side}
-          className={clsx(styles.vsHalf, side === 2 && styles.vsHalfTwo, sideClass(side))}
-        >
-          <div className={clsx(styles.display, styles.vsName, styles.oneLine)} translate='no'>
-            {nameOf(turn, side)}
+/**
+ * The card, which is a scene rather than a still: the pair and the field walk
+ * on, hold, and clear the stage again. The timing lives in PlayerBattle.css
+ * against BATTLE_VERSUS_MS; all that is decided here is where in it this screen
+ * is starting.
+ *
+ * Read once, on mount, and never again: --t0 is an animation-delay, and an
+ * animation-delay that changes restarts the animation it is on — which is every
+ * tick of the clock if this is taken from msLeft as it falls. Both stamps are
+ * the server's, so two screens joining at different moments still land on the
+ * same frame of the same scene.
+ */
+export const Versus = ({ turn, msLeft }: { turn: BattleTurn, msLeft: number }) => {
+  const [elapsedMs] = useState(() => Math.max(0, (turn.endsAt - turn.sentAt) - msLeft))
+
+  return (
+    <div className={styles.vsScene} style={{ '--t0': `${-elapsedMs}ms` } as React.CSSProperties}>
+      <SplitField />
+      <Pair turn={turn} className={styles.pairVersus} />
+      <div className={clsx(styles.display, styles.vsWord)}>VS</div>
+      <div className={styles.vsBand}>
+        {([1, 2] as BattleSide[]).map(side => (
+          <div
+            key={side}
+            className={clsx(styles.vsHalf, side === 2 && styles.vsHalfTwo, sideClass(side))}
+          >
+            <div className={clsx(styles.display, styles.vsName, styles.oneLine)} translate='no'>
+              {nameOf(turn, side)}
+            </div>
+            <div className={clsx(styles.silk, styles.vsSings)}>Sings</div>
+            <div className={clsx(styles.vsSong, styles.oneLine)} translate='no'>
+              {songLine(songOf(turn, side))}
+            </div>
           </div>
-          <div className={clsx(styles.silk, styles.vsSings)}>Sings</div>
-          <div className={clsx(styles.vsSong, styles.oneLine)} translate='no'>
-            {songLine(songOf(turn, side))}
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
-  </>
-)
+  )
+}
 
 /* --- intro ------------------------------------------------------------ */
 

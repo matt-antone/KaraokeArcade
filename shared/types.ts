@@ -348,10 +348,12 @@ export interface TriviaResult {
  *  is ten beats and runs a shade over five minutes, so these are the numbers
  *  that decide how much of the night one battle costs.
  *
- *  The three splashes are the same length on purpose: a room reads "something
- *  is about to happen" from the rhythm, and a rhythm needs a beat it can
- *  predict. The judging beats are longer because a crowd needs a moment to
- *  work out that it is being asked for something. */
+ *  The two opening splashes are deliberately unequal: the title card is the
+ *  shortest beat in the sequence because it says one word, and the versus card
+ *  is the longest of the three because it is a scene rather than a still — the
+ *  fighters and the field slide on, hold, and slide back off, and the hold is
+ *  the only part of it the room is meant to read. The judging beats are longer
+ *  because a crowd needs a moment to work out it is being asked for something. */
 /** The title card: the Singer Battle lockup, and nothing else on the screen.
  *
  *  Its own beat rather than the gap before one. The lockup used to be drawn
@@ -361,9 +363,14 @@ export interface TriviaResult {
  *  it reliably stayed up was the end of the queue, where it was stuck. A scene
  *  the room is meant to see is a beat like any other, sent by the server and
  *  the same length on every screen watching. */
-export const BATTLE_LOGO_MS = 5000
+export const BATTLE_LOGO_MS = 3000
 
-export const BATTLE_VERSUS_MS = 5000
+/** The versus card, which is three movements rather than one still: 2s for the
+ *  fighters to walk on (the field beats them there in 1.75s), a 5s hold that is
+ *  the card itself, and 1.5s to clear the stage for the first intro. The three
+ *  add up to this number, and PlayerBattle.css animates against it — change one
+ *  and the other has to move with it. */
+export const BATTLE_VERSUS_MS = 8500
 export const BATTLE_INTRO_MS = 12000
 export const BATTLE_JUDGE_MS = 5000
 export const BATTLE_METER_MS = 15000

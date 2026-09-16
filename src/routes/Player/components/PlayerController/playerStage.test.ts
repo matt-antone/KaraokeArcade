@@ -68,8 +68,25 @@ describe('resolveMedia', () => {
       keyChange: 0,
       rgTrackGain: -2,
       rgTrackPeak: 0.5,
-      isVideoKeyingEnabled: true,
     })
+  })
+
+  // Keying is a property of the folder a file was scanned from, so two
+  // fighters can disagree about it through no doing of their own — and the
+  // side that has it on gets the alpha player's blurred, darkened backdrop
+  // inside the bezel while the other side gets a plain picture. Off on both
+  // halves, whatever the folders say.
+  it('plays both fighters unkeyed, whatever their folders say', () => {
+    const keyed = { ...battleRow, isVideoKeyingEnabled: true } as unknown as QueueItem
+
+    expect(resolveMedia(keyed, 1).isVideoKeyingEnabled).toBe(false)
+    expect(resolveMedia(keyed, 2).isVideoKeyingEnabled).toBe(false)
+  })
+
+  it('leaves keying alone on an ordinary row', () => {
+    const keyed = { ...battleRow, isVideoKeyingEnabled: true } as unknown as QueueItem
+
+    expect(resolveMedia(keyed, null).isVideoKeyingEnabled).toBe(true)
   })
 
   // a media component reloads only when the key changes, and one queue row is

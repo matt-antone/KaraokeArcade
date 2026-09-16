@@ -25,7 +25,8 @@ modes:
       - Change key, keep the tempo.
   - name: Trivia
     kicker: "02 · Play"
-    image: images/trivia.jpg
+    tv: images/trivia-tv.jpg
+    phone: images/trivia-phone.jpg
     lead: Five questions between singers.
     bullets:
       - Every phone is a buzzer.
@@ -33,7 +34,8 @@ modes:
       - Plays offline.
   - name: Singer Battle
     kicker: "03 · Fight"
-    image: images/singer-battle.jpg
+    tv: images/battle-tv.jpg
+    phone: images/battle-phone.jpg
     lead: Pick their song. They pick yours.
     bullets:
       - Eight arcade fighters.

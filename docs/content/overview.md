@@ -34,7 +34,10 @@ The part everybody came for. See <a href='{{< ref "docs/karaokearcade-app" >}}'>
 
 Music trivia that takes the gap between two singers, so the room has something to do - and the guests who would rather not sing get a way to play. See <a href='{{< ref "docs/karaokearcade-app/#trivia" >}}'>Trivia</a>.
 
-{{< img "images/trivia.jpg" "Trivia on the TV (top) and on a phone (bottom)" "1x" />}}
+<div class="pair">
+{{< img "images/trivia-tv.jpg" "Trivia on the TV" "1x" />}}
+{{< img "images/trivia-phone.jpg" "Trivia on a phone" "1x" />}}
+</div>
 
 - A round waits in the queue like a singer does, and comes up about once per lap.
 - **Five questions**, on an arcade cabinet on the TV, with four coloured keys on every phone in the room.
@@ -46,7 +49,10 @@ Music trivia that takes the gap between two singers, so the room has something t
 
 One turn, two singers, and each of them picks the other's song. It runs on the TV as an arcade cabinet: fighters, a VS slam, two-minute rounds and a verdict. See <a href='{{< ref "docs/karaokearcade-app/#battle" >}}'>Battle</a>.
 
-{{< img "images/singer-battle.jpg" "Singer Battle on the TV (top) and on a phone (bottom)" "1x" />}}
+<div class="pair">
+{{< img "images/battle-tv.jpg" "Singer Battle on the TV" "1x" />}}
+{{< img "images/battle-phone.jpg" "Voting on a phone" "1x" />}}
+</div>
 
 - **Pick who you sing as.** Eight fighters; whoever you choose is who the room watches on stage.
 - **Throw a challenge.** Pick somebody in the room, then pick the song *they* have to sing. Their phone gets 45 seconds to accept - and the song they pick back is the one *you* sing. Neither of you sees the other's choice until it's on screen.

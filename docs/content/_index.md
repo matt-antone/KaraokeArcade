@@ -99,13 +99,13 @@ KaraokeArcade has three parts. See <a href='{{< ref "docs/getting-started" >}}'>
 
 There are several <a href='{{< ref "docs/karaokearcade-server#installation" >}}'>installation methods</a> available for KaraokeArcade Server.
 
-## Discord & Support
+## Support
 
-For bugs and requests specific to KaraokeArcade, open an <a href="https://github.com/matt-antone/KaraokeParty/issues" rel="noopener">issue</a>{{% icon-external %}}. For general karaoke-system support and development chat, there's the <a href="https://discord.gg/PgqVtFq" rel="noopener">Karaoke Eternal Discord Server</a>{{% icon-external %}}, home of the <a href="https://github.com/bhj/KaraokeEternal" rel="noopener">project KaraokeArcade is forked from</a>{{% icon-external %}}.
+For bugs and requests specific to KaraokeArcade, open an <a href="https://github.com/matt-antone/KaraokeArcade/issues" rel="noopener">issue</a>{{% icon-external %}}. KaraokeArcade is forked from <a href="https://github.com/bhj/KaraokeEternal" rel="noopener">Karaoke Eternal</a>{{% icon-external %}}.
 
 ## Contributing & Development
 
-Contributions are welcome - please open an <a href="https://github.com/matt-antone/KaraokeParty/issues" rel="noopener">issue</a>{{% icon-external %}} before starting on anything major, since the project's scope is deliberately narrow.
+Contributions are welcome - please open an <a href="https://github.com/matt-antone/KaraokeArcade/issues" rel="noopener">issue</a>{{% icon-external %}} before starting on anything major, since the project's scope is deliberately narrow.
 
 You'll need <a href="https://nodejs.org/en/" rel="noopener">Node.js</a>{{% icon-external %}} v24 or later and <a href="https://bun.sh" rel="noopener">Bun</a>{{% icon-external %}} v1.2 or later:
 

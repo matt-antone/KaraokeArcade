@@ -6,12 +6,7 @@
   "redirects": [
     {
       "source": "/repo",
-      "destination": "https://github.com/matt-antone/KaraokeParty",
-      "permanent": false
-    },
-    {
-      "source": "/discord",
-      "destination": "https://discord.gg/PgqVtFq",
+      "destination": "https://github.com/matt-antone/KaraokeArcade",
       "permanent": false
     }
   ]

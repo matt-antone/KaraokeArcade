@@ -88,7 +88,7 @@ Go ahead and press play in the player to start the party!
 
 To get the most out of KaraokeArcade, continue with the <a href="{{< ref "docs/karaokearcade-app" >}}">app documentation</a>. Seriously, there's quite a bit going on beneath the surface!
 
-Found a bug or have a request? Open an <a href="https://github.com/matt-antone/KaraokeParty/issues" rel="noopener">issue</a>{{% icon-external %}}. For general karaoke-system support and development chat, there's the <a href="https://discord.gg/PgqVtFq" rel="noopener">Karaoke Eternal Discord Server</a>{{% icon-external %}}.
+Found a bug or have a request? Open an <a href="https://github.com/matt-antone/KaraokeArcade/issues" rel="noopener">issue</a>{{% icon-external %}}.
 
 KaraokeArcade is a fork of <a href="https://github.com/bhj/KaraokeEternal" rel="noopener">Karaoke Eternal</a>{{% icon-external %}}; if you are able, please consider [sponsoring the upstream project](https://www.karaoke-eternal.com/sponsor) that made this possible.
 

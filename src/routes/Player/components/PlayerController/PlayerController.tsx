@@ -4,12 +4,11 @@ import Player from '../Player/Player'
 import PlayerBackdrop from '../PlayerBackdrop/PlayerBackdrop'
 import PlayerTextOverlay from '../PlayerTextOverlay/PlayerTextOverlay'
 import PlayerQR from '../PlayerQR/PlayerQR'
-import PlayerTrivia from '../PlayerTrivia/PlayerTrivia'
+import PlayerTrivia, { PlayerTriviaSplash } from '../PlayerTrivia/PlayerTrivia'
 import PlayerBattle from '../PlayerBattle/PlayerBattle'
 import type { BattleUpNext } from '../PlayerBattle/battleBeats'
 import battleVideoRect from '../PlayerBattle/battleVideoRect'
 import PlayerFrame from './PlayerFrame'
-import TriviaMark from 'components/TriviaMark/TriviaMark'
 import getRoundRobinQueue from 'routes/Queue/selectors/getRoundRobinQueue'
 import { playerLeave, playerError, playerLoad, playerPlay, playerStatus, type PlayerState } from '../../modules/player'
 import getRoomPrefs from '../../selectors/getRoomPrefs'
@@ -134,7 +133,7 @@ const StageOverlay = ({
 
   // A battle owns the stage for its whole row, including the gap before the
   // server's first beat lands — PlayerBattle draws its own holding card for
-  // that, the way the trivia mark covers a round's lead-in.
+  // that, the way the trivia splash covers a round's lead-in.
   if (isBattleRow) {
     return (
       <PlayerBattle
@@ -149,11 +148,9 @@ const StageOverlay = ({
 
   return (
     <>
-      {/* One mount across the whole lead-in. Rendering the mark from the
-          intermission branch and again from the row's would replay the sting
-          the moment the row went current, and the question would cut the
-          replay off halfway. */}
-      {isTriviaLeadIn && <TriviaMark variant='stage' />}
+      {/* One mount across the whole lead-in, so the splash does not restart
+          the moment the row goes current. */}
+      {isTriviaLeadIn && <PlayerTriviaSplash width={width} height={height} />}
       {!isTriviaRow && <PlayerTextOverlay {...overlay} width={width} height={height} />}
     </>
   )

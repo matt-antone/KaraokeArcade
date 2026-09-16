@@ -1,56 +1,71 @@
-/* A key like any other on the deck: raised, a vertical gradient from its -hi
-   to its -lo, travelling 1px when pressed. Only the face colour differs. */
+/* An arcade keycap: a flat palette fill, a neon glow in its own colour, and a
+   dark bevel along the bottom edge. Only the fill, ink and glow differ per key,
+   so they are the three properties each key sets. */
 .key {
   display: flex;
   align-items: center;
-  gap: var(--gap-3);
-  padding: var(--gap-3);
-  min-height: var(--target);
   width: 100%;
   border: none;
-  border-radius: var(--radius-key);
-  box-shadow: var(--bevel);
-  color: var(--ink);
+  border-radius: 4px;
+  background: var(--fill);
+  color: var(--key-ink);
+  box-shadow: 0 0 var(--glow-size) var(--glow), inset 0 -5px 0 rgba(0, 0, 0, .3);
   cursor: pointer;
-  transition: transform var(--dur-key) var(--ease-key);
 
-  &:active {
-    transform: translateY(1px);
+  &:disabled {
+    cursor: default;
   }
 
   &:focus-visible {
-    outline: var(--focus-outline);
+    outline: 2px solid var(--arc-ring);
     outline-offset: 2px;
   }
 }
 
 .label {
   flex: 1;
-  font-weight: var(--weight-semibold);
+  font-family: var(--font-body);
+  font-weight: 800;
 }
 
-/* Sized for a room: in vh, like every other thing the TV shows, because 16px
-   of answer text is unreadable from a sofa. */
+/* Across a room: the letter the room shouts, then the answer. */
 .player {
-  padding: 2.2vh var(--gap-4);
+  --glow-size: 26px;
+  gap: 16px;
+  padding: 16px 20px;
 
   .label {
     text-align: left;
-    font-size: 2.9vh;
+    font-size: 24px;
     line-height: 1.2;
   }
 }
 
-/* Sized for a hand, and centred in it: the key is thumbed at, so the text sits
-   in the middle of the target rather than along one edge of it. */
+.letter {
+  font-family: var(--font-trivia);
+  font-size: 20px;
+  color: rgba(0, 0, 0, .45);
+}
+
+.tag {
+  font-family: var(--font-trivia);
+  font-size: 15px;
+  text-transform: uppercase;
+  color: var(--arc-ring);
+}
+
+/* In the hand, and centred in it: the key is thumbed at, so the text sits in
+   the middle of the target rather than along one edge of it. */
 .pad {
+  --glow-size: 18px;
   justify-content: center;
-  min-height: 0;
   height: 100%;
+  min-height: 0;
+  padding: 10px;
 
   .label {
     text-align: center;
-    font-size: var(--text-l);
+    font-size: 16px;
     line-height: 1.25;
     /* four keys in a phone-sized grid, and OpenTDB writes some long ones */
     overflow-wrap: anywhere;
@@ -58,56 +73,73 @@
 }
 
 .k0 {
-  background-color: var(--ans-1-hi);
-  background-image: var(--key-face-ans-1);
+  --fill: var(--arc-magenta);
+  --key-ink: #fff;
+  --glow: rgba(255, 46, 136, .5);
+  --glow-hot: rgba(255, 46, 136, .9);
 }
 
 .k1 {
-  background-color: var(--ans-2-hi);
-  background-image: var(--key-face-ans-2);
+  --fill: var(--arc-mint);
+  --key-ink: var(--arc-ink-mint);
+  --glow: rgba(126, 249, 208, .45);
+  --glow-hot: rgba(126, 249, 208, .85);
 }
 
 .k2 {
-  background-color: var(--ans-3-hi);
-  background-image: var(--key-face-ans-3);
+  --fill: var(--arc-yellow);
+  --key-ink: var(--arc-ink-yellow);
+  --glow: rgba(255, 214, 0, .45);
+  --glow-hot: rgba(255, 214, 0, .85);
 }
 
 .k3 {
-  background-color: var(--ans-4-hi);
-  background-image: var(--key-face-ans-4);
+  --fill: var(--arc-violet);
+  --key-ink: var(--arc-ink-violet);
+  --glow: rgba(179, 136, 255, .45);
+  --glow-hot: rgba(179, 136, 255, .85);
 }
 
-/* Chosen: the key stays down. Pressed is a position on this deck, not a
-   flash, so the state that says "you answered" is the key still travelled. */
-.chosen,
-.missed {
-  transform: translateY(1px);
-  box-shadow: var(--well);
+/* Chosen: yours, ringed in cream, answering still open. */
+.chosen {
+  box-shadow: inset 0 0 0 3px var(--arc-ring), 0 0 24px var(--glow-hot);
 }
 
-/* The reveal dims by colour, never by opacity: a key that is out goes back to
-   graphite and keeps its numeral, so it is still readable. The one still lit
-   is the answer, and there is only ever one.
-
-   Two roads into graphite: `closed` is a key you never pressed, and `wrong` is
-   one nobody's reveal kept. */
+/* Out: a dead key, never faded — the label stays readable on the dark. Two
+   roads here: `closed` is a key you never pressed, `wrong` is one the reveal
+   did not keep. */
 .closed,
 .wrong {
-  background-color: var(--key);
-  background-image: var(--key-face);
-  color: var(--ink-4);
+  background: var(--arc-dead);
+  color: var(--arc-dead-ink);
+  box-shadow: inset 0 -5px 0 rgba(0, 0, 0, .4);
+
+  .letter {
+    color: var(--arc-dead-letter);
+  }
 }
 
-/* The one you did press and got wrong keeps its own colour, turned down: it is
-   the only key on the board that is neither the answer nor graphite, so "which
-   one did I press?" is answered by colour rather than by two steps of grey.
-   Turned down rather than faded — the key stays opaque, nothing ghosts
-   through — and the label rides at full ink, so a wrong answer is still
-   readable next to the right one. */
+/* The one you pressed and got wrong keeps its own fill, turned down, so "which
+   one did I press?" is answered by colour rather than by four dead keys. */
 .missed {
-  filter: brightness(.55);
+  filter: brightness(.62) saturate(.9);
 }
 
+/* The answer: ringed, and throbbing on the TV. */
 .correct {
-  box-shadow: var(--bevel), var(--focus-ring);
+  box-shadow: inset 0 0 0 3px var(--arc-ring), 0 0 30px var(--glow-hot);
+
+  &.player {
+    box-shadow: inset 0 0 0 4px var(--arc-ring), 0 0 46px var(--glow-hot), 0 0 90px rgba(255, 244, 176, .35);
+    animation: throb 1.1s ease-in-out infinite;
+  }
+}
+
+@keyframes throb {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.035); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .correct.player { animation: none; }
 }

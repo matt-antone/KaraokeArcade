@@ -1,0 +1,99 @@
+.podium {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Wraps rather than truncating: a clip box would slice the glow off square. */
+.name {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-family: var(--font-trivia);
+  text-transform: uppercase;
+  color: var(--arc-text-2);
+}
+
+.score {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--arc-mint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hard-edged blocks: a podium is solid, so no radius. */
+.block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  font-family: var(--font-trivia);
+}
+
+.p0 {
+  .name {
+    color: #fff;
+    text-shadow: 0 0 18px rgba(255, 214, 0, .6);
+  }
+
+  .score {
+    color: var(--arc-yellow);
+    text-shadow: 0 0 16px rgba(255, 214, 0, .9);
+  }
+
+  .block {
+    background: var(--arc-yellow);
+    color: var(--arc-ink-yellow);
+    box-shadow: 0 0 40px rgba(255, 214, 0, .55), inset 0 -7px 0 rgba(0, 0, 0, .3);
+  }
+}
+
+.p1 .block {
+  background: var(--arc-violet);
+  color: var(--arc-ink-violet);
+  box-shadow: 0 0 24px rgba(179, 136, 255, .45), inset 0 -6px 0 rgba(0, 0, 0, .3);
+}
+
+.p2 .block {
+  background: var(--arc-magenta);
+  color: #fff;
+  box-shadow: 0 0 24px rgba(255, 46, 136, .45), inset 0 -6px 0 rgba(0, 0, 0, .3);
+}
+
+/* ---- the room ---- */
+.player {
+  gap: 18px;
+
+  .column { gap: 8px; width: 200px; }
+  .name { font-size: 18px; }
+  .score { font-size: 32px; }
+  .block { font-size: 38px; }
+  .p0 { width: 230px; }
+  .p0 .name { font-size: 24px; }
+  .p0 .score { font-size: 44px; }
+  .p0 .block { height: 154px; font-size: 54px; }
+  .p1 .block { height: 102px; }
+  .p2 .block { height: 82px; }
+}
+
+/* ---- the hand ---- */
+.pad {
+  gap: 8px;
+
+  .column { gap: 4px; width: 78px; }
+  .name { font-size: 10px; }
+  .score { font-size: 18px; }
+  .block { font-size: 22px; }
+  .p0 { width: 88px; }
+  .p0 .name { font-size: 12px; }
+  .p0 .score { font-size: 22px; }
+  .p0 .block { height: 84px; font-size: 30px; }
+  .p1 .block { height: 54px; }
+  .p2 .block { height: 44px; }
+}

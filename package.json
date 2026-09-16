@@ -62,6 +62,7 @@
     "@fontsource-variable/figtree": "^5.3.0",
     "@fontsource-variable/jetbrains-mono": "^5.3.0",
     "@fontsource/michroma": "^5.3.0",
+    "@fontsource/rubik-mono-one": "^5.3.0",
     "@fontsource/silkscreen": "^5.3.0",
     "@jcoreio/async-throttle": "^1.7.0",
     "@koa/router": "^15.3.0",

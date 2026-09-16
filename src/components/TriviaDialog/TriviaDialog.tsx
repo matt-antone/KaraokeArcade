@@ -3,6 +3,7 @@ import clsx from 'clsx'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
 import AnswerKey, { type AnswerKeyState } from 'components/AnswerKey/AnswerKey'
 import Modal from 'components/Modal/Modal'
+import TriviaPodium from 'components/TriviaPodium/TriviaPodium'
 import TriviaRail from 'components/TriviaRail/TriviaRail'
 import TriviaTally from 'components/TriviaTally/TriviaTally'
 import alertCue from 'lib/alertCue'
@@ -22,25 +23,12 @@ import styles from './TriviaDialog.css'
  * screen across a bar. The TV is where the round happens together; the pad is
  * where it stays playable.
  *
- * The keys say what they are rather than which they are. A numeral bridging
- * the pad to the screen bridges nothing once both spell out "Saturn", and the
- * reveal lights the key with the answer written on it.
- *
- * The clock is the same two marks the TV uses: how far through the round you
- * are, and how much of the answering time is left.
+ * It fills the phone: the keys are the whole point, and a 2 × 2 grid that
+ * grows with the screen is a bigger target than one sized for a card.
  */
-/** What fits a phone without scrolling. Everyone else is still on the board;
- *  the TV carries the same list. */
+/** Rows that fit under the podium without scrolling — fourth and fifth. The
+ *  TV carries the rest of the list. */
 const SCOREBOARD_ROWS = 5
-
-/** A correct answer that was yours, or the one you actually picked and missed.
- *  Every other key is just its own text. */
-const labelOf = (answer: string, state: AnswerKeyState, isMine: boolean) => {
-  if (state === 'correct' && isMine) return `🎉 ${answer}`
-  if (state === 'missed') return `😬 ${answer}`
-
-  return answer
-}
 
 /** What one answer key is, which depends entirely on whether the reveal has
  *  landed: before it, the keys are open or your choice is locked in; after it,
@@ -57,11 +45,11 @@ const stateOf = (i: number, correctIdx: number | undefined, answeredIdx: number 
   return i === answeredIdx ? 'chosen' : 'closed'
 }
 
-/** Top five, and your own row after them if you are not in it. A board you
- *  cannot find yourself on is a board you stop playing for, and outside the
- *  top five is exactly where most of the room is standing. */
+/** Fourth and fifth under the podium, and your own row after them if you are
+ *  further down. A board you cannot find yourself on is a board you stop
+ *  playing for, and outside the top five is where most of the room stands. */
 const scoreboardRows = (scores: TriviaScore[], userId: number | null) => {
-  const rows = scores.slice(0, SCOREBOARD_ROWS).map((score, i) => ({ score, rank: i, isAside: false }))
+  const rows = scores.slice(3, SCOREBOARD_ROWS).map((score, i) => ({ score, rank: i + 3, isAside: false }))
   const myRank = scores.findIndex(s => s.userId === userId)
 
   if (myRank >= SCOREBOARD_ROWS) {
@@ -95,16 +83,15 @@ const TriviaDialog = () => {
   const now = result ? serverNow(result, tick) : 0
   const isTally = !!result && now >= result.scoresFrom
   const isScoreboard = !!result?.boardFrom && now >= result.boardFrom
+  const onClose = () => setDismissedRoundId(round.roundId)
 
   // The same count the TV shows, on every question including the last.
   if (isTally && !isScoreboard) {
     return (
-      <Modal
-        className={styles.modal}
-        title='Who got it'
-        onClose={() => setDismissedRoundId(round.roundId)}
-      >
-        <TriviaTally numCorrect={result.numCorrect} variant='pad' />
+      <Modal className={styles.modal} title='Who got it' onClose={onClose}>
+        <div className={clsx(styles.pad, styles.centered)}>
+          <TriviaTally numCorrect={result.numCorrect} variant='pad' />
+        </div>
       </Modal>
     )
   }
@@ -113,73 +100,77 @@ const TriviaDialog = () => {
     const rows = scoreboardRows(result.scores, userId)
 
     return (
-      <Modal
-        className={styles.modal}
-        title='Scores'
-        onClose={() => setDismissedRoundId(round.roundId)}
-      >
-        {rows.length > 0
-          ? (
-              <div className={styles.scoreboard}>
-                {rows.map(({ score: s, rank, isAside }) => (
-                  <div
-                    key={s.userId}
-                    className={clsx(
-                      styles.scoreRow,
-                      s.userId === userId && styles.mine,
-                      isAside && styles.aside,
-                    )}
-                  >
-                    <span className={styles.rank}>{String(rank + 1).padStart(2, '0')}</span>
-                    <span className={styles.scoreName} translate='no'>{s.name}</span>
-                    <span className={styles.score}>{s.score}</span>
+      <Modal className={styles.modal} title='Scores' onClose={onClose}>
+        <div className={styles.pad}>
+          <TriviaRail round={round} meta={`after Q${round.questionNumber}`} variant='pad' />
+          {result.scores.length > 0
+            ? (
+                <>
+                  <TriviaPodium scores={result.scores} variant='pad' />
+                  <div className={styles.scoreboard}>
+                    {rows.map(({ score: s, rank, isAside }) => (
+                      <div
+                        key={s.userId}
+                        className={clsx(
+                          styles.scoreRow,
+                          s.userId === userId && styles.mine,
+                          isAside && styles.aside,
+                        )}
+                      >
+                        <span className={styles.rank}>{String(rank + 1).padStart(2, '0')}</span>
+                        <span className={styles.scoreName} translate='no'>{s.name}</span>
+                        <span className={styles.score}>{s.score}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )
-          : <div className={styles.hint}>Nobody played</div>}
+                </>
+              )
+            : <div className={styles.hint}>Nobody played</div>}
+        </div>
       </Modal>
     )
   }
 
+  const isMissed = !!result && answeredIdx !== null && answeredIdx !== result.correctIdx
+
   return (
     <Modal
-      className={styles.modal}
+      className={clsx(styles.modal, result && styles.reveal)}
       title={result ? 'Answer' : 'Trivia'}
-      onClose={() => setDismissedRoundId(round.roundId)}
+      onClose={onClose}
     >
-      {/* The same two marks the TV carries, so the pad and the room run one
-          clock — and no answer text, so the question stays on the screen. */}
-      <TriviaRail round={round} isRunning={!result} variant='pad' />
+      <div className={styles.pad}>
+        {/* The same clock the TV counts down, so the pad and the room run one. */}
+        <TriviaRail round={round} isRunning={!result} variant='pad' />
 
-      <div className={styles.question} translate='no'>{round.question}</div>
+        <div className={styles.question} translate='no'>{round.question}</div>
 
-      <div className={styles.keys}>
-        {round.answers.map((answer, i) => {
-          const state = stateOf(i, result?.correctIdx, answeredIdx)
-
-          return (
+        <div className={styles.keys}>
+          {round.answers.map((answer, i) => (
             <AnswerKey
               key={answer}
               index={i}
-              // The two faces the tally already uses, said to one guest about
-              // one key: the popper on the answer you got, the grimace on the
-              // one you pressed instead. Both ride on your own key, so the pad
-              // tells you how you did without you counting keys.
-              label={labelOf(answer, state, i === answeredIdx)}
+              label={answer}
               variant='pad'
-              state={state}
+              state={stateOf(i, result?.correctIdx, answeredIdx)}
               // one answer each, and the reveal is not a chance to change it
               disabled={answeredIdx !== null || !!result}
               onClick={() => dispatch(answerTrivia(round.roundId, i))}
             />
-          )
-        })}
-      </div>
-      <div className={styles.hint}>
+          ))}
+        </div>
+
         {result
-          ? 'The lit key was the answer'
-          : answeredIdx !== null ? 'Locked in' : 'Tap your answer'}
+          ? (
+              <div className={clsx(styles.hint, isMissed && styles.missed)}>
+                {answeredIdx === null
+                  ? 'the lit key was the answer'
+                  : isMissed ? `you picked ${round.answers[answeredIdx]}` : 'you got it'}
+              </div>
+            )
+          : answeredIdx !== null
+            ? <div className={styles.locked}>locked in</div>
+            : <div className={styles.hint}>tap your answer</div>}
       </div>
     </Modal>
   )

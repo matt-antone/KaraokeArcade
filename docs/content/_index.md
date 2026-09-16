@@ -8,12 +8,6 @@ description: Your TV is the stage, everybody's phone is the remote, and nobody i
 
 KaraokeArcade runs the whole night from a browser. Guests scan a QR code, search your library, queue a song and watch their place in line from the couch. You self-host it on a laptop, a Mac mini, a Raspberry Pi or a NAS - no accounts to make, no subscription, no ads, nothing phoning home.
 
-{{< screenshots >}}
-
-<p style="text-align: center;">
-  <i>App in mobile browser (top) controlling player in desktop browser (bottom)</i>
-</p>
-
 ## One queue, three kinds of turn
 
 There is one rotation and everything takes its turn in it. A trivia round and a singer battle sit in the queue exactly like a song does - they come round when they come round, and each costs a turn.
@@ -23,6 +17,12 @@ Trivia and battles are off until a host turns them on for a room, so a night tha
 ### Karaoke
 
 The part everybody came for. See <a href='{{< ref "docs/karaokearcade-app" >}}'>the app</a> for how each screen works.
+
+{{< screenshots >}}
+
+<p style="text-align: center;">
+  <i>App in mobile browser (top) controlling player in desktop browser (bottom)</i>
+</p>
 
 - **Queue from the couch.** Search by artist or song, star the ones you want later, tap once to get in line.
 - **Know when you're up.** A <a href='{{< ref "docs/karaokearcade-app/#status-strip" >}}'>strip at the top of every screen</a> counts down to your turn.
@@ -35,15 +35,19 @@ The part everybody came for. See <a href='{{< ref "docs/karaokearcade-app" >}}'>
 
 Music trivia that takes the gap between two singers, so the room has something to do - and the guests who would rather not sing get a way to play. See <a href='{{< ref "docs/karaokearcade-app/#trivia" >}}'>Trivia</a>.
 
+{{< img "images/trivia.jpg" "Trivia on the TV (top) and on a phone (bottom)" "1x" />}}
+
 - A round waits in the queue like a singer does, and comes up about once per lap.
-- **Five questions**, big on the TV, four coloured keys on every phone in the room.
+- **Five questions**, on an arcade cabinet on the TV, with four coloured keys on every phone in the room.
 - Anyone can play, whether or not they have a song queued. One answer each, first tap counts.
-- The right answer goes up for everyone at once, then the scoreboard, then the next singer is on.
+- The right answer goes up for everyone at once, then how many got it. After the last question come the high scores on a podium, then the winner, then the next singer is on.
 - Questions come from the <a href="https://opentdb.com/" rel="noopener">Open Trivia Database</a>{{% icon-external %}} and are cached ahead of time, so a party in a basement with no internet still plays.
 
 ### Singer Battle
 
 One turn, two singers, and each of them picks the other's song. It runs on the TV as an arcade cabinet: fighters, a VS slam, two-minute rounds and a verdict. See <a href='{{< ref "docs/karaokearcade-app/#battle" >}}'>Battle</a>.
+
+{{< img "images/singer-battle.jpg" "Singer Battle on the TV (top) and on a phone (bottom)" "1x" />}}
 
 - **Pick who you sing as.** Eight fighters; whoever you choose is who the room watches on stage.
 - **Throw a challenge.** Pick somebody in the room, then pick the song *they* have to sing. Their phone gets 45 seconds to accept - and the song they pick back is the one *you* sing. Neither of you sees the other's choice until it's on screen.

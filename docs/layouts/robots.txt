@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: {{ strings.TrimSuffix "/" site.Params.siteURL }}/sitemap.xml

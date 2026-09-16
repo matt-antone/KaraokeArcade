@@ -1,6 +1,6 @@
 ---
 title: Overview
-description: Your TV is the stage, everybody's phone is the remote, and nobody installs anything. KaraokeArcade runs the whole night from a browser - karaoke, music trivia and head-to-head singer battles, all in one queue. Self-hosted, ad-free and open source.
+description: Everything KaraokeArcade does - the karaoke queue, music trivia and singer battles - how it compares to Karaoke Eternal, and how to install, support and contribute to it.
 ---
 
 **Your TV is the stage. Everybody's phone is the remote. Nobody installs anything.**

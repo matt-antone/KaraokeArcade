@@ -13,3 +13,12 @@ markup:
     renderer:
       unsafe: true
 disableKinds: ["taxonomy", "RSS"]
+enableRobotsTXT: true
+params:
+  # baseURL stays "/" so Vercel preview deploys link to themselves. Anything a
+  # crawler or a link unfurler reads must be absolute, and uses this instead.
+  siteURL: https://www.karaokearcade.com
+  description: Your TV is the stage, everybody's phone is the remote, and nobody installs anything. Karaoke, music trivia and singer battles in one queue. Self-hosted, ad-free and open source.
+  ogImage: brand/og-image.jpg
+  ogImageAlt: A Singer Battle on the TV, with the room's vote on a phone
+  repo: https://github.com/matt-antone/KaraokeArcade

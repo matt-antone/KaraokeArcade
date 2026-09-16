@@ -1,0 +1,78 @@
+{{/* Everything a search engine or a link unfurler reads. URLs are built on
+     params.siteURL, not baseURL: see config.yaml. */}}
+{{ $origin := strings.TrimSuffix "/" site.Params.siteURL }}
+{{ $url := printf "%s%s" $origin .RelPermalink }}
+{{ $title := cond (isset .Params "seotitle") .Params.seoTitle (printf "%s | %s" site.Title .Title) }}
+{{ $desc := .Description | default site.Params.description }}
+{{ $image := printf "%s/%s" $origin site.Params.ogImage }}
+{{ $isHome := .IsHome }}
+
+<title>{{ $title }}</title>
+<meta name="description" content="{{ $desc }}">
+{{ if eq .Kind "404" }}
+<meta name="robots" content="noindex">
+{{ else }}
+<link rel="canonical" href="{{ $url }}">
+{{ end }}
+
+<meta property="og:site_name" content="{{ site.Title }}">
+<meta property="og:type" content="{{ cond $isHome "website" "article" }}">
+<meta property="og:title" content="{{ $title }}">
+<meta property="og:description" content="{{ $desc }}">
+<meta property="og:url" content="{{ $url }}">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="{{ $image }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{{ site.Params.ogImageAlt }}">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ $title }}">
+<meta name="twitter:description" content="{{ $desc }}">
+<meta name="twitter:image" content="{{ $image }}">
+<meta name="twitter:image:alt" content="{{ site.Params.ogImageAlt }}">
+
+{{ $graph := slice }}
+{{ if $isHome }}
+  {{ $graph = $graph | append (dict
+    "@type" "WebSite"
+    "@id" (printf "%s/#website" $origin)
+    "url" (printf "%s/" $origin)
+    "name" site.Title
+    "description" $desc
+  ) }}
+  {{ $graph = $graph | append (dict
+    "@type" "SoftwareApplication"
+    "name" site.Title
+    "description" $desc
+    "url" (printf "%s/" $origin)
+    "image" $image
+    "applicationCategory" "MultimediaApplication"
+    "operatingSystem" "Windows, macOS, Linux"
+    "license" "https://opensource.org/license/isc-license-txt"
+    "isAccessibleForFree" true
+    "offers" (dict "@type" "Offer" "price" "0" "priceCurrency" "USD")
+    "sameAs" (slice site.Params.repo)
+  ) }}
+{{ else if ne .Kind "404" }}
+  {{ $crumbs := slice (dict "@type" "ListItem" "position" 1 "name" site.Title "item" (printf "%s/" $origin)) }}
+  {{ range .Ancestors.Reverse }}
+    {{ if not .IsHome }}
+      {{ $crumbs = $crumbs | append (dict "@type" "ListItem" "position" (add (len $crumbs) 1) "name" .Title "item" (printf "%s%s" $origin .RelPermalink)) }}
+    {{ end }}
+  {{ end }}
+  {{ $crumbs = $crumbs | append (dict "@type" "ListItem" "position" (add (len $crumbs) 1) "name" .Title "item" $url) }}
+  {{ $graph = $graph | append (dict "@type" "BreadcrumbList" "itemListElement" $crumbs) }}
+
+  {{/* the F.A.Q. list page renders every question inline, so it can carry them all */}}
+  {{ if eq .RelPermalink "/faq/" }}
+    {{ $qs := slice }}
+    {{ range .Pages }}
+      {{ $qs = $qs | append (dict "@type" "Question" "name" .Title "acceptedAnswer" (dict "@type" "Answer" "text" (.Plain | strings.TrimSpace))) }}
+    {{ end }}
+    {{ $graph = $graph | append (dict "@type" "FAQPage" "mainEntity" $qs) }}
+  {{ end }}
+{{ end }}
+{{ with $graph }}
+<script type="application/ld+json">{{ dict "@context" "https://schema.org" "@graph" . | jsonify | safeJS }}</script>
+{{ end }}

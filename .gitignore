@@ -45,3 +45,6 @@ docs/singer-battle/
 docs/public/
 .vercel
 docs/assets/css/deck-tokens.css
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/

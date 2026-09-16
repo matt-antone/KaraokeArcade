@@ -16,8 +16,9 @@
    can never drift. Nothing here may invent a colour; if a rule needs one that
    is not a token, the rule is wrong.
 
-   The one thing the app has that this doesn't is motion: there is nothing to
-   operate on a documentation page, so keys light rather than travel. */
+   Motion lives on the front page only: panels settle in and screenshots drift
+   at their own depth as you scroll, driven by CSS scroll timelines and
+   dropped entirely under reduced motion. Doc pages stay still. */
 
 @font-face {
   font-family: 'Michroma';
@@ -747,4 +748,371 @@ details > :last-child { padding-bottom: var(--gap-4); }
   }
 
   .content.container { padding-top: var(--gap-5); }
+}
+
+/* ---- the front page ------------------------------------------------------
+   A product page rather than a doc page: a bar across the top instead of the
+   sidebar, full-width bands, and the app's screenshots stacked as layers of
+   the panel. Built from the same panel / key / well objects as the rest. */
+
+.home {
+  --page: 72rem;
+}
+
+.home .content.container {
+  margin: 0;
+  max-width: none;
+  padding: 0;
+  overflow-x: clip;
+}
+
+.home .copyright {
+  margin-left: 0;
+  text-align: center;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: var(--gap-5);
+  padding: var(--gap-3) var(--gap-5);
+  background: var(--brush);
+  border-bottom: var(--seam-rule);
+  box-shadow: var(--edge-top);
+}
+
+.topbar .logo { margin: 0; }
+
+.topbar nav {
+  display: flex;
+  gap: var(--gap-1);
+  margin-left: auto;
+}
+
+.topbar nav a {
+  padding: 7px var(--gap-3);
+  border-radius: var(--radius-key);
+  font-size: var(--text-m);
+  font-weight: var(--weight-medium);
+  color: var(--ink-2);
+}
+
+.topbar nav a:hover {
+  color: var(--ink);
+  background-color: var(--faceplate-hi);
+  text-decoration: none;
+}
+
+.eyebrow {
+  @extend %silkscreen;
+
+  color: var(--vu);
+  margin-bottom: var(--gap-3);
+}
+
+.lead {
+  font-size: #{"clamp(1.25rem, 1rem + 1vw, 1.75rem)"};
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+
+/* one big sentence on its own band */
+.statement {
+  margin: 0;
+  font-size: #{"clamp(2rem, 1.2rem + 3.5vw, 4rem)"};
+  font-weight: var(--weight-semibold);
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.ticks {
+  margin: var(--gap-5) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: #{"clamp(1.125rem, 1rem + .5vw, 1.375rem)"};
+}
+
+.ticks li {
+  display: flex;
+  gap: var(--gap-3);
+  margin-bottom: var(--gap-3);
+}
+
+.ticks li::before {
+  content: '';
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-top: .45em;
+  border-radius: 1px;
+  background: var(--key-face-vu);
+}
+
+/* keys: the calls to action, the app's key with its bevel and 1px travel */
+.cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap-3);
+  margin-top: var(--gap-5);
+}
+
+.key {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target-l);
+  padding: 0 var(--gap-5);
+  font-size: var(--text-l);
+  font-weight: var(--weight-semibold);
+  color: var(--ink);
+  background: var(--key-face);
+  border-radius: var(--radius-key);
+  box-shadow: var(--bevel);
+  transition: transform var(--dur-key) var(--ease-key);
+}
+
+.key:hover { text-decoration: none; }
+
+.key:active { transform: translateY(1px); }
+
+.key-vu {
+  color: var(--on-vu);
+  background: var(--key-face-vu);
+}
+
+/* hero */
+.hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--gap-6);
+  max-width: var(--page);
+  min-height: 90vh;
+  margin: 0 auto;
+  padding: var(--gap-6) var(--gap-5);
+}
+
+.hero .lead { margin-bottom: 0; }
+
+.hero h1 {
+  font-size: #{"clamp(2.75rem, 1.5rem + 4.5vw, 5.5rem)"};
+  line-height: 1.08;
+  letter-spacing: -.01em;
+  padding: 0;
+  border: none;
+  margin-bottom: var(--gap-4);
+}
+
+/* the chassis behind the hero: a seam grid fading out, and an amber wash */
+.hero-grid {
+  position: absolute;
+  inset: 0 -50vw;
+  z-index: -1;
+  background:
+    radial-gradient(60% 55% at 70% 45%, var(--vu-well), transparent 70%),
+    repeating-linear-gradient(0deg, var(--seam) 0 1px, transparent 1px 48px),
+    repeating-linear-gradient(90deg, var(--seam) 0 1px, transparent 1px 48px);
+  mask-image: radial-gradient(70% 70% at 60% 45%, #000 30%, transparent 80%);
+}
+
+.hero-stage {
+  position: relative;
+  aspect-ratio: 5 / 4;
+}
+
+.layer {
+  display: block;
+  border: var(--seam-rule);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--bevel), 0 24px 60px -20px var(--chassis-deep);
+}
+
+.hero-stage .tv {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 92%;
+  height: auto;
+}
+
+.hero-stage .phone {
+  position: absolute;
+  width: 30%;
+  height: auto;
+}
+
+.hero-stage .phone-a { left: 4%; bottom: 0; rotate: -6deg; }
+
+.hero-stage .phone-b { left: 30%; bottom: -8%; rotate: 3deg; }
+
+/* bands */
+.band,
+.feature {
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: var(--gap-6) var(--gap-5);
+}
+
+.intro {
+  max-width: 50rem;
+  text-align: center;
+  padding-block: calc(var(--gap-6) * 2);
+}
+
+.feature {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: calc(var(--gap-6) * 1.5);
+  padding-block: calc(var(--gap-6) * 1.5);
+}
+
+.feature.flip .feature-media { order: -1; }
+
+.feature h2 {
+  font-size: #{"clamp(2.5rem, 1.5rem + 4vw, 4.5rem)"};
+  line-height: 1;
+  margin: 0 0 var(--gap-4);
+}
+
+.feature-media { margin: 0; }
+
+.feature-media > .layer {
+  width: 100%;
+  height: auto;
+}
+
+/* three phones fanned out, each at its own depth */
+.fan {
+  position: relative;
+  aspect-ratio: 1 / 1;
+}
+
+.fan .layer {
+  position: absolute;
+  width: 40%;
+  height: auto;
+}
+
+.fan .layer:nth-child(1) { left: 2%; top: 14%; rotate: -8deg; }
+
+.fan .layer:nth-child(2) { left: 30%; top: 4%; z-index: 1; }
+
+.fan .layer:nth-child(3) { left: 58%; top: 14%; rotate: 8deg; }
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--gap-4);
+}
+
+.card {
+  @extend %panel;
+
+  padding: var(--gap-5);
+}
+
+.card h3 {
+  margin: 0 0 var(--gap-2);
+  font-size: #{"clamp(1.75rem, 1.2rem + 1.5vw, 2.5rem)"};
+}
+
+.card p {
+  margin: 0;
+  font-size: #{"clamp(1.125rem, 1rem + .5vw, 1.375rem)"};
+  color: var(--ink-2);
+}
+
+/* highlights: a label and nothing else, so it can be big */
+.chips .card {
+  font-size: #{"clamp(1.25rem, 1rem + 1vw, 1.75rem)"};
+  font-weight: var(--weight-semibold);
+  text-align: center;
+}
+
+.closer {
+  padding-bottom: calc(var(--gap-6) * 2);
+}
+
+.closer .cta { justify-content: center; }
+
+.step {
+  @extend %silkscreen;
+
+  display: block;
+  margin-bottom: var(--gap-2);
+  color: var(--vu);
+}
+
+/* motion: scroll-driven, native, and only when the reader has not asked
+   for less. Browsers without scroll timelines get the still page. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    @keyframes rise {
+      from { opacity: 0; translate: 0 2.5rem; }
+    }
+
+    @keyframes lift {
+      to { translate: 0 calc(var(--depth) * -1px); }
+    }
+
+    @keyframes drift {
+      from { translate: 0 calc(var(--depth) * .5px); }
+      to { translate: 0 calc(var(--depth) * -.5px); }
+    }
+
+    @keyframes recede {
+      to { opacity: .15; translate: 0 -3rem; }
+    }
+
+    .reveal {
+      animation: rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 30%;
+    }
+
+    .hero-stage .layer {
+      animation: lift linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 100vh;
+    }
+
+    .hero-copy {
+      animation: recede linear both;
+      animation-timeline: scroll(root);
+      animation-range: 20vh 90vh;
+    }
+
+    .feature-media .layer {
+      animation: drift linear both;
+      animation-timeline: view();
+    }
+  }
+}
+
+@media (max-width: 52rem) {
+  .topbar { padding: var(--gap-3) var(--gutter); gap: var(--gap-3); }
+
+  .topbar .github-buttons { display: none; }
+
+  .hero,
+  .feature {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .feature.flip .feature-media { order: 0; }
+
+  .hero,
+  .band,
+  .feature { padding-inline: var(--gutter); }
+
+  .hero-stage { margin-bottom: var(--gap-6); }
+}
+
+@media (max-width: 30rem) {
+  .topbar nav a:first-child { display: none; }
 }

@@ -1,4 +1,84 @@
 {{ define "main" }}
-  <h1>{{ .Title }}</h1>
-  {{ .Content }}
+{{ $p := .Params }}
+{{/* the app page's screenshots, in gallery order */}}
+{{ $shots := slice }}
+{{ with .Site.GetPage "docs/karaokearcade-app" }}
+  {{ range sort (where ((.Resources.ByType "image").Match "app-*") "Params.galleryOrder" "!=" nil) "Params.galleryOrder" "asc" }}
+    {{ $shots = $shots | append . }}
+  {{ end }}
+{{ end }}
+{{ $player := "" }}
+{{ $phones := slice }}
+{{ range $shots }}
+  {{ if eq .Name "app-player.jpg" }}{{ $player = . }}{{ else }}{{ $phones = $phones | append . }}{{ end }}
+{{ end }}
+
+<section class="hero">
+  <div class="hero-grid" aria-hidden="true"></div>
+  <div class="hero-copy">
+    <p class="eyebrow">{{ $p.hero.eyebrow }}</p>
+    <h1>{{ $p.hero.title }}</h1>
+    <p class="lead">{{ $p.hero.lead }}</p>
+    <div class="cta">
+      <a class="key key-vu" href="{{ .Site.BaseURL }}docs/getting-started/">Get started</a>
+      <a class="key" href="{{ .Site.BaseURL }}overview/">Overview</a>
+    </div>
+  </div>
+  <div class="hero-stage" aria-hidden="true">
+    {{ with $player }}<img class="layer tv" style="--depth: 60" src="{{ .RelPermalink }}" width="{{ .Width }}" height="{{ .Height }}" alt="">{{ end }}
+    {{ with index $phones 1 }}<img class="layer phone phone-a" style="--depth: 160" src="{{ .RelPermalink }}" width="{{ .Width }}" height="{{ .Height }}" alt="">{{ end }}
+    {{ with index $phones 0 }}<img class="layer phone phone-b" style="--depth: 260" src="{{ .RelPermalink }}" width="{{ .Width }}" height="{{ .Height }}" alt="">{{ end }}
+  </div>
+</section>
+
+<section class="band intro reveal">
+  <p class="eyebrow">{{ $p.modesIntro.kicker }}</p>
+  <p class="statement">{{ $p.modesIntro.lead }}</p>
+</section>
+
+{{ range $i, $m := $p.modes }}
+<section class="feature{{ if not (modBool $i 2) }} flip{{ end }}" id="{{ anchorize $m.name }}">
+  <div class="feature-copy reveal">
+    <p class="eyebrow">{{ $m.kicker }}</p>
+    <h2>{{ $m.name }}</h2>
+    <p class="lead">{{ $m.lead }}</p>
+    <ul class="ticks">
+      {{ range $m.bullets }}<li>{{ . }}</li>{{ end }}
+    </ul>
+  </div>
+  <figure class="feature-media">
+    {{ if $m.gallery }}
+      <div class="fan">
+        {{ range $j, $s := first 3 $phones }}
+          <img class="layer" style="--depth: {{ add 40 (mul $j 70) }}" src="{{ $s.RelPermalink }}" width="{{ $s.Width }}" height="{{ $s.Height }}" alt="{{ $s.Title }}" loading="lazy">
+        {{ end }}
+      </div>
+    {{ else }}{{ with resources.Get $m.image }}
+      <img class="layer" style="--depth: 50" src="{{ .RelPermalink }}" width="{{ .Width }}" height="{{ .Height }}" alt="{{ $m.name }} on the TV and a phone" loading="lazy">
+    {{ end }}{{ end }}
+  </figure>
+</section>
+{{ end }}
+
+<section class="band">
+  <div class="cards chips">
+    {{ range $p.highlights }}<div class="card reveal">{{ . }}</div>{{ end }}
+  </div>
+</section>
+
+<section class="band closer">
+  <div class="cards parts">
+    {{ range $i, $part := $p.parts }}
+    <div class="card reveal">
+      <span class="step">0{{ add $i 1 }}</span>
+      <h3>{{ $part.name }}</h3>
+      <p>{{ $part.text }}</p>
+    </div>
+    {{ end }}
+  </div>
+  <div class="cta reveal">
+    <a class="key key-vu" href="{{ .Site.BaseURL }}docs/getting-started/">Get started</a>
+    <a class="key" href="{{ .Site.BaseURL }}overview/">Read the overview</a>
+  </div>
+</section>
 {{ end }}

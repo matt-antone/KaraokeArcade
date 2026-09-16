@@ -19,8 +19,8 @@
 
   <nav class="active">
     <ul>
-      <li class="{{ if .IsHome }} active{{ end }}">
-        <a href="{{ .Site.BaseURL }}">Overview</a>
+      <li class="{{ if eq .RelPermalink "/overview/" }} active{{ end }}">
+        <a href="{{ .Site.BaseURL }}overview/">Overview</a>
       </li>
       <li>
         <a rel="external" href="{{ .Site.BaseURL }}repo">GitHub</a>

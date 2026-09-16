@@ -2,8 +2,8 @@
 <html lang="en-us">
 {{ partial "head.html" . }}
 
-<body>
-  {{ partial "sidebar.html" . }}
+<body{{ if .IsHome }} class="home"{{ end }}>
+  {{ if .IsHome }}{{ partial "topbar.html" . }}{{ else }}{{ partial "sidebar.html" . }}{{ end }}
   <div class="content container">
     {{ block "main" . }}
     {{ end }}

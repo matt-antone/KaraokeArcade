@@ -1,0 +1,13 @@
+<header class="topbar">
+  <div class="logo">
+    <a href='{{ .Site.BaseURL }}'>
+      Karaoke<span class="logo-subtitle">Arcade</span>
+    </a>
+  </div>
+  <nav>
+    <a href="{{ .Site.BaseURL }}overview/">Overview</a>
+    <a href="{{ .Site.BaseURL }}docs/">Docs</a>
+    <a href="{{ .Site.BaseURL }}faq/">F.A.Q.</a>
+  </nav>
+  {{ partial "github-buttons.html" . }}
+</header>

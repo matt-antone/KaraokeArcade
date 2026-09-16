@@ -1,18 +1,136 @@
-/* The stage is a panel with a top rail, a middle, and a footer — read in that
-   order, sized in vh because the reader is across the room. */
+/* The TV's box, whatever its size. The 960 × 540 frame inside is centred and
+   scaled to fit; anything around it is the cabinet's own dark. */
 .container {
-  font-family: var(--font-body);
   position: absolute;
   top: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2vh;
-  padding: 3vh 4vw 2vh;
+  overflow: hidden;
+  background: #06040d;
+}
+
+.frame {
+  --grid-line: rgba(179, 136, 255, .1);
+  --grid-from: 55%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 960px;
+  height: 540px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #1a0b3a 0%, #0b0618 60%, #06040d 100%);
+  font-family: var(--font-body);
   text-align: center;
 }
 
-/* the middle takes whatever the rail and the keys leave, and centres in it */
+/* ---- layers ---------------------------------------------------------- */
+
+.glow,
+.grid,
+.scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* the cabinet floor: a grid that only shows in the lower part of the screen */
+.grid {
+  background:
+    linear-gradient(180deg, transparent 58%, rgba(179, 136, 255, .16) 100%),
+    repeating-linear-gradient(90deg, var(--grid-line) 0 1px, transparent 1px 58px),
+    repeating-linear-gradient(0deg, var(--grid-line) 0 1px, transparent 1px 58px);
+  mask-image: linear-gradient(180deg, transparent var(--grid-from), #000 100%);
+}
+
+.scanlines {
+  background: repeating-linear-gradient(180deg, rgba(0, 0, 0, .26) 0 1px, transparent 1px 3px);
+}
+
+.content {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 28px 56px 24px;
+}
+
+.centered {
+  justify-content: center;
+  gap: 16px;
+  padding: 40px 60px;
+}
+
+/* ---- tones: one per beat that changes the room ------------------------ */
+
+.splash {
+  --grid-line: rgba(179, 136, 255, .14);
+  --grid-from: 48%;
+  background: linear-gradient(180deg, #1f0d45 0%, #0b0618 58%, #06040d 100%);
+
+  .scanlines {
+    background: repeating-linear-gradient(180deg, rgba(0, 0, 0, .28) 0 1px, transparent 1px 3px);
+  }
+
+  /* the rainbow rule across the top edge */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1;
+    height: 6px;
+    background: linear-gradient(90deg, var(--arc-magenta), var(--arc-yellow), var(--arc-mint), var(--arc-violet));
+  }
+
+  .glow {
+    background: radial-gradient(52% 38% at 50% 34%, rgba(255, 214, 0, .2), transparent 72%);
+    animation: haze 10s ease-in-out infinite alternate;
+  }
+}
+
+.urgent {
+  --grid-line: rgba(255, 46, 136, .14);
+  background: linear-gradient(180deg, #2a0a2c 0%, #12061a 60%, #08040e 100%);
+
+  .glow {
+    box-shadow: inset 0 0 120px rgba(255, 46, 136, .35);
+    animation: pulse 1s ease-in-out infinite;
+  }
+
+  .question {
+    text-shadow: 0 0 26px rgba(255, 46, 136, .6), 4px 4px 0 rgba(160, 20, 90, .6);
+  }
+
+  .attribution {
+    color: rgba(255, 176, 212, .42);
+  }
+}
+
+.reveal .glow {
+  background: radial-gradient(46% 30% at 50% 78%, rgba(126, 249, 208, .2), transparent 70%);
+}
+
+.tally .glow {
+  background: radial-gradient(50% 36% at 50% 46%, rgba(255, 214, 0, .18), transparent 70%);
+  animation: haze 8s ease-in-out infinite alternate;
+}
+
+.final {
+  --grid-line: rgba(179, 136, 255, .14);
+  --grid-from: 46%;
+  background: linear-gradient(180deg, #241046 0%, #0c0619 58%, #06040d 100%);
+
+  .centered {
+    gap: 14px;
+    padding: 36px 60px;
+  }
+}
+
+/* ---- the question ---------------------------------------------------- */
+
+/* the middle takes whatever the header and the keys leave, and centres in it */
 .stage {
   flex: 1;
   display: flex;
@@ -23,73 +141,196 @@
 }
 
 .question {
-  max-width: 28ch;
-  font-size: 5vh;
-  font-weight: var(--weight-semibold);
-  line-height: 1.2;
-  color: var(--ink);
+  max-width: 20ch;
+  font-family: var(--font-trivia);
+  font-size: 34px;
+  line-height: 1.35;
+  text-wrap: pretty;
+  color: #fff;
+  text-shadow: 0 0 24px rgba(179, 136, 255, .6), 4px 4px 0 rgba(124, 58, 237, .55);
 }
 
 /* Two by two, and the same two by two on the phone. The order the server sent
-   is the order both surfaces lay out, which is what makes "the second key on
-   the left" mean one thing in the room.
-
-   Recessed: four lit keys in a machined tray. The well is what gives the
-   colours an edge to sit against — on the bare chassis they float. */
+   is the order both surfaces lay out. */
 .answers {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--gap-2);
+  gap: 12px;
   width: 100%;
-  max-width: 64rem;
-  padding: var(--gap-2);
-  border-radius: var(--radius-panel);
-  background: var(--chassis-deep);
-  box-shadow: var(--well);
+  max-width: 840px;
 }
 
-.scoreboard {
+.attribution {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--arc-text-muted);
+}
+
+/* ---- splash & round over --------------------------------------------- */
+
+.splashTitle,
+.ready,
+.winner,
+.winnerUnit {
+  font-family: var(--font-trivia);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.splashTitle {
+  font-size: 86px;
+  color: var(--arc-yellow);
+  text-shadow: 0 0 20px rgba(255, 214, 0, .85), 6px 6px 0 var(--arc-magenta), 12px 12px 0 var(--arc-shadow-violet);
+}
+
+.ready {
+  font-size: 26px;
+  color: var(--arc-mint);
+  text-shadow: 0 0 16px rgba(126, 249, 208, .7);
+  animation: blink 1.1s steps(1, end) infinite;
+}
+
+.body {
+  font-size: 22px;
+  color: var(--arc-text-2);
+}
+
+.final .body {
+  margin-top: 12px;
+}
+
+.leds {
   display: flex;
-  flex-direction: column;
-  gap: var(--gap-1);
-  width: 100%;
-  max-width: 40rem;
+  gap: 10px;
+  margin-top: 4px;
+
+  div {
+    width: 16px;
+    height: 16px;
+    background: var(--led);
+    box-shadow: 0 0 14px var(--led);
+  }
+
+  div:nth-child(1) { --led: var(--arc-magenta); }
+  div:nth-child(2) { --led: var(--arc-yellow); animation-delay: .17s; }
+  div:nth-child(3) { --led: var(--arc-mint); animation-delay: .34s; }
+  div:nth-child(4) { --led: var(--arc-violet); animation-delay: .51s; }
 }
 
-.scoreRow {
+.blinking div {
+  animation-name: blink;
+  animation-duration: .7s;
+  animation-timing-function: steps(1, end);
+  animation-iteration-count: infinite;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  letter-spacing: .4em;
+  text-transform: uppercase;
+  color: var(--arc-mint);
+}
+
+/* Wraps rather than truncating: a clip box would slice the glow off square. */
+.winner {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: 64px;
+  color: var(--arc-yellow);
+  text-shadow: 0 0 20px rgba(255, 214, 0, .85), 5px 5px 0 var(--arc-magenta), 10px 10px 0 rgba(124, 58, 237, .65);
+}
+
+.winnerScore {
   display: flex;
   align-items: baseline;
-  gap: var(--gap-4);
-  padding: 1vh var(--gap-4);
-  border-radius: var(--radius-panel);
-  background: var(--faceplate);
-  box-shadow: var(--well);
+  gap: 14px;
+}
+
+.winnerPoints {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 56px;
+  line-height: 1;
+  color: var(--arc-mint);
+  text-shadow: 0 0 18px rgba(126, 249, 208, .8);
+}
+
+.winnerUnit {
+  font-size: 20px;
+  color: var(--arc-text-2);
+}
+
+/* ---- standings ------------------------------------------------------- */
+
+.podium {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 0;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  padding: 8px 14px;
+  background: rgba(179, 136, 255, .1);
+  text-align: left;
 }
 
 .rank {
   font-family: var(--font-mono);
-  font-size: 2vh;
-  color: var(--ink-3);
+  font-size: 14px;
+  color: var(--arc-text-rank);
 }
 
-.scoreName {
+.rowName {
   flex: 1;
-  text-align: left;
-  font-size: 3vh;
-  color: var(--ink);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 20px;
+  color: var(--arc-text-row);
 }
 
-.score {
+.rowScore {
   font-family: var(--font-mono);
-  font-size: 3.2vh;
-  font-weight: var(--weight-bold);
-  color: var(--vu);
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--arc-mint);
   font-variant-numeric: tabular-nums;
 }
 
-.attribution {
-  color: var(--ink-5);
+/* ---- motion ---------------------------------------------------------- */
+
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: .14; }
+}
+
+@keyframes haze {
+  0% { transform: translate3d(-5%, 0, 0) scale(1.08); opacity: .5; }
+  100% { transform: translate3d(5%, -3%, 0) scale(1.22); opacity: .85; }
+}
+
+@keyframes pulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.2); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow,
+  .ready,
+  .blinking div { animation: none; }
 }

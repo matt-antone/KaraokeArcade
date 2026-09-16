@@ -23,13 +23,28 @@ describe('PlayerTrivia', () => {
     expect(markup).not.toContain('Dot Matrix')
   })
 
-  /** Zero needs no special case in the layout, but it does not get the party. */
-  it('counts a question nobody got, and does not cheer about it', () => {
+  /** Zero needs no special case: it is a count like any other. */
+  it('counts a question nobody got', () => {
     const markup = render({ result: triviaResult({ numCorrect: 0 }) })
 
     expect(markup).toContain('>0<')
-    expect(markup).toContain('😬')
-    expect(markup).not.toContain('🎉')
+  })
+
+  /** The final board's hold is split: the standings first, then the winner. */
+  it('crowns the winner once the standings have had their half', () => {
+    const standings = render({ result: triviaResult({ isFinal: true, boardFrom: Date.now() - 500, endsAt: Date.now() + 5000 }) })
+
+    expect(standings).toContain('high scores')
+    expect(standings).not.toContain('wins')
+
+    const over = render({ result: triviaResult({ isFinal: true, boardFrom: Date.now() - 5000, endsAt: Date.now() + 500 }) })
+
+    expect(over).toContain('Dot Matrix wins')
+  })
+
+  it('escalates to lock it in for the last five seconds', () => {
+    expect(render({ round: triviaRound({ endsAt: Date.now() + 12000 }) })).not.toContain('lock it in')
+    expect(render({ round: triviaRound({ endsAt: Date.now() + 3000 }) })).toContain('lock it in')
   })
 
   /** The last question earns a third beat: the count first, like every other

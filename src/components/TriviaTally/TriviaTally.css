@@ -1,40 +1,41 @@
-/* Read top to bottom in one glance from the back of the room: the party, the
-   number, what the number counts. */
+/* The number, then what it counts, in one glance from the back of the room. */
 .tally {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--gap-1);
-}
-
-/* in the hand */
-.party {
-  font-size: var(--display-m);
+  gap: 6px;
+  font-family: var(--font-trivia);
+  text-transform: uppercase;
   line-height: 1;
 }
 
 .count {
-  font-family: var(--font-mono);
-  font-size: var(--display-m);
-  font-weight: var(--weight-bold);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  color: var(--vu);
+  color: var(--arc-yellow);
 }
 
 .label {
-  color: var(--ink-3);
+  color: var(--arc-mint);
+  text-shadow: 0 0 16px rgba(126, 249, 208, .7);
 }
 
-/* across the room: sized in vh like everything else the TV draws */
-.player .party {
-  font-size: 14vh;
+.player {
+  .count {
+    font-size: 150px;
+    text-shadow: 0 0 30px rgba(255, 214, 0, .9), 8px 8px 0 var(--arc-magenta), 16px 16px 0 rgba(124, 58, 237, .6);
+  }
+
+  .label {
+    font-size: 30px;
+  }
 }
 
-.player .count {
-  font-size: var(--display-xl);
-}
+.pad {
+  .count {
+    font-size: 96px;
+    text-shadow: 0 0 22px rgba(255, 214, 0, .9), 5px 5px 0 var(--arc-magenta);
+  }
 
-.player .label {
-  font-size: 1.8vh;
+  .label {
+    font-size: 18px;
+  }
 }

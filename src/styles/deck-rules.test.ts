@@ -47,6 +47,16 @@ const ARCADE = [
   'components/BattleVote/',
   'components/Header/BattleStrip/',
   'routes/Queue/components/QueueBattleItem/',
+  // Trivia took the same exemption with its arcade redesign: a round is a
+  // cabinet attract mode on the TV and on the pads, set in Rubik Mono One with
+  // neon glows, hard offset drops and its own four-key palette. The values are
+  // in the trivia arcade design handoff.
+  'routes/Player/components/PlayerTrivia/',
+  'components/AnswerKey/',
+  'components/TriviaDialog/',
+  'components/TriviaPodium/',
+  'components/TriviaRail/',
+  'components/TriviaTally/',
 ]
 
 /** True for a "path:line:text" row, or a bare path, inside Singer Battle. */
@@ -140,13 +150,6 @@ describe('DECK rules', () => {
     // "No emoji. Anywhere." The favourite control is a text star and library
     // facets are words on keys.
     //
-    // One exception, granted deliberately: the faces on TriviaTally — a party
-    // when the room got the question, a grimace when nobody did. They were
-    // asked for by name, and it is the one place on the deck that is cheering
-    // rather than reporting. Listed here rather than allowed by character, so
-    // the rule still holds for every other file and this stays one decision
-    // somebody can reverse in one line.
-    //
     // Done in JS rather than grep: grep matches bytes in this locale, so a
     // Unicode range flags fragments of unrelated multibyte characters — it
     // reported every em dash in the codebase, and the legitimate ★.
@@ -155,19 +158,7 @@ describe('DECK rules', () => {
     const EMOJI = new RegExp('\\p{Extended_Pictographic}|\\uFE0F', 'u')
     const hits: string[] = []
 
-    const EXCEPT = [
-      'components/TriviaTally/TriviaTally.tsx',
-      // and the test that pins which face goes with which count
-      'routes/Player/components/PlayerTrivia/PlayerTrivia.test.tsx',
-      // the same popper, thrown once more for the one guest who got it: the
-      // pad is where a singer finds out they were right, and that is the
-      // other place the deck cheers rather than reports
-      'components/TriviaDialog/TriviaDialog.tsx',
-    ]
-
     for (const file of files('*.tsx')) {
-      if (EXCEPT.includes(file)) continue
-
       for (const [i, line] of readFileSync(join(SRC, file), 'utf8').split('\n').entries()) {
         // ★ and ☆ are text stars, explicitly what the design system asks for
         if (EMOJI.test(line.replace(/[★☆]/g, ''))) hits.push(`${file}:${i + 1}:${line.trim()}`)

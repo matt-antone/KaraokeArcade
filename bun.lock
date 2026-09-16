@@ -8,6 +8,7 @@
         "@fontsource-variable/figtree": "^5.3.0",
         "@fontsource-variable/jetbrains-mono": "^5.3.0",
         "@fontsource/michroma": "^5.3.0",
+        "@fontsource/rubik-mono-one": "^5.3.0",
         "@fontsource/silkscreen": "^5.3.0",
         "@jcoreio/async-throttle": "^1.7.0",
         "@koa/router": "^15.3.0",
@@ -401,6 +402,8 @@
     "@fontsource-variable/jetbrains-mono": ["@fontsource-variable/jetbrains-mono@5.3.0", "", {}, "sha512-F32xpS2NsGYoQi2ADSkKTgpJj7ozajsGgDJ8woTnqjmIB+dxDIqImjl4pXZVEExu8UFZ2ndhmX18EBS/hdz3Lw=="],
 
     "@fontsource/michroma": ["@fontsource/michroma@5.3.0", "", {}, "sha512-9sbGD7ek1hGvq0TmgNPFbuI3k7qwXVdZ+zCDsTHDGRIQqfYrpYWwEYcwH2fzOtvn8uiGqzAoJ72vuFE3v/hDdg=="],
+
+    "@fontsource/rubik-mono-one": ["@fontsource/rubik-mono-one@5.3.0", "", {}, "sha512-ReaCXaIKJAFdJAUaw8Gq3qXC9od7JotgqZFsVnwp06KqnBFtrX9qdeUvBdL+7avyUTic20gmzSH0NtEC6xAbDQ=="],
 
     "@fontsource/silkscreen": ["@fontsource/silkscreen@5.3.0", "", {}, "sha512-M1NQ3LQH0LFNvyFPd/piHEGMImPPtpLglNnLC6Vdcq9kL0jNIOtTQmksAWCc4enbDnw1OnIpZtjNEfRqYm/QmA=="],
 

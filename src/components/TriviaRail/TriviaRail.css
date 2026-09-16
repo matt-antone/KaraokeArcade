@@ -1,75 +1,203 @@
-/* What this is, how far through, and how long left: one rail, edge to edge, so
-   nothing in the middle of either surface has to carry status. */
-.strip {
+/* Wordmark on the left, where-we-are and the clock on the right. */
+.header {
   display: flex;
-  align-items: baseline;
-  gap: var(--gap-3);
+  align-items: center;
   width: 100%;
 }
 
-.label {
-  color: var(--ink-3);
-}
-
-/* pushed to the right edge, against the clock */
-.progress {
+.spacer {
   flex: 1;
-  text-align: right;
-  color: var(--ink-3);
 }
 
-/* The clock is data, so it is mono, and it is the one thing here the room
-   should act on, so it is amber. */
-.clock {
-  flex: none;
-  font-family: var(--font-mono);
-  font-weight: var(--weight-bold);
+.wordmark {
+  font-family: var(--font-trivia);
+  text-transform: uppercase;
   line-height: 1;
-  color: var(--vu);
-  font-variant-numeric: tabular-nums;
+}
+
+.meta {
+  font-family: var(--font-mono);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--arc-mint);
+}
+
+.yellow {
+  color: var(--arc-yellow);
+  text-shadow: 0 0 14px rgba(255, 214, 0, .8), 3px 3px 0 var(--arc-magenta);
+}
+
+.mint {
+  color: var(--arc-mint);
+  text-shadow: 0 0 16px rgba(126, 249, 208, .8), 3px 3px 0 rgba(124, 58, 237, .6);
 }
 
 .timeBar {
+  display: flex;
   width: 100%;
-  border-radius: var(--radius-key);
-  background: var(--key-well);
-  box-shadow: var(--well);
-  overflow: hidden;
 }
 
-.timeFill {
-  height: 100%;
-  background-image: var(--key-face-vu);
+.segment {
+  flex: 1;
+  background: rgba(255, 214, 0, .13);
 }
 
-/* Sized for a room: vh, like everything else the TV shows. Large enough to
-   read from the sofa and no larger — the question is what that screen is
-   for, and the clock outgrew it once already. */
+.lit {
+  background: var(--arc-yellow);
+  box-shadow: 0 0 10px var(--arc-yellow);
+}
+
+/* the leading segment snaps on and off — never fades */
+.lead {
+  animation: blink .5s steps(1, end) infinite;
+}
+
+/* ---- the room -------------------------------------------------------- */
+
 .player {
-  gap: var(--gap-4);
+  gap: 20px;
 
-  &.timeBar {
-    height: 0.8vh;
-    min-height: 5px;
+  .wordmark {
+    font-size: 22px;
   }
 
-  .clock {
-    min-width: 2ch;
-    font-size: 4.6vh;
+  .meta {
+    font-size: 14px;
+  }
+
+  &.timeBar {
+    gap: 4px;
+  }
+
+  .segment {
+    height: 8px;
   }
 }
 
-/* Sized for a hand, and spaced by margins because the modal's content box has
-   no gap of its own. */
+.clock {
+  display: flex;
+  gap: 6px;
+}
+
+.cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 76px;
+  border-radius: 5px;
+  background: var(--arc-well);
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, .9);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 52px;
+  line-height: 1;
+}
+
+.ghost {
+  position: absolute;
+  color: rgba(255, 46, 136, .12);
+}
+
+.digit {
+  position: relative;
+  color: var(--arc-magenta);
+  text-shadow: 0 0 12px rgba(255, 46, 136, .95);
+}
+
+/* The last five seconds: the wordmark becomes a blinking LOCK IT IN, the clock
+   swells to one cell, and the bar goes magenta. */
+.urgent {
+  .wordmark {
+    color: var(--arc-magenta);
+    text-shadow: 0 0 16px rgba(255, 46, 136, .9);
+    animation: blink .5s steps(1, end) infinite;
+  }
+
+  .meta {
+    color: #ffb0d4;
+  }
+
+  .cell {
+    width: 80px;
+    height: 96px;
+    background: #1b0a1c;
+    font-size: 74px;
+  }
+
+  .digit {
+    text-shadow: 0 0 18px rgba(255, 46, 136, 1);
+    animation: throb .95s ease-in-out infinite;
+  }
+
+  .segment {
+    background: rgba(255, 46, 136, .13);
+  }
+
+  .lit {
+    background: var(--arc-magenta);
+    box-shadow: 0 0 12px var(--arc-magenta);
+  }
+
+  .lead {
+    animation-duration: .4s;
+  }
+}
+
+/* ---- the hand -------------------------------------------------------- */
+
 .pad {
-  margin-bottom: var(--gap-2);
+  gap: 10px;
+
+  .wordmark {
+    font-size: 14px;
+    text-shadow: 0 0 10px rgba(255, 214, 0, .8), 2px 2px 0 var(--arc-magenta);
+  }
+
+  .mint {
+    text-shadow: 0 0 10px rgba(126, 249, 208, .8);
+  }
+
+  .meta {
+    font-size: 11px;
+    letter-spacing: .14em;
+  }
 
   &.timeBar {
-    height: 5px;
-    margin-bottom: var(--gap-3);
+    gap: 3px;
   }
 
-  .clock {
-    font-size: var(--text-3xl);
+  .segment {
+    height: 6px;
   }
+
+  .lit {
+    box-shadow: 0 0 8px var(--arc-yellow);
+  }
+}
+
+.padClock {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--arc-magenta);
+  text-shadow: 0 0 12px rgba(255, 46, 136, .9);
+}
+
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: .14; }
+}
+
+@keyframes throb {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.035); }
+}
+
+/* The time bar's blink carries information and stays; the rest is decoration. */
+@media (prefers-reduced-motion: reduce) {
+  .urgent .digit,
+  .urgent .wordmark { animation: none; }
 }

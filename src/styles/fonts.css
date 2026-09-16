@@ -21,10 +21,15 @@
    Michroma is 400-only by design and Silkscreen needs its 700 for the arcade
    labels that are drawn bold.
 
+   Rubik Mono One is trivia's display face. A round lands mid-party with no
+   warning, so main.tsx asks for it at boot rather than waiting for the first
+   question to reference it and flash the fallback.
+
    Every family is still referenced through --font-display / --font-body /
    --font-mono / --font-arcade in variables.css, each with a fallback stack, so
    swapping a source again touches this file only. */
 @import '@fontsource/michroma/index.css';
+@import '@fontsource/rubik-mono-one/index.css';
 @import '@fontsource/silkscreen/400.css';
 @import '@fontsource/silkscreen/700.css';
 @import '@fontsource-variable/figtree/wght.css';

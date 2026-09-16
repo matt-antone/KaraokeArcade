@@ -36,14 +36,14 @@ interface AnswerKeyProps {
 /**
  * One of the four trivia answer keys, and the single place their appearance is
  * decided — the player screen and every phone render this same component, so
- * key 3 cannot come out amber in one place and indigo in the other.
+ * key 3 cannot come out yellow in one place and violet in the other.
  *
- * The answer is now written on the key itself, on both surfaces. The numeral
- * that used to sit beside it existed to bridge the phone to the screen, and
- * bridges nothing once the phone says "Saturn" too: a guest reads the key they
- * are pressing. Position and colour still separate the four from each other,
- * and neither carries the meaning alone — roughly one in twelve men cannot
- * separate red from green, and a phone in landscape moves the grid.
+ * An arcade keycap: a solid palette fill with a bevel along its bottom edge.
+ * The TV prints the key's letter beside the answer, because across a room the
+ * letter is what people shout; the phone is thumbed at and carries the answer
+ * alone. Position and colour still separate the four, and neither carries the
+ * meaning alone — roughly one in twelve men cannot separate red from green,
+ * and a phone in landscape moves the grid.
  */
 const AnswerKey = ({ index, label, variant, state = 'open', disabled, onClick }: AnswerKeyProps) => (
   <button
@@ -52,7 +52,9 @@ const AnswerKey = ({ index, label, variant, state = 'open', disabled, onClick }:
     disabled={disabled}
     onClick={onClick}
   >
+    {variant === 'player' && <span className={styles.letter} aria-hidden='true'>{'ABCD'[index]}</span>}
     <span className={styles.label}>{label}</span>
+    {variant === 'player' && state === 'correct' && <span className={styles.tag}>correct</span>}
   </button>
 )
 

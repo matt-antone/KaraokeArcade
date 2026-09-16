@@ -1,16 +1,65 @@
-.modal {
-  width: min(92vw, 26rem);
-  /* The dialog only exists while a round is on, so mounting is the cue: an
-     amber ring blinks twice, the way an indicator lamp announces itself.
-     Declared here rather than in variables.css because css-loader hashes
-     animation names inside a module and a global keyframe resolves to
-     nothing. */
+/* The pad fills the phone: the Modal's panel restyled as the arcade's dark,
+   its title bar as the screen's wordmark. */
+dialog.modal {
+  box-sizing: border-box;
+  width: 100vw;
+  max-width: 100vw;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  border: 1px solid rgba(179, 136, 255, .4);
+  border-radius: 0;
+  background: linear-gradient(180deg, #1a0b3a, #07040f);
+  box-shadow: inset 0 0 30px rgba(179, 136, 255, .2);
+  color: #fff;
+  /* The dialog only exists while a round is on, so mounting is the cue: the
+     frame blinks twice, the way an LED announces itself. Declared here rather
+     than in variables.css because css-loader hashes animation names inside a
+     module and a global keyframe resolves to nothing. */
   animation: trivia-alert 220ms steps(1, end) 4;
+
+  &[open] {
+    box-shadow: inset 0 0 30px rgba(179, 136, 255, .2);
+  }
+
+  /* the Modal's title bar, as the pad's wordmark */
+  > :first-child {
+    border-bottom: 0;
+    padding-left: 18px;
+
+    button {
+      color: var(--arc-text-2);
+    }
+  }
+
+  h1 {
+    font-family: var(--font-trivia);
+    font-size: 14px;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    color: var(--arc-yellow);
+    text-shadow: 0 0 10px rgba(255, 214, 0, .8), 2px 2px 0 var(--arc-magenta);
+  }
+
 }
 
-/* Hard-edged, on the inside of the panel: the deck has no glow. */
+/* The reveal turns the frame magenta and the wordmark mint. */
+dialog.reveal {
+  border-color: rgba(255, 46, 136, .45);
+
+  &,
+  &[open] {
+    box-shadow: inset 0 0 30px rgba(255, 46, 136, .22);
+  }
+
+  h1 {
+    color: var(--arc-mint);
+    text-shadow: 0 0 10px rgba(126, 249, 208, .8);
+  }
+}
+
 @keyframes trivia-alert {
-  0%, 49.9% { outline: 2px solid var(--vu); outline-offset: -2px; }
+  0%, 49.9% { outline: 2px solid var(--arc-yellow); outline-offset: -2px; }
   50%, 100% { outline: 2px solid transparent; outline-offset: -2px; }
 }
 
@@ -18,67 +67,89 @@
   .modal { animation: none; }
 }
 
-/* The same two by two the player screen lays out, so "top right on my phone"
-   and "top right on the TV" are the same answer. Square-ish keys: the pad is
-   meant to be thumbed at without looking down.
+/* Everything under the title bar, as one column that fills what is left. */
+.pad {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  padding: 0 4px 8px;
+}
 
-   Recessed, like the player's: the tray is what gives four lit keys an edge
-   to sit against. */
+.centered {
+  align-items: center;
+  justify-content: center;
+}
+
+.question {
+  padding: 4px 0;
+  text-align: center;
+  font-family: var(--font-trivia);
+  font-size: 16px;
+  line-height: 1.45;
+  color: #fff;
+}
+
+/* The same two by two the TV lays out, so "top right on my phone" and "top
+   right on the TV" are the same answer. It takes all the height left, so the
+   keys stay well above any touch-target floor. */
 .keys {
+  flex: 1;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: minmax(5.5rem, auto);
-  gap: var(--gap-2);
-  padding: var(--gap-2);
-  border-radius: var(--radius-panel);
-  background: var(--chassis-deep);
-  box-shadow: var(--well);
+  grid-auto-rows: minmax(110px, 1fr);
+  gap: 10px;
 }
 
 .hint {
-  margin-top: var(--gap-4);
   text-align: center;
   font-family: var(--font-mono);
-  font-size: var(--silkscreen-size);
-  letter-spacing: var(--silkscreen-tracking);
+  font-size: 11px;
+  letter-spacing: .14em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  color: rgba(216, 204, 255, .5);
 }
 
-/* The standings, phone-sized. Same shape as the player screen's board so a
-   glance down and a glance up read the same. */
+.missed {
+  color: rgba(255, 176, 212, .75);
+}
+
+.locked {
+  text-align: center;
+  font-family: var(--font-trivia);
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--arc-mint);
+  text-shadow: 0 0 12px rgba(126, 249, 208, .7);
+}
+
+/* ---- the standings, phone-sized -------------------------------------- */
+
 .scoreboard {
   display: flex;
   flex-direction: column;
-  gap: var(--gap-1);
+  gap: 4px;
 }
 
 .scoreRow {
   display: flex;
   align-items: baseline;
-  gap: var(--gap-3);
-  padding: var(--gap-2) var(--gap-3);
-  border-radius: var(--radius-panel);
-  background: var(--faceplate);
-  box-shadow: var(--well);
+  gap: 10px;
+  padding: 7px 11px;
+  background: rgba(179, 136, 255, .1);
 }
 
-/* your own row, carried down from wherever you actually stand: set off by a
-   seam rather than by a label, because the row already says which one is you */
+/* your own row, carried down from wherever you actually stand */
 .aside {
-  margin-top: var(--gap-3);
-  border-top: var(--seam-rule);
-}
-
-/* amber is "yours" everywhere else on the deck, so it is yours here */
-.mine .scoreName {
-  color: var(--mine);
+  margin-top: 8px;
 }
 
 .rank {
   font-family: var(--font-mono);
-  font-size: var(--text-s);
-  color: var(--ink-3);
+  font-size: 11px;
+  color: var(--arc-text-rank);
 }
 
 .scoreName {
@@ -86,26 +157,30 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--ink);
+  font-size: 15px;
+  color: var(--arc-text-row);
 }
 
 .score {
   font-family: var(--font-mono);
-  font-size: var(--text-xl);
-  font-weight: var(--weight-bold);
-  color: var(--ink);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--arc-mint);
   font-variant-numeric: tabular-nums;
 }
 
-/* The question, in the hand. The answers stay off the pad — see the component
-   — but the question itself costs the room nothing and keeps a guest who
-   cannot read the TV from where they are standing in the round. */
-.question {
-  margin: var(--gap-3) 0;
-  text-align: center;
-  font-size: var(--text-xl);
-  font-weight: var(--weight-semibold);
-  line-height: 1.3;
-  color: var(--ink);
-}
+/* yellow is "yours" on the arcade */
+.mine {
+  background: rgba(255, 214, 0, .14);
+  box-shadow: inset 0 0 0 1px rgba(255, 214, 0, .5);
 
+  .rank,
+  .scoreName,
+  .score {
+    color: var(--arc-yellow);
+  }
+
+  .scoreName {
+    font-weight: 700;
+  }
+}

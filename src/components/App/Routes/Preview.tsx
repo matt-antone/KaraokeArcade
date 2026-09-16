@@ -55,6 +55,9 @@ const finalResult = () => triviaFixtures.triviaResult({
   sentAt: Date.now(),
 })
 
+/** Past the middle of the final board's hold, where the winner takes over. */
+const overResult = () => ({ ...finalResult(), boardFrom: Date.now() - 8000, endsAt: Date.now() + 2000 })
+
 const turn = (phase: BattlePhase, over: Partial<BattleTurn> = {}) => battleFixtures.battleTurn({
   phase,
   endsAt: Date.now() + 30000,
@@ -119,6 +122,9 @@ const Preview = ({ scene }: { scene: string }) => {
       })
     } else if (scene === 'battle-intro') {
       dispatch({ type: 'battle/TURN', payload: turn('intro2') })
+    } else if (scene === 'battle-sing') {
+      // the challenger at the mic, so the set shows both fighters on stage
+      dispatch({ type: 'battle/TURN', payload: turn('sing1', { endsAt: Date.now() + 94000 }) })
     }
   }, [dispatch, scene])
 
@@ -147,6 +153,14 @@ const Preview = ({ scene }: { scene: string }) => {
           width={w}
           height={h}
         />
+      </div>
+    )
+  }
+
+  if (scene === 'trivia-tv-over') {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#000', zIndex: 9999 }}>
+        <PlayerTrivia round={round({ questionNumber: 5 })} result={overResult()} width={w} height={h} />
       </div>
     )
   }

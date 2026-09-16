@@ -161,6 +161,30 @@
      and nothing else, never a sentence. Falls back to the mono stack so a
      party with no uplink gets small caps rather than a serif. */
   --font-arcade: 'Silkscreen', 'JetBrains Mono', ui-monospace, monospace;
+  /* Trivia only: the arcade-cabinet display face, set with hard offset
+     shadows. Everything a trivia screen reads as a sentence stays Figtree. */
+  --font-trivia: 'Rubik Mono One', 'Michroma', sans-serif;
+
+  /* ---- trivia arcade ----------------------------------------------- */
+  /* Trivia's own cabinet: four keys, a ring, and the dark it glows in. The
+     deck's graphite and amber stop at the trivia screens' edge. */
+  --arc-magenta: #ff2e88;
+  --arc-mint: #7ef9d0;
+  --arc-yellow: #ffd600;
+  --arc-violet: #b388ff;
+  --arc-ring: #fff4b0;
+  --arc-ink-mint: #04241c;
+  --arc-ink-yellow: #2a1d00;
+  --arc-ink-violet: #1a0b33;
+  --arc-dead: #1b1330;
+  --arc-dead-ink: #6e6488;
+  --arc-dead-letter: #4b4166;
+  --arc-well: #120a24;
+  --arc-text-2: #d8ccff;
+  --arc-text-row: #e9e2ff;
+  --arc-text-rank: #a08fd0;
+  --arc-text-muted: rgba(216, 204, 255, .4);
+  --arc-shadow-violet: rgba(124, 58, 237, .7);
 
   --weight-regular: 400;
   --weight-medium: 500;

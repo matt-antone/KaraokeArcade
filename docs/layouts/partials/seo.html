@@ -9,6 +9,7 @@
 
 <title>{{ $title }}</title>
 <meta name="description" content="{{ $desc }}">
+{{ if $isHome }}<meta name="google-site-verification" content="Sp6iOuyBPLnQj7tMa3moK_-wVjpxXOCPnNF4EjO74hE">{{ end }}
 {{ if eq .Kind "404" }}
 <meta name="robots" content="noindex">
 {{ else }}

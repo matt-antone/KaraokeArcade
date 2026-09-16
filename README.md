@@ -12,7 +12,16 @@ There is one rotation and everything takes its turn in it. A trivia round and a 
 
 The part everybody came for. MP3+G, MP4 and a music-synced visualizer, a round-robin queue that stays fair as people arrive, and singers who can manage their own spot without asking the host for anything.
 
-[![Karaoke on a phone](/docs/assets/images/karaoke.jpg?raw=true)](/docs/assets/images/karaoke.jpg?raw=true)
+<p align="center">
+  <a href="docs/content/docs/karaokearcade-app/app-library.png"><img src="docs/content/docs/karaokearcade-app/app-library.png" width="150" alt="Library"></a>
+  <a href="docs/content/docs/karaokearcade-app/app-queue.png"><img src="docs/content/docs/karaokearcade-app/app-queue.png" width="150" alt="Queue"></a>
+  <a href="docs/content/docs/karaokearcade-app/app-queue-me.png"><img src="docs/content/docs/karaokearcade-app/app-queue-me.png" width="150" alt="Me tab"></a>
+  <a href="docs/content/docs/karaokearcade-app/app-account.png"><img src="docs/content/docs/karaokearcade-app/app-account.png" width="150" alt="Account"></a>
+  <a href="docs/content/docs/karaokearcade-app/app-settings.png"><img src="docs/content/docs/karaokearcade-app/app-settings.png" width="150" alt="Settings"></a>
+  <a href="docs/content/docs/karaokearcade-app/app-player.jpg"><img src="docs/content/docs/karaokearcade-app/app-player.jpg" width="790" alt="Player"></a>
+</p>
+
+<p align="center"><i>App in mobile browser (top) controlling player in desktop browser (bottom)</i></p>
 
 - **Queue from the couch.** Search by artist or song, star the ones you want later, tap once to get in line.
 - **Know when you're up.** A strip at the top of every screen counts down to your turn.
@@ -28,9 +37,9 @@ Music trivia that takes the gap between two singers, so the room has something t
 [![Trivia](/docs/assets/images/trivia.jpg?raw=true)](/docs/assets/images/trivia.jpg?raw=true)
 
 - A round waits in the queue like a singer does, and comes up about once per lap.
-- **Five questions**, big on the TV, four colored keys on every phone in the room.
+- **Five questions**, on an arcade cabinet on the TV, with four colored keys on every phone in the room.
 - Anyone can play, whether or not they have a song queued. One answer each, first tap counts.
-- The right answer goes up for everyone at once, then the scoreboard, then the next singer is on.
+- The right answer goes up for everyone at once, then how many got it. After the last question come the high scores on a podium, then the winner, then the next singer is on.
 - Questions come from the [Open Trivia Database](https://opentdb.com/) and are cached ahead of time, so a party in a basement with no internet still plays.
 
 ### 🥊 Singer Battle

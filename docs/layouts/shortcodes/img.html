@@ -5,6 +5,10 @@
     {{ $img = . }}
   {{ end }}
 {{ end }}
+{{/* not in a docs bundle: fall back to the site's assets/ dir */}}
+{{ with and (eq (printf "%T" $img) "string") (resources.Get $img) }}
+  {{ $img = . }}
+{{ end }}
 <figure>
   <a href="#{{ anchorize $img.RelPermalink }}">
     <img srcset="{{ $img.RelPermalink }} {{ $density }}" src="{{ $img.RelPermalink }}" alt="{{ (.Get 1) }}" />

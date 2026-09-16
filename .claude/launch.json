@@ -22,6 +22,16 @@
       "autoPort": true
     },
     {
+      "name": "docs",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "npm run docs:tokens && hugo server --source docs -p $PORT"
+      ],
+      "port": 1313,
+      "autoPort": true
+    },
+    {
       "name": "dev-test",
       "runtimeExecutable": "sh",
       "runtimeArgs": [

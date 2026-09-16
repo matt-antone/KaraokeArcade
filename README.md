@@ -91,7 +91,7 @@ KaraokeArcade has three parts. [Getting Started](docs/content/docs/getting-start
 
 ## Support
 
-For bugs and requests specific to this fork, open an [issue](https://github.com/matt-antone/KaraokeParty/issues). For general karaoke-system and development chat, the upstream [Karaoke Eternal Discord](https://discord.gg/PgqVtFq) is the place to be.
+For bugs and requests specific to this fork, open an [issue](https://github.com/matt-antone/KaraokeArcade/issues).
 
 ## Contributing & development
 

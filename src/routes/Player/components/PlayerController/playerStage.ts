@@ -57,12 +57,22 @@ export const NO_MEDIA: StageMedia = {
  *
  * The key matters as much as the file. A media component reloads only when
  * mediaKey changes (componentDidUpdate), and one queue row is one queueId, so
- * both halves would share a key. The five-second intro2 splash sits exactly
- * between them and drops isMediaVisible, which unmounts the component and makes
+ * both halves would share a key. The intro2 splash sits exactly between them
+ * and drops isMediaVisible, which unmounts the component and makes
  * componentDidMount load the new sources unconditionally — but a distinct key
  * is what makes the *volume* right too: Player uses a changed mediaKey to hold
  * off applying the next song's replay gain until it plays. Negated rather than
  * invented so it stays one row's key, and stays a number.
+ *
+ * Video keying is the one prop a battle overrides rather than resolves. It is
+ * a property of the *folder* a file was scanned from, so two fighters whose
+ * songs live in different folders get different answers to it — and keying
+ * swaps the plain MP4 player for the alpha one, which lays a blurred, darkened
+ * backdrop behind the picture and turns the visualizer on behind that. Inside
+ * the stage's bezel that is a television with its brightness pulled down on
+ * one fighter's song and not the other's, decided by nothing either of them
+ * did. The panel is a hole cut in the plate with a real player behind it: what
+ * belongs in it is the video, at full brightness, both times.
  */
 export function resolveMedia (queueItem: QueueItem | undefined, battleSide: BattleSide | null): StageMedia {
   if (!queueItem) return NO_MEDIA
@@ -75,7 +85,7 @@ export function resolveMedia (queueItem: QueueItem | undefined, battleSide: Batt
       keyChange: queueItem.opponentKeyChange,
       rgTrackGain: queueItem.opponentRgTrackGain,
       rgTrackPeak: queueItem.opponentRgTrackPeak,
-      isVideoKeyingEnabled: queueItem.opponentIsVideoKeyingEnabled,
+      isVideoKeyingEnabled: false,
     }
   }
 
@@ -86,7 +96,7 @@ export function resolveMedia (queueItem: QueueItem | undefined, battleSide: Batt
     keyChange: queueItem.keyChange,
     rgTrackGain: queueItem.rgTrackGain,
     rgTrackPeak: queueItem.rgTrackPeak,
-    isVideoKeyingEnabled: queueItem.isVideoKeyingEnabled,
+    isVideoKeyingEnabled: battleSide ? false : queueItem.isVideoKeyingEnabled,
   }
 }
 

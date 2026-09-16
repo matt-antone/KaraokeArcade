@@ -53,9 +53,12 @@
           <img class="layer" style="--depth: {{ add 40 (mul $j 70) }}" src="{{ $s.RelPermalink }}" width="{{ $s.Width }}" height="{{ $s.Height }}" alt="{{ $s.Title }}" loading="lazy">
         {{ end }}
       </div>
-    {{ else }}{{ with resources.Get $m.image }}
-      <img class="layer" style="--depth: 50" src="{{ .RelPermalink }}" width="{{ .Width }}" height="{{ .Height }}" alt="{{ $m.name }} on the TV and a phone" loading="lazy">
-    {{ end }}{{ end }}
+    {{ else }}
+      <div class="duo">
+        {{ with resources.Get $m.tv }}<img class="layer tv" style="--depth: 40" src="{{ .RelPermalink }}" width="{{ .Width }}" height="{{ .Height }}" alt="{{ $m.name }} on the TV" loading="lazy">{{ end }}
+        {{ with resources.Get $m.phone }}<img class="layer phone" style="--depth: 140" src="{{ .RelPermalink }}" width="{{ .Width }}" height="{{ .Height }}" alt="{{ $m.name }} on a phone" loading="lazy">{{ end }}
+      </div>
+    {{ end }}
   </figure>
 </section>
 {{ end }}

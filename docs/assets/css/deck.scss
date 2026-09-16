@@ -985,6 +985,31 @@ details > :last-child { padding-bottom: var(--gap-4); }
   height: auto;
 }
 
+/* the TV with a phone held up in front of it */
+.duo {
+  position: relative;
+  padding-bottom: 18%;
+}
+
+.duo .tv {
+  width: 88%;
+  height: auto;
+  margin-left: auto;
+}
+
+.duo .phone {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 30%;
+  height: auto;
+  rotate: -4deg;
+}
+
+.feature.flip .duo .tv { margin: 0 auto 0 0; }
+
+.feature.flip .duo .phone { left: auto; right: 0; rotate: 4deg; }
+
 /* three phones fanned out, each at its own depth */
 .fan {
   position: relative;
@@ -1110,9 +1135,71 @@ details > :last-child { padding-bottom: var(--gap-4); }
   .band,
   .feature { padding-inline: var(--gutter); }
 
-  .hero-stage { margin-bottom: var(--gap-6); }
+  .hero-stage {
+    width: 100%;
+    max-width: 22rem;
+    margin: 0 auto var(--gap-5);
+  }
+
+  /* a phone is already close to the reader: smaller type, tighter bands and
+     screenshots that stay screenshot-sized rather than filling the width */
+  .hero { gap: var(--gap-5); padding-block: var(--gap-5); }
+
+  .hero h1 { font-size: 2.125rem; }
+
+  .lead { font-size: 1.125rem; }
+
+  .statement { font-size: 1.5rem; }
+
+  .intro { padding-block: var(--gap-6); }
+
+  .feature {
+    gap: var(--gap-5);
+    padding-block: var(--gap-5);
+  }
+
+  .feature h2 { font-size: 2rem; margin-bottom: var(--gap-2); }
+
+  .ticks { font-size: 1rem; margin-top: var(--gap-3); }
+
+  .ticks li { margin-bottom: var(--gap-2); }
+
+  .fan,
+  .duo {
+    max-width: 20rem;
+    margin: 0 auto;
+  }
+
+  .band { padding-block: var(--gap-4); }
+
+  .cards { grid-template-columns: 1fr 1fr; gap: var(--gap-2); }
+
+  .parts { grid-template-columns: 1fr; }
+
+  .card { padding: var(--gap-3); }
+
+  .chips .card { font-size: 1rem; }
+
+  .card h3 { font-size: 1.375rem; }
+
+  .card p { font-size: 1rem; }
+
+  .closer { padding-bottom: var(--gap-6); }
 }
 
 @media (max-width: 30rem) {
   .topbar nav a:first-child { display: none; }
 }
+
+/* a TV shot and a phone shot side by side, the same height: each column is
+   as wide as its image's aspect ratio */
+.pair {
+  display: grid;
+  grid-template-columns: 1.75fr .53fr;
+  gap: var(--gap-3);
+  align-items: start;
+  max-width: 34rem;
+  margin-bottom: var(--gap-4);
+}
+
+.pair figure { margin: 0; }

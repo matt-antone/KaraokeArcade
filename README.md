@@ -34,7 +34,7 @@ The part everybody came for. MP3+G, MP4 and a music-synced visualizer, a round-r
 
 Music trivia that takes the gap between two singers, so the room has something to do — and the guests who would rather not sing get a way to play.
 
-[![Trivia](/docs/assets/images/trivia.jpg?raw=true)](/docs/assets/images/trivia.jpg?raw=true)
+<img src="/docs/assets/images/trivia-tv.jpg?raw=true" alt="Trivia on the TV" height="300"> <img src="/docs/assets/images/trivia-phone.jpg?raw=true" alt="Trivia on a phone" height="300">
 
 - A round waits in the queue like a singer does, and comes up about once per lap.
 - **Five questions**, on an arcade cabinet on the TV, with four colored keys on every phone in the room.
@@ -46,7 +46,7 @@ Music trivia that takes the gap between two singers, so the room has something t
 
 One turn, two singers, and each of them picks the other's song. It runs on the TV as an arcade cabinet: fighters, a VS slam, two-minute rounds and a verdict.
 
-[![Singer Battle](/docs/assets/images/singer-battle.jpg?raw=true)](/docs/assets/images/singer-battle.jpg?raw=true)
+<img src="/docs/assets/images/battle-tv.jpg?raw=true" alt="Singer Battle on the TV" height="300"> <img src="/docs/assets/images/battle-phone.jpg?raw=true" alt="Voting on a phone" height="300">
 
 - **Pick who you sing as.** Eight fighters; whoever you choose is who the room watches on stage.
 - **Throw a challenge.** Pick somebody in the room, then pick the song *they* have to sing. Their phone gets 45 seconds to accept — and the song they pick back is the one *you* sing. Neither of you sees the other's choice until it's on screen.

@@ -117,7 +117,7 @@ const beatContent = (
     case 'logo':
       return <Logo />
     case 'versus':
-      return <Versus turn={turn} />
+      return <Versus turn={turn} msLeft={msLeft} />
     case 'intro1':
     case 'intro2':
       return <Intro turn={turn} at={at} />

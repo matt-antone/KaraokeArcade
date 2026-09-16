@@ -33,8 +33,24 @@ import {
   BATTLE_TURN,
   BATTLE_TURN_CLEAR,
 } from '../../shared/actionTypes.js'
-import { BATTLE_INVITE_MS } from '../../shared/types.js'
+import {
+  BATTLE_INTRO_MS,
+  BATTLE_INVITE_MS,
+  BATTLE_JUDGE_BALLOT_MS,
+  BATTLE_JUDGE_MS,
+  BATTLE_LOGO_MS,
+  BATTLE_METER_MS,
+  BATTLE_SING_MS,
+  BATTLE_VERSUS_MS,
+} from '../../shared/types.js'
 import type { BattlePhase, BattleTurn } from '../../shared/types.js'
+
+/** How far into a battle each beat starts, summed from the beat lengths rather
+ *  than written as the round number they currently add up to. The round numbers
+ *  were wrong the first time a beat changed length, and a test that walks to the
+ *  wrong beat fails somewhere far from the thing that moved. */
+const TO_SING1 = BATTLE_LOGO_MS + BATTLE_VERSUS_MS + BATTLE_INTRO_MS
+const TO_JUDGE = TO_SING1 + BATTLE_SING_MS + BATTLE_INTRO_MS + BATTLE_SING_MS
 
 const ROOM_ID = 1
 const ALICE = 1
@@ -561,7 +577,7 @@ describe('the beats', () => {
     await negotiate(io, { queueId: 1 })
 
     Battle.startTurn(io, ROOM_ID, 1, false)
-    await vi.advanceTimersByTimeAsync(22000) // logo, versus, intro1
+    await vi.advanceTimersByTimeAsync(TO_SING1) // logo, versus, intro1
     expect(Battle.getTurn(ROOM_ID)?.phase).toBe('sing1')
 
     // the opponent's side reported against the challenger's beat is a stale
@@ -579,7 +595,7 @@ describe('the beats', () => {
     await negotiate(io, { queueId: 1 })
 
     Battle.startTurn(io, ROOM_ID, 1, false)
-    await vi.advanceTimersByTimeAsync(274000) // logo, versus, both intros, both songs
+    await vi.advanceTimersByTimeAsync(TO_JUDGE) // logo, versus, both intros, both songs
     expect(Battle.getTurn(ROOM_ID)?.phase).toBe('judge')
 
     io.emitted.length = 0
@@ -604,7 +620,7 @@ describe('the beats', () => {
     expect(open.every(p => p.challengerScore === 0 && p.opponentScore === 0)).toBe(true)
 
     // out of the ask and into the verdict, thirty seconds later
-    await vi.advanceTimersByTimeAsync(31000)
+    await vi.advanceTimersByTimeAsync(BATTLE_JUDGE_BALLOT_MS + 1000)
 
     const turn = Battle.getTurn(ROOM_ID)
     expect(turn?.phase).toBe('winner')
@@ -625,7 +641,7 @@ describe('the beats', () => {
     // display. getSingers resolves that to three people, and Alice and Bob are
     // the ones fighting — so one phone in the room can vote.
     Battle.startTurn(io, ROOM_ID, 1, false, (await Battle.getSingers(io, ROOM_ID, 0)).length)
-    await vi.advanceTimersByTimeAsync(274000)
+    await vi.advanceTimersByTimeAsync(TO_JUDGE)
 
     const turn = Battle.getTurn(ROOM_ID)
     expect(turn?.phase).toBe('judge')
@@ -643,7 +659,7 @@ describe('the beats', () => {
     // drawn with a room size behind it would be a row waiting for taps that
     // are never coming.
     Battle.startTurn(io, ROOM_ID, 1, true, (await Battle.getSingers(io, ROOM_ID, 0)).length)
-    await vi.advanceTimersByTimeAsync(274000)
+    await vi.advanceTimersByTimeAsync(TO_JUDGE)
 
     expect(Battle.getTurn(ROOM_ID)?.ballotsOf).toBe(0)
   })
@@ -655,12 +671,12 @@ describe('the beats', () => {
     await negotiate(io, { queueId: 1 })
 
     Battle.startTurn(io, ROOM_ID, 1, true)
-    await vi.advanceTimersByTimeAsync(280000) // through the ask, into meter1
+    await vi.advanceTimersByTimeAsync(TO_JUDGE + BATTLE_JUDGE_MS + 1000) // through the ask, into meter1
 
     Battle.score(io, ROOM_ID, 1, 1, 61)
     Battle.score(io, ROOM_ID, 1, 2, 4200) // clamped to the maximum
 
-    await vi.advanceTimersByTimeAsync(30000)
+    await vi.advanceTimersByTimeAsync(BATTLE_METER_MS * 2)
 
     const turn = Battle.getTurn(ROOM_ID)
     expect(turn?.phase).toBe('winner')

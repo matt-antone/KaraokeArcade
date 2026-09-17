@@ -57,7 +57,7 @@ KaraokeArcade Server is also available as an `npm` package:
 npm i -g karaokearcade
 {{< /highlight >}}
 
-<aside class="info">
+<aside class="info" role="note">
   {{% icon-info %}}
   <p>In the above command, <code>i</code> is short for "install", and <code>-g</code> means "global" so that the command in the next step will work everywhere.</p>
 </aside>
@@ -68,7 +68,7 @@ npm i -g karaokearcade
 karaokearcade-server
 {{< /highlight >}}
 
-<aside class="info">
+<aside class="info" role="note">
   {{% icon-info %}}
   <p>The server chooses a random port at startup unless <a href="#cli--env">otherwise specified</a>. For example, to use port 8888, run <code>karaokearcade-server --port 8888</code></p>
 </aside>
@@ -167,7 +167,7 @@ Field templates are defined using [JSON-e syntax](https://json-e.js.org){{% icon
 }
 {{< /highlight >}}
 
-<aside class="info">
+<aside class="info" role="note">
   {{% icon-info %}}
   <p><strong>Tip: </strong>Setting the media scanner log or console level to "debug" (see below) can be helpful in troubleshooting your field templates.
 </p>

@@ -11,10 +11,10 @@
 {{ end }}
 <figure>
   <a href="#{{ anchorize $img.RelPermalink }}">
-    <img srcset="{{ $img.RelPermalink }} {{ $density }}" src="{{ $img.RelPermalink }}" alt="{{ (.Get 1) }}" />
+    <img srcset="{{ $img.RelPermalink }} {{ $density }}" src="{{ $img.RelPermalink }}" alt="{{ (.Get 1) }}" width="{{ $img.Width }}" height="{{ $img.Height }}" loading="lazy" />
   </a>
   <a href="#_" class="overlay" id="{{ anchorize $img.RelPermalink }}">
-    <img srcset="{{ $img.RelPermalink }} {{ $density }}" src="{{ $img.RelPermalink }}" alt="{{ (.Get 1) }}" />
+    <img srcset="{{ $img.RelPermalink }} {{ $density }}" src="{{ $img.RelPermalink }}" alt="{{ (.Get 1) }}" width="{{ $img.Width }}" height="{{ $img.Height }}" loading="lazy" />
   </a>
   <figcaption>
     <p>{{ (.Get 1) }}</p>

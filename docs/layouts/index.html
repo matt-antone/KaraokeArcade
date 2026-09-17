@@ -13,6 +13,10 @@
   {{ if eq .Name "app-player.jpg" }}{{ $player = . }}{{ else }}{{ $phones = $phones | append . }}{{ end }}
 {{ end }}
 
+{{/* The screenshots ship at panel size (800x1400, 1728x1080). Nothing on this
+     page draws one wider than ~430 CSS px, so each is cut to twice its largest
+     drawn size and served as WebP — the originals were most of the mobile
+     payload. */}}
 <section class="hero">
   <div class="hero-grid" aria-hidden="true"></div>
   <div class="hero-copy">
@@ -25,9 +29,9 @@
     </div>
   </div>
   <div class="hero-stage" aria-hidden="true">
-    {{ with $player }}<img class="layer tv" style="--depth: 60" src="{{ .RelPermalink }}" width="{{ .Width }}" height="{{ .Height }}" alt="">{{ end }}
-    {{ with index $phones 1 }}<img class="layer phone phone-a" style="--depth: 160" src="{{ .RelPermalink }}" width="{{ .Width }}" height="{{ .Height }}" alt="">{{ end }}
-    {{ with index $phones 0 }}<img class="layer phone phone-b" style="--depth: 260" src="{{ .RelPermalink }}" width="{{ .Width }}" height="{{ .Height }}" alt="">{{ end }}
+    {{ with $player }}{{ $i := .Process "resize 900x webp q78" }}<img class="layer tv" style="--depth: 60" src="{{ $i.RelPermalink }}" width="{{ $i.Width }}" height="{{ $i.Height }}" alt="" fetchpriority="high">{{ end }}
+    {{ with index $phones 1 }}{{ $i := .Process "resize 440x webp q78" }}<img class="layer phone phone-a" style="--depth: 160" src="{{ $i.RelPermalink }}" width="{{ $i.Width }}" height="{{ $i.Height }}" alt="">{{ end }}
+    {{ with index $phones 0 }}{{ $i := .Process "resize 440x webp q78" }}<img class="layer phone phone-b" style="--depth: 260" src="{{ $i.RelPermalink }}" width="{{ $i.Width }}" height="{{ $i.Height }}" alt="">{{ end }}
   </div>
 </section>
 
@@ -50,13 +54,14 @@
     {{ if $m.gallery }}
       <div class="fan">
         {{ range $j, $s := first 3 $phones }}
-          <img class="layer" style="--depth: {{ add 40 (mul $j 70) }}" src="{{ $s.RelPermalink }}" width="{{ $s.Width }}" height="{{ $s.Height }}" alt="{{ $s.Title }}" loading="lazy">
+          {{ $i := $s.Process "resize 560x webp q78" }}
+          <img class="layer" style="--depth: {{ add 40 (mul $j 70) }}" src="{{ $i.RelPermalink }}" width="{{ $i.Width }}" height="{{ $i.Height }}" alt="{{ $s.Title }}" loading="lazy">
         {{ end }}
       </div>
     {{ else }}
       <div class="duo">
-        {{ with resources.Get $m.tv }}<img class="layer tv" style="--depth: 40" src="{{ .RelPermalink }}" width="{{ .Width }}" height="{{ .Height }}" alt="{{ $m.name }} on the TV" loading="lazy">{{ end }}
-        {{ with resources.Get $m.phone }}<img class="layer phone" style="--depth: 140" src="{{ .RelPermalink }}" width="{{ .Width }}" height="{{ .Height }}" alt="{{ $m.name }} on a phone" loading="lazy">{{ end }}
+        {{ with resources.Get $m.tv }}{{ $i := .Process "resize 900x webp q78" }}<img class="layer tv" style="--depth: 40" src="{{ $i.RelPermalink }}" width="{{ $i.Width }}" height="{{ $i.Height }}" alt="{{ $m.name }} on the TV" loading="lazy">{{ end }}
+        {{ with resources.Get $m.phone }}{{ $i := .Process "webp q78" }}<img class="layer phone" style="--depth: 140" src="{{ $i.RelPermalink }}" width="{{ $i.Width }}" height="{{ $i.Height }}" alt="{{ $m.name }} on a phone" loading="lazy">{{ end }}
       </div>
     {{ end }}
   </figure>

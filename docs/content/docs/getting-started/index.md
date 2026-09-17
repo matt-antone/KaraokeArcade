@@ -21,7 +21,7 @@ On the system that will serve the web app and your media files, <a href='{{< ref
 
 Once the server is running, browse to the web app at the **server URL**.
 
-<aside class="info">
+<aside class="info" role="note">
   {{% icon-info %}}
   <p>Since the app is designed for mobile, it's recommended to use your phone for the best experience once you're finished with the initial setup here.</p>
 </aside>
@@ -32,7 +32,7 @@ Since this is your first time with KaraokeArcade, you'll be asked to create your
 
 Make sure you use a strong password and store it someplace safe, since admins can manage users, rooms, preferences and more.
 
-<aside class="info">
+<aside class="info" role="note">
   {{% icon-info %}}
   <p>KaraokeArcade Server stores all data on <strong>your server only</strong>.</p>
 </aside>
@@ -65,7 +65,7 @@ KaraokeArcade's player is just another part of the browser app, but it's meant t
 
 Go to **Settings**, where the **Player** panel reports **"no player in room"**. Press **Open Player Here** to start one in a new tab.
 
-<aside class="info">
+<aside class="info" role="note">
   {{% icon-info %}}
   <p>You can also navigate to <code>/player</code> directly. Browsers without fullscreen support can still run a player, they just won't fill the screen.</p>
 </aside>
@@ -78,7 +78,7 @@ Now that there's a player in the room, the playback and display controls appear 
 
 Go ahead and press play in the player to start the party!
 
-<aside class="info">
+<aside class="info" role="note">
   {{% icon-info %}}
   <p>Starting playback inside the player (rather than on a remote device) helps avoid browser auto-play restrictions. See the <a href="{{< ref "faq#enabling-autoplay" >}}">F.A.Q.</a> for more on how to enable auto-play in your browser.</p>
 </aside>

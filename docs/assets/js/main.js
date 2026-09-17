@@ -7,6 +7,7 @@
   function toggleNav() {
     btn.classList.toggle('active')
     nav.classList.toggle('active')
+    btn.setAttribute('aria-expanded', String(nav.classList.contains('active')))
   }
 
   document.addEventListener("DOMContentLoaded", e => {
@@ -20,6 +21,16 @@
     if (btn && nav) {
       toggleNav()
     }
+
+    // A box that scrolls sideways (a wide table, a long code line) has to be
+    // reachable by keyboard too, not just by dragging it.
+    document.querySelectorAll('pre, table').forEach(el => {
+      if (el.scrollWidth > el.clientWidth) {
+        el.tabIndex = 0
+        el.setAttribute('role', 'group')
+        el.setAttribute('aria-label', el.tagName === 'TABLE' ? 'Table, scrolls sideways' : 'Code, scrolls sideways')
+      }
+    })
 
     // init nav highlighter if we're in docs
     if (segs[0] === 'docs' && typeof Gumshoe !== 'undefined') {

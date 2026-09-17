@@ -1,0 +1,28 @@
+{{/* One screenshot layer of the front page, as a responsive WebP set.
+
+     Every one of these is drawn at a different fraction of the viewport, so a
+     single file is either too big for a phone or too small for a desktop. The
+     candidate widths below are cut from the original and the browser picks
+     against `sizes`, which restates what the stylesheet actually does.
+
+     dict keys: res (the image resource), sizes, max (largest useful CSS px,
+     doubled for 2x screens), class, alt, style, loading, fetchpriority. */}}
+{{ $r := .res }}
+{{ $max := int (math.Min (int .max) $r.Width) }}
+{{ $widths := slice }}
+{{ range (slice 240 320 440 600 800 1000) }}
+  {{ if lt . $max }}{{ $widths = $widths | append . }}{{ end }}
+{{ end }}
+{{ $widths = $widths | append $max }}
+{{ $srcset := slice }}
+{{ range $widths }}
+  {{ $i := $r.Process (printf "resize %dx webp q78" .) }}
+  {{ $srcset = $srcset | append (printf "%s %dw" $i.RelPermalink $i.Width) }}
+{{ end }}
+{{ $fallback := $r.Process (printf "resize %dx webp q78" $max) }}
+<img class="{{ .class }}"{{ with .style }} style="{{ . | safeCSS }}"{{ end }}
+  src="{{ $fallback.RelPermalink }}"
+  srcset="{{ delimit $srcset ", " }}"
+  sizes="{{ .sizes }}"
+  width="{{ $fallback.Width }}" height="{{ $fallback.Height }}"
+  alt="{{ .alt }}"{{ with .loading }} loading="{{ . }}"{{ end }}{{ with .fetchpriority }} fetchpriority="{{ . }}"{{ end }}>

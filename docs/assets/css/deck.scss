@@ -145,6 +145,23 @@ a {
 
 a:hover { text-decoration: underline; }
 
+/* The docs sidebar is twenty links deep before the prose starts. */
+.skip-link {
+  position: absolute;
+  left: var(--gutter);
+  top: var(--gutter);
+  z-index: 10;
+  padding: var(--gap-3) var(--gap-4);
+  color: var(--ink);
+  background: var(--key-face);
+  border-radius: var(--radius-key);
+  box-shadow: var(--bevel);
+  text-decoration: none;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus { transform: none; }
+
 :focus-visible {
   outline: var(--focus-outline);
   outline-offset: 2px;
@@ -218,7 +235,7 @@ pre code {
   .k, .kc, .kd, .kn, .kp, .kr, .kt { color: var(--ink); font-weight: var(--weight-semibold); }
   .s, .s1, .s2, .sa, .sb, .sc, .sd, .se, .sh, .si, .sx, .sr, .ss { color: var(--standby); }
   .m, .mb, .mf, .mh, .mi, .il, .mo { color: var(--standby); }
-  .c, .c1, .cm, .cp, .cpf, .cs, .ch { color: var(--ink-4); font-style: italic; }
+  .c, .c1, .cm, .cp, .cpf, .cs, .ch { color: var(--ink-3); font-style: italic; }
   .n, .na, .nb, .nc, .nd, .ni, .ne, .nf, .nl, .nn, .no, .nt, .nv, .py { color: var(--ink-2); }
   .o, .ow, .p { color: var(--ink-3); }
   .err { color: var(--alert); }
@@ -367,6 +384,8 @@ pre code {
 
 #btn-nav {
   display: none;
+  padding: 0;
+  border: none;
   align-items: center;
   justify-content: center;
   width: var(--target);
@@ -695,12 +714,13 @@ details > :last-child { padding-bottom: var(--gap-4); }
   padding: var(--gap-5) var(--gap-6);
   margin-left: var(--sidebar-w);
   border-top: var(--seam-rule);
-  color: var(--ink-4);
+  color: var(--ink-3);
 }
 
 .copyright a {
-  color: var(--ink-3);
+  color: var(--ink-2);
   font-weight: var(--weight-regular);
+  text-decoration: underline;
 }
 
 /* ---- narrow: the sidebar becomes the app's header bar ------------------ */
@@ -748,6 +768,16 @@ details > :last-child { padding-bottom: var(--gap-4); }
   }
 
   .content.container { padding-top: var(--gap-5); }
+
+  /* A table of CLI options is wider than a phone. Let it scroll inside its own
+     panel rather than drag the whole page sideways: `overflow` on a table box
+     does not clip it, because the box still sizes to its widest row. */
+  table {
+    display: block;
+    overflow-x: auto;
+  }
+
+  th { white-space: normal; }
 }
 
 /* ---- the front page ------------------------------------------------------
@@ -1077,7 +1107,7 @@ details > :last-child { padding-bottom: var(--gap-4); }
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
     @keyframes rise {
-      from { opacity: 0; translate: 0 2.5rem; }
+      from { translate: 0 2.5rem; }
     }
 
     @keyframes lift {

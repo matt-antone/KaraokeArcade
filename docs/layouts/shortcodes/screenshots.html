@@ -11,11 +11,11 @@
       <li>
         <a href="#{{ anchorize (.RelPermalink) }}" class="screenshot-link">
           <img srcset="{{.Permalink }} 2x" src="{{.Permalink }}" alt="{{.Title }}" width="{{.Width }}"
-            height="{{.Height }}" />
+            height="{{.Height }}" loading="lazy" />
         </a>
         <a href="#_" class="overlay" id="{{ anchorize (.RelPermalink) }}">
           <img srcset="{{.Permalink }} 2x" src="{{.Permalink }}" alt="{{.Title }}" width="{{.Width }}"
-            height="{{.Height }}" />
+            height="{{.Height }}" loading="lazy" />
         </a>
       </li>
     {{ end }}

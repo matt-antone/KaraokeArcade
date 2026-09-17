@@ -76,7 +76,7 @@ Microphones are *not* required since the player itself only outputs music - this
 
 KaraokeArcade is a fork of <a href="https://github.com/bhj/KaraokeEternal" rel="noopener">Karaoke Eternal</a>{{% icon-external %}}, and tracks it for the media, scanning and server side. Where it differs is what the night feels like for the people in the room.
 
-| | KaraokeArcade | Karaoke Eternal |
+| Feature | KaraokeArcade | Karaoke Eternal |
 | --- | --- | --- |
 | **Queue from your phone** | Yes | Yes |
 | **MP3+G, MP4, visualizer** | Yes | Yes |

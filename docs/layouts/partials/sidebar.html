@@ -10,21 +10,22 @@
 
     {{ partial "github-buttons.html" . }}
 
-    <div id="btn-nav" class="active">
-      <svg class="icon" viewBox="0 0 24 24">
+    <button id="btn-nav" class="active" type="button" aria-controls="site-nav" aria-expanded="true"
+      aria-label="Navigation">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z" />
       </svg>
-    </div>
+    </button>
   </header>
 
-  <nav class="active">
+  <nav id="site-nav" class="active" aria-label="Site">
     <ul>
       <li class="{{ if eq .RelPermalink "/overview/" }} active{{ end }}">
         <a href="{{ .Site.BaseURL }}overview/">Overview</a>
       </li>
       <li>
         <a rel="external" href="{{ .Site.BaseURL }}repo">GitHub</a>
-        <svg class="icon external" viewBox="0 0 24 24">
+        <svg class="icon external" viewBox="0 0 24 24" aria-hidden="true">
           <path
             d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
         </svg>

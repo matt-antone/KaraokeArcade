@@ -3,11 +3,12 @@
 {{ partial "head.html" . }}
 
 <body{{ if .IsHome }} class="home"{{ end }}>
+  <a class="skip-link" href="#content">Skip to content</a>
   {{ if .IsHome }}{{ partial "topbar.html" . }}{{ else }}{{ partial "sidebar.html" . }}{{ end }}
-  <div class="content container">
+  <main id="content" class="content container">
     {{ block "main" . }}
     {{ end }}
-  </div>
+  </main>
   {{ partial "footer.html" . }}
   <script src='{{ (resources.Get "js/gumshoe.min.js").Permalink }}'></script>
   <script src='{{ (resources.Get "js/main.js").Permalink }}'></script>

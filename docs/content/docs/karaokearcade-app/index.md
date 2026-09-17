@@ -176,7 +176,7 @@ Rooms have a number of options, including:
 
 **Reset for New Night** hands a used room back in the state a new one arrives in: its queue is emptied, paused singers are un-paused, and the player's list of what has been sung is cleared, so the whole library is selectable again. Use it instead of creating a room per session. Each singer's own record of everything they have ever sung is separate and is not touched.
 
-<aside class="warn">
+<aside class="warn" role="note">
   {{% icon-warn %}}
   <p>Removing a room will also remove its queue, so the history of songs played during that session will be lost.</p>
 </aside>
@@ -244,7 +244,7 @@ The room decides, and there are two ways it can. Which one a room uses is set in
 
 **By crowd noise.** Switch on **Judge singer battles by crowd noise** and the ballot is replaced by the player listening through the microphone: it takes a reading while the room cheers for each singer in turn, and the loudest one wins. The score climbs on screen as it's measured, and the second singer's turn shows the number they have to beat.
 
-<aside class="info">
+<aside class="info" role="note">
   {{% icon-info %}}
   <p>Crowd scoring needs a microphone, and browsers only hand a page one on a secure origin - so it works on a player opened at <code>http://localhost</code>, on the machine running the server, and not at a LAN address. If a room is set to crowd noise and its player can't hear the room, those battles are decided as a draw. Rooms on the default vote are unaffected: a ballot runs on the phones and needs nothing of the player's machine.</p>
 </aside>
@@ -269,7 +269,7 @@ To start a player, go to the system driving your audio, sign in to the desired r
 
 Once a player is in the room, the transport and display options in that same panel become the room's controls. Between songs the player runs a short intermission - roughly fifteen seconds - that names and pictures the next singer, so they have time to get to the mic, and shows the room's join QR code while it waits.
 
-<aside class="info">
+<aside class="info" role="note">
   {{% icon-info %}}
   <p>Starting playback inside the player (rather than on a remote device) helps avoid browser auto-play restrictions. See the <a href="{{< ref "faq#enabling-autoplay" >}}">F.A.Q.</a> for more on how to enable auto-play in your browser.</p>
 </aside>

@@ -1,11 +1,25 @@
-{{/* Google Analytics. Production builds only, so `hugo server` stays out of the numbers. */}}
+{{/* Google Analytics. Production builds only, so `hugo server` stays out of the
+     numbers.
+
+     gtag.js is 172 KB — more than twice the rest of this page put together —
+     and as an async <script> in the head it opens a third-party connection and
+     competes with the hero image for the same throttled phone connection.
+     Measured on a simulated mobile 4G: LCP 3.1s with it in the head, 2.0s
+     without, and TBT 30ms against 0. So the tag is queued here and the library
+     is fetched once the page has finished painting. dataLayer holds the calls
+     until it lands and gtag.js replays them, so the page view still counts. */}}
 {{ if hugo.IsProduction }}
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-XQLFPVJWLR"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'G-XQLFPVJWLR');
+
+  addEventListener('load', function () {
+    var s = document.createElement('script')
+    s.async = true
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=G-XQLFPVJWLR'
+    document.head.appendChild(s)
+  });
 </script>
 {{ end }}

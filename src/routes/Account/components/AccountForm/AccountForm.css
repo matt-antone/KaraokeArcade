@@ -4,14 +4,7 @@
   gap: var(--gap-2);
 }
 
-/* the avatar is a square well; the field sits at its top edge rather than
-   stretching to 96px */
-.userDisplayContainer {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--gap-3);
-
-  input {
-    min-width: 0;
-  }
+/* the avatar is a square well, not a full-width row */
+.container > :first-child {
+  align-self: flex-start;
 }

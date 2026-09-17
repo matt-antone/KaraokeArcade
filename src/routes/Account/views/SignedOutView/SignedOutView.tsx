@@ -8,6 +8,7 @@ import InputRadio from 'components/InputRadio/InputRadio'
 import Button from 'components/Button/Button'
 import AccountForm from '../../components/AccountForm/AccountForm'
 import SignIn from './SignIn/SignIn'
+import ResetPassword from './ResetPassword/ResetPassword'
 import styles from './SignedOutView.css'
 
 /**
@@ -135,6 +136,7 @@ const SignedOutView = () => {
   const [showAllRooms, setShowAllRooms] = useState(true)
   const [prevRooms, setPrevRooms] = useState<typeof rooms | null>(null)
   const [focusRequest, setFocusRequest] = useState(0)
+  const [isResetting, setIsResetting] = useState(false)
 
   // once per mount
   useEffect(() => {
@@ -190,7 +192,7 @@ const SignedOutView = () => {
 
   useEffect(() => {
     firstFieldRef.current?.focus()
-  }, [focusRequest, mode])
+  }, [focusRequest, mode, isResetting])
 
   return (
     <div className={styles.container}>
@@ -217,7 +219,19 @@ const SignedOutView = () => {
           allowNewStandard={allowNewStandard}
         />
 
-        {(mode === 'returning' || !allowNew) && (
+        {(mode === 'returning' || !allowNew) && isResetting && (
+          <ResetPassword
+            initialUsername={username}
+            onDone={(name) => {
+              setUsername(name)
+              setPassword('')
+              setIsResetting(false)
+            }}
+            onFirstFieldRef={handleFirstFieldRef}
+          />
+        )}
+
+        {(mode === 'returning' || !allowNew) && !isResetting && (
           <SignIn
             username={username}
             password={password}
@@ -225,6 +239,7 @@ const SignedOutView = () => {
             onPasswordChange={setPassword}
             onSubmit={handleLogin}
             onFirstFieldRef={handleFirstFieldRef}
+            onForgotPassword={() => setIsResetting(true)}
           />
         )}
 

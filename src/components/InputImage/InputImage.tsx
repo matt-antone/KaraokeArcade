@@ -116,9 +116,11 @@ const InputImage = ({ user, onSelect }: UserImageProps) => {
       {imageURL && !isLoading && (
         <Button
           className={styles.btnClear}
-          icon='CLEAR'
+          icon='DELETE'
+          aria-label='Remove photo'
           onClick={handleImgClear}
-          size={32}
+          size={20}
+          variant='default'
         />
       )}
 

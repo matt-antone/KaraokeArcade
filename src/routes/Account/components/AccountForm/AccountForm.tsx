@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import InputImage from 'components/InputImage/InputImage'
 import { UserWithRole } from 'shared/types'
+import { SECURITY_QUESTIONS } from 'shared/securityQuestions'
 import styles from './AccountForm.css'
 
 interface AccountFormProps {
@@ -25,6 +26,8 @@ const buildFormData = (fields: {
   newPasswordConfirm?: string
   image?: Blob
   role?: string
+  securityQuestion?: string
+  securityAnswer?: string
 }): FormData => {
   const data = new FormData()
 
@@ -36,6 +39,12 @@ const buildFormData = (fields: {
     data.append('newPasswordConfirm', fields.newPasswordConfirm ?? '')
   }
 
+  // sent as a pair or not at all, so the server can refuse half of one
+  if (fields.securityQuestion?.trim() || fields.securityAnswer?.trim()) {
+    data.append('securityQuestion', fields.securityQuestion ?? '')
+    data.append('securityAnswer', fields.securityAnswer ?? '')
+  }
+
   if (fields.image !== undefined) data.append('image', fields.image)
   if (fields.role !== undefined) data.append('role', fields.role)
 
@@ -43,14 +52,16 @@ const buildFormData = (fields: {
 }
 
 /** Whether anything on the form differs from the account behind it. A new
- *  username or password counts by existing at all; the name and the role count
- *  only when they have moved. */
+ *  password or security question counts by existing at all; the name and the
+ *  role count only when they have moved. */
 const isFormDirty = (
-  user: { name: string, isAdmin: boolean },
-  values: { username?: string, newPassword?: string, name?: string, role?: string },
-): boolean => !!values.username
+  user: { isAdmin: boolean },
+  originalName: string,
+  values: { name?: string, newPassword?: string, role?: string, securityQuestion?: string, securityAnswer?: string },
+): boolean => (values.name ?? '').trim() !== originalName
   || !!values.newPassword
-  || values.name !== user.name
+  || !!values.securityQuestion
+  || !!values.securityAnswer
   || (values.role !== undefined && values.role !== (user.isAdmin ? '1' : '0'))
 
 /** The password pair. The confirm only appears once something has been typed
@@ -87,6 +98,51 @@ const PasswordFields = ({ isExisting, isChangingPassword, show, onChange, newPas
   )
 }
 
+/** The question asked on the sign-in screen when the password is forgotten.
+ *  An existing account's answer is never sent back, so both read as optional
+ *  there: filling them in replaces whatever was set before. Picking a question
+ *  clears the answer, since an answer typed for another question is wrong. */
+const SecurityFields = ({ isExisting, show, onChange, questionRef, answerRef }: {
+  isExisting: boolean
+  show: boolean
+  onChange: () => void
+  questionRef: React.RefObject<HTMLSelectElement | null>
+  answerRef: React.RefObject<HTMLInputElement | null>
+}) => {
+  if (!show) return null
+
+  return (
+    <>
+      <select
+        defaultValue=''
+        onChange={() => {
+          if (answerRef.current) {
+            answerRef.current.value = ''
+            answerRef.current.setCustomValidity('')
+          }
+          onChange()
+        }}
+        ref={questionRef}
+      >
+        <option value='' disabled>
+          {isExisting ? 'change security question (optional)...' : 'security question, for a forgotten password...'}
+        </option>
+        {SECURITY_QUESTIONS.map(q => <option key={q} value={q}>{q}</option>)}
+      </select>
+      <input
+        type='text'
+        autoComplete='off'
+        onChange={(e) => {
+          e.target.setCustomValidity('')
+          onChange()
+        }}
+        placeholder={isExisting ? 'new security answer' : 'security answer'}
+        ref={answerRef}
+      />
+    </>
+  )
+}
+
 /** Admin-only. Guest is offered only to an account that already is one:
  *  it is a role you can keep, not one you can be promoted into. */
 const RoleSelect = ({ user, onChange, selectRef }: {
@@ -113,11 +169,12 @@ const AccountForm = ({
   showPassword = true,
   user,
 }: AccountFormProps) => {
-  const username = useRef<HTMLInputElement>(null)
   const newPassword = useRef<HTMLInputElement>(null)
   const newPasswordConfirm = useRef<HTMLInputElement>(null)
   const name = useRef<HTMLInputElement>(null)
   const role = useRef<HTMLSelectElement>(null)
+  const securityQuestion = useRef<HTMLSelectElement>(null)
+  const securityAnswer = useRef<HTMLInputElement>(null)
   const [prevDateUpdated, setPrevDateUpdated] = useState(user?.dateUpdated)
   const [state, setState] = useState({
     isDirty: false,
@@ -131,6 +188,10 @@ const AccountForm = ({
   // optional; a new one is being filled in. The only difference between the two
   // sets of placeholders.
   const isExisting = !!user && user.userId !== null
+
+  // One name per account. It is the username, which is also what the room
+  // sees; a guest has no username to sign in with, so theirs is just the name.
+  const originalName = (showUsername ? user?.username : user?.name) ?? ''
 
   if (user && user.dateUpdated !== prevDateUpdated) {
     setPrevDateUpdated(user.dateUpdated)
@@ -150,11 +211,12 @@ const AccountForm = ({
 
     setState(prev => ({
       ...prev,
-      isDirty: isFormDirty(user, {
-        username: username.current?.value,
-        newPassword: newPassword.current?.value,
+      isDirty: isFormDirty(user, originalName, {
         name: name.current?.value,
+        newPassword: newPassword.current?.value,
         role: role.current?.value,
+        securityQuestion: securityQuestion.current?.value,
+        securityAnswer: securityAnswer.current?.value,
       }),
       isChangingPassword: !!newPassword.current?.value,
     }))
@@ -171,13 +233,26 @@ const AccountForm = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
+    // a question with no answer could never be passed
+    const answer = securityAnswer.current
+    if (securityQuestion.current?.value && answer && !answer.value.trim()) {
+      answer.setCustomValidity('Enter an answer for your security question')
+      answer.reportValidity()
+      return
+    }
+
+    // unchanged is left out: resending your own name would be refused as taken
+    const nextName = name.current?.value.trim()
+    const changedName = nextName && nextName !== originalName ? nextName : undefined
+
     onSubmit(buildFormData({
-      name: name.current?.value,
-      username: username.current?.value,
+      [showUsername ? 'username' : 'name']: changedName,
       newPassword: state.isChangingPassword ? newPassword.current?.value ?? '' : undefined,
       newPasswordConfirm: state.isChangingPassword ? newPasswordConfirm.current?.value ?? '' : undefined,
       image: state.userImage,
       role: role.current?.value,
+      securityQuestion: securityQuestion.current?.value,
+      securityAnswer: securityAnswer.current?.value,
     }))
   }
 
@@ -188,38 +263,25 @@ const AccountForm = ({
       noValidate
       onSubmit={handleSubmit}
     >
-      <div className={styles.userDisplayContainer}>
-        <InputImage
-          user={user}
-          onSelect={handleUserImageChange}
-        />
-        <input
-          type='text'
-          defaultValue={user?.name ?? ''}
-          onChange={updateDirty}
-          placeholder='display name'
-          ref={(r) => {
-            name.current = r
-            if (!showUsername) onFirstFieldRef?.(r)
-          }}
-        />
-      </div>
+      <InputImage
+        user={user}
+        onSelect={handleUserImageChange}
+      />
 
-      {showUsername && (
-        <input
-          type='email'
-          autoComplete='off'
-          autoFocus={autoFocus}
-          onChange={updateDirty}
-          placeholder={isExisting ? 'change username (optional)' : 'username or email'}
-          // https://github.com/facebook/react/issues/23301
-          ref={(r) => {
-            if (r) username.current = r
-            if (autoFocus) r?.setAttribute('autofocus', 'true')
-            onFirstFieldRef?.(r)
-          }}
-        />
-      )}
+      <input
+        type='text'
+        autoComplete={showUsername ? 'username' : 'off'}
+        autoFocus={autoFocus}
+        defaultValue={originalName}
+        onChange={updateDirty}
+        placeholder='name'
+        // https://github.com/facebook/react/issues/23301
+        ref={(r) => {
+          name.current = r
+          if (autoFocus) r?.setAttribute('autofocus', 'true')
+          onFirstFieldRef?.(r)
+        }}
+      />
 
       <PasswordFields
         isExisting={isExisting}
@@ -228,6 +290,14 @@ const AccountForm = ({
         onChange={updateDirty}
         newPasswordRef={newPassword}
         confirmRef={newPasswordConfirm}
+      />
+
+      <SecurityFields
+        isExisting={isExisting}
+        show={showPassword}
+        onChange={updateDirty}
+        questionRef={securityQuestion}
+        answerRef={securityAnswer}
       />
 
       {showRole && <RoleSelect user={user} onChange={updateDirty} selectRef={role} />}

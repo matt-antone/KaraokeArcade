@@ -1,9 +1,8 @@
-import React, { useRef, useState } from 'react'
+import React, { useState } from 'react'
 import clsx from 'clsx'
 import { useNavigate } from 'react-router'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
 import { requestLogout, updateAccount } from 'store/modules/user'
-import { showErrorMessage } from 'store/modules/ui'
 import { removeItem } from 'routes/Queue/modules/queue'
 import getUpcoming from 'routes/Queue/selectors/getUpcoming'
 import Panel from 'components/Panel/Panel'
@@ -18,7 +17,6 @@ const Account = () => {
   const user = useAppSelector(state => state.user)
   const upcomingQueueIds = useAppSelector(state => getUpcoming(state, user.userId))
 
-  const curPassword = useRef(null)
   const [isDirty, setDirty] = useState(false)
   const [confirm, confirmDialog] = useConfirm()
 
@@ -51,19 +49,6 @@ const Account = () => {
   }
 
   const handleSubmit = (data: FormData) => {
-    if (!user.isGuest) {
-      if (!curPassword.current.value.trim()) {
-        // The app's own fault panel rather than window.alert, which an
-        // embedded or managed browser suppresses outright — the form would
-        // simply refuse to submit with nothing said about why.
-        dispatch(showErrorMessage('Please enter your current password to make changes.'))
-        curPassword.current.focus()
-        return
-      }
-
-      data.append('password', curPassword.current.value)
-    }
-
     dispatch(updateAccount(data))
   }
 
@@ -83,16 +68,6 @@ const Account = () => {
           showUsername={!user.isGuest}
           showPassword={!user.isGuest}
         >
-          {isDirty && !user.isGuest && (
-            <input
-              type='password'
-              autoComplete='current-password'
-              placeholder='current password'
-              ref={curPassword}
-            />
-
-          )}
-
           <div className={styles.btnContainer}>
             {isDirty && (
               <Button type='submit' variant='primary'>

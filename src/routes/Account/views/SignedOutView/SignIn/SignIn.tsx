@@ -9,6 +9,7 @@ interface SignInProps {
   onPasswordChange: (password: string) => void
   onSubmit: (e: React.FormEvent) => void
   onFirstFieldRef: (el: HTMLInputElement | null) => void
+  onForgotPassword: () => void
 }
 
 const SignIn = ({
@@ -18,13 +19,14 @@ const SignIn = ({
   onPasswordChange,
   onSubmit,
   onFirstFieldRef,
+  onForgotPassword,
 }: SignInProps) => {
   return (
     <form noValidate onSubmit={onSubmit} className={styles.container}>
       <input
-        type='email'
+        type='text'
         autoComplete='username'
-        placeholder='username or email'
+        placeholder='name'
         value={username}
         onChange={e => onUsernameChange(e.target.value)}
         ref={onFirstFieldRef}
@@ -38,6 +40,9 @@ const SignIn = ({
       />
       <Button type='submit' variant='primary'>
         Sign In
+      </Button>
+      <Button onClick={onForgotPassword} variant='default'>
+        Forgot password?
       </Button>
     </form>
   )

@@ -4,20 +4,52 @@ import crypto from '../lib/crypto.js'
 import Queue from '../Queue/Queue.js'
 import { randomChars } from '../lib/util.js'
 import { SongHistoryItem, User as UserType } from '../../shared/types.js'
+import { SECURITY_QUESTIONS } from '../../shared/securityQuestions.js'
 
 type ServerUser = UserType & {
   role: string
   password?: string // only populated if requesting creds
+  securityQuestion?: string | null
+  securityAnswer?: string | null // hash; only populated if requesting creds
   image?: string
   rooms?: number[] // populated in router
 }
 
 export const IMG_MAX_LENGTH = 51200 // 50KB
 export const USERNAME_MIN_LENGTH = 3
-export const USERNAME_MAX_LENGTH = 128
+export const USERNAME_MAX_LENGTH = 50 // shown on the queue and player, so no longer than a name
 export const PASSWORD_MIN_LENGTH = 6
 export const NAME_MIN_LENGTH = 2
 export const NAME_MAX_LENGTH = 50
+const ANSWER_MIN_LENGTH = 2
+
+/** Case, surrounding space and doubled spaces are not part of an answer. */
+export const normalizeAnswer = (answer: string): string => answer.trim().toLowerCase().replace(/\s+/g, ' ')
+
+/**
+ * The two security columns, answer hashed, or undefined when neither was
+ * given. Half a pair is refused: a question with no answer can never be
+ * passed, and an answer with no question can never be asked.
+ */
+export async function securityFields (
+  question?: string,
+  answer?: string,
+): Promise<{ securityQuestion: string, securityAnswer: string } | undefined> {
+  const q = question?.trim() ?? ''
+  const a = normalizeAnswer(answer ?? '')
+
+  if (!q && !a) return undefined
+
+  if (!(SECURITY_QUESTIONS as readonly string[]).includes(q)) {
+    throw new Error('Please choose a security question')
+  }
+
+  if (a.length < ANSWER_MIN_LENGTH) {
+    throw new Error(`Security answer must have at least ${ANSWER_MIN_LENGTH} characters`)
+  }
+
+  return { securityQuestion: q, securityAnswer: await crypto.hash(a) }
+}
 
 /**
  * Every rule a username and password have to pass before an account exists.
@@ -29,11 +61,11 @@ export const NAME_MAX_LENGTH = 50
  */
 function assertCredentials (username: string, newPassword: string, newPasswordConfirm: string): void {
   if (!username) {
-    throw new Error('Username or email is required')
+    throw new Error('Name is required')
   }
 
   if (username.length < USERNAME_MIN_LENGTH || username.length > USERNAME_MAX_LENGTH) {
-    throw new Error(`Username or email must have ${USERNAME_MIN_LENGTH}-${USERNAME_MAX_LENGTH} characters`)
+    throw new Error(`Name must have ${USERNAME_MIN_LENGTH}-${USERNAME_MAX_LENGTH} characters`)
   }
 
   if (!newPassword) {
@@ -53,19 +85,19 @@ function assertCredentials (username: string, newPassword: string, newPasswordCo
   }
 
   if (User.getByUsername(username)) {
-    throw new Error('Username or email is not available')
+    throw new Error('That name is taken')
   }
 }
 
-/** Asked of everyone, guests included: it is the name the room reads off the
- *  queue and the player. */
+/** A guest's name: they have no username, so this is what the room reads off
+ *  the queue and the player. */
 function assertDisplayName (name?: string): void {
   if (!name) {
-    throw new Error('Display name is required')
+    throw new Error('Name is required')
   }
 
   if (name.length < NAME_MIN_LENGTH || name.length > NAME_MAX_LENGTH) {
-    throw new Error(`Display name must have ${NAME_MIN_LENGTH}-${NAME_MAX_LENGTH} characters`)
+    throw new Error(`Name must have ${NAME_MIN_LENGTH}-${NAME_MAX_LENGTH} characters`)
   }
 }
 
@@ -144,12 +176,16 @@ class User {
     newPasswordConfirm,
     name,
     image,
+    securityQuestion,
+    securityAnswer,
   }: {
     username?: string
     newPassword?: string
     newPasswordConfirm?: string
     name?: string
     image?: Buffer
+    securityQuestion?: string
+    securityAnswer?: string
   }, role = 'standard') {
     username = username?.trim()
     name = name?.trim()
@@ -166,11 +202,22 @@ class User {
       assertCredentials(username, newPassword, newPasswordConfirm)
       fields.set('username', username)
       fields.set('password', await crypto.hash(newPassword))
+
+      const security = await securityFields(securityQuestion, securityAnswer)
+      if (security) {
+        fields.set('securityQuestion', security.securityQuestion)
+        fields.set('securityAnswer', security.securityAnswer)
+      }
     }
 
-    // asked of everyone, guests included: it is the name the room reads
-    assertDisplayName(name)
-    fields.set('name', name)
+    // One name per account: a username is also what the room reads. Only a
+    // guest, who has no username, types a separate name.
+    if (role === 'guest') {
+      assertDisplayName(name)
+      fields.set('name', name)
+    } else {
+      fields.set('name', username)
+    }
     fields.set('dateCreated', Math.floor(Date.now() / 1000))
     fields.set('roleId', sql`(SELECT roleId FROM roles WHERE name = ${role})`)
 
@@ -198,13 +245,13 @@ class User {
 
   static async validate ({ username, password }) {
     if (!username || !password) {
-      throw new Error('Username/email and password are required')
+      throw new Error('Name and password are required')
     }
 
     const user = User.getByUsername(username, true) as ServerUser
 
     if (!user || !(await crypto.compare(password, user.password))) {
-      throw new Error('Incorrect username/email or password')
+      throw new Error('Incorrect name or password')
     }
 
     return user
@@ -345,6 +392,7 @@ class User {
     if (!creds) {
       delete user.username
       delete user.password
+      delete user.securityAnswer
     }
 
     return user

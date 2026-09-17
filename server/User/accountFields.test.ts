@@ -3,14 +3,17 @@ import { open, close } from '../lib/Database.js'
 import crypto from '../lib/crypto.js'
 import User from './User.js'
 import {
-  assertCurrentPassword,
   assertImageSize,
   assertMayUpdate,
+  assertSecurityAnswer,
   assertSelfSignupRole,
   nextName,
   nextPassword,
   nextRole,
+  nextSecurity,
   nextUsername,
+  RESET_LOCKOUT_MS,
+  RESET_MAX_ATTEMPTS,
   type Fail,
 } from './accountFields.js'
 
@@ -18,10 +21,9 @@ import {
  * The rules behind changing an account, which until now could only be reached
  * through a Koa handler and so were never tested at all.
  *
- * This is the path that changes passwords and grants admin. The two rules worth
- * staring at are that an admin cannot promote themselves and that changing your
- * own account makes you prove the current password — both are one condition
- * away from being a privilege escalation, and both are now pinned.
+ * This is the path that changes passwords and grants admin. The rule worth
+ * staring at is that an admin cannot promote themselves — one condition away
+ * from being a privilege escalation, and now pinned.
  */
 
 /** Stands in for ctx.throw: records the refusal instead of raising it, so a
@@ -65,48 +67,6 @@ describe('assertMayUpdate', () => {
     assertMayUpdate(fail, false, 1)
 
     expect(calls).toEqual([[401, undefined]])
-  })
-})
-
-describe('assertCurrentPassword', () => {
-  it('asks for it when changing your own account', async () => {
-    const { calls, fail } = recorder()
-    await assertCurrentPassword(fail, { actor: SINGER, targetId: SINGER.userId, isGuest: false })
-
-    expect(calls).toEqual([[422, 'Current password is required']])
-  })
-
-  it('refuses a wrong one', async () => {
-    const actor = { ...SINGER, password: await crypto.hash('the real one') }
-    const { calls, fail } = recorder()
-
-    await assertCurrentPassword(fail, { actor, targetId: SINGER.userId, isGuest: false, given: 'a guess' })
-
-    expect(calls).toEqual([[401, 'Incorrect current password']])
-  })
-
-  it('accepts the right one', async () => {
-    const actor = { ...SINGER, password: await crypto.hash('the real one') }
-    const { calls, fail } = recorder()
-
-    await assertCurrentPassword(fail, { actor, targetId: SINGER.userId, isGuest: false, given: 'the real one' })
-
-    expect(calls).toEqual([])
-  })
-
-  // an admin editing somebody else is not claiming to be that person
-  it('does not ask an admin editing another account', async () => {
-    const { calls, fail } = recorder()
-    await assertCurrentPassword(fail, { actor: ADMIN, targetId: SINGER.userId, isGuest: false })
-
-    expect(calls).toEqual([])
-  })
-
-  it('does not ask a guest, who has no password', async () => {
-    const { calls, fail } = recorder()
-    await assertCurrentPassword(fail, { actor: SINGER, targetId: SINGER.userId, isGuest: true })
-
-    expect(calls).toEqual([])
   })
 })
 
@@ -165,7 +125,7 @@ describe('the field rules', () => {
     const { calls, fail } = recorder()
     nextUsername(fail, 'already', false)
 
-    expect(calls).toEqual([[409, 'Username or email is not available']])
+    expect(calls).toEqual([[409, 'That name is taken']])
   })
 
   it('refuses a username that is too short', () => {
@@ -255,5 +215,87 @@ describe('the upload and signup guards', () => {
     assertSelfSignupRole(fail, role)
 
     expect(calls).toEqual([[401, 'Invalid role']])
+  })
+})
+
+describe('assertSecurityAnswer', () => {
+  const account = async (username: string) => ({
+    username,
+    role: 'standard',
+    securityAnswer: await crypto.hash('paris'),
+  })
+
+  it('accepts the answer regardless of case and spacing', async () => {
+    const { calls, fail } = recorder()
+    await assertSecurityAnswer(fail, await account('answerer'), '  PARIS ')
+
+    expect(calls).toEqual([])
+  })
+
+  it('refuses a wrong answer', async () => {
+    const { calls, fail } = recorder()
+    await assertSecurityAnswer(fail, await account('wrong'), 'london')
+
+    expect(calls).toEqual([[401, 'Incorrect answer']])
+  })
+
+  it('refuses an account with no question, and a guest', async () => {
+    const { calls, fail } = recorder()
+    await assertSecurityAnswer(fail, { username: 'none', role: 'standard', securityAnswer: null }, 'paris')
+    await assertSecurityAnswer(fail, { username: 'guest-x', role: 'guest', securityAnswer: 'x' }, 'x')
+    await assertSecurityAnswer(fail, false, 'paris')
+
+    expect(calls.map(c => c[0])).toEqual([404, 404, 404])
+  })
+
+  it('locks the account after too many wrong answers, even to the right one, until it runs out', async () => {
+    const user = await account('guesser')
+    const now = 1_000_000
+
+    for (let i = 0; i < RESET_MAX_ATTEMPTS; i++) {
+      await assertSecurityAnswer(recorder().fail, user, 'nope', now)
+    }
+
+    const locked = recorder()
+    await assertSecurityAnswer(locked.fail, user, 'paris', now + 1)
+    expect(locked.calls).toEqual([[429, expect.any(String)]])
+
+    const later = recorder()
+    await assertSecurityAnswer(later.fail, user, 'paris', now + RESET_LOCKOUT_MS + 1)
+    expect(later.calls).toEqual([])
+  })
+})
+
+describe('nextSecurity', () => {
+  it('hashes the normalized answer and keeps the question', async () => {
+    const { calls, fail } = recorder()
+    const res = await nextSecurity(fail, { securityQuestion: ' What was the name of your first pet? ', securityAnswer: ' Rex ', isGuest: false })
+
+    expect(calls).toEqual([])
+    expect(res?.securityQuestion).toBe('What was the name of your first pet?')
+    expect(await crypto.compare('rex', res!.securityAnswer)).toBe(true)
+  })
+
+  it('leaves both alone when neither is given, and for a guest', async () => {
+    const { calls, fail } = recorder()
+
+    expect(await nextSecurity(fail, { isGuest: false })).toBeUndefined()
+    expect(await nextSecurity(fail, { securityQuestion: 'What was the name of your first pet?', securityAnswer: 'rex', isGuest: true })).toBeUndefined()
+    expect(calls).toEqual([])
+  })
+
+  it('refuses a question that is not one of the presets', async () => {
+    const { calls, fail } = recorder()
+    await nextSecurity(fail, { securityQuestion: 'What is my password?', securityAnswer: 'hunter2', isGuest: false })
+
+    expect(calls).toEqual([[400, 'Please choose a security question']])
+  })
+
+  it('refuses half a pair', async () => {
+    const { calls, fail } = recorder()
+    await nextSecurity(fail, { securityQuestion: 'What was the name of your first pet?', isGuest: false })
+    await nextSecurity(fail, { securityAnswer: 'rex', isGuest: false })
+
+    expect(calls.map(c => c[0])).toEqual([400, 400])
   })
 })

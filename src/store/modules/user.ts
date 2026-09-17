@@ -146,6 +146,28 @@ export const updateAccount = createAsyncThunk<void, FormData, { state: RootState
 )
 
 // ------------------------------------
+// Forgot password (security question)
+// ------------------------------------
+export const fetchResetQuestion = createAsyncThunk(
+  'user/RESET_QUESTION',
+  async (username: string) => {
+    const res = await api.post<{ securityQuestion: string }>('user/reset/question', {
+      body: { username },
+    })
+
+    return res.securityQuestion
+  },
+)
+
+export const resetPassword = createAsyncThunk(
+  'user/RESET_PASSWORD',
+  async (body: { username: string, securityAnswer: string, newPassword: string, newPasswordConfirm: string }) => {
+    await api.post('user/reset', { body })
+    alert('Password changed. Sign in with your new password.')
+  },
+)
+
+// ------------------------------------
 // Request account (does not refresh JWT)
 // ------------------------------------
 export const fetchAccount = createAsyncThunk(

@@ -36,14 +36,16 @@
 
 .btnClear {
   position: absolute;
-  top: 0;
-  left: 0;
+  right: var(--gap-1);
+  bottom: var(--gap-1);
   z-index: 2;
-  min-width: var(--target);
-  min-height: var(--target);
+  width: auto;
+  padding: 2px;
 
+  /* the key's own ink, not the well's dimmed placeholder colour */
   svg {
-    color: var(--alert);
+    margin: 0;
+    color: inherit;
   }
 }
 

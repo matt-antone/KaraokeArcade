@@ -215,11 +215,11 @@ If using the Docker image, the database will be located in the folder you mapped
 
 If using the `npm` installation method, the default locations for the database (`database.sqlite3`), web server log (`server.log`) and media scanner log (`scanner.log`) are as follows:
 
-These folders keep the pre-rebrand `Karaoke Eternal Server` name so existing installs keep their database.
+These folders keep the pre-rebrand `Karaoke Eternal Server` name so existing installs keep their database. Set `--data` or `KES_PATH_DATA` to put the database somewhere else.
 
 ### Windows
 
-- Database: `%USERPROFILE%\AppData\Roaming\Karaoke Eternal Server`
+- Database: `%APPDATA%\Karaoke Eternal Server` (usually `%USERPROFILE%\AppData\Roaming\Karaoke Eternal Server`)
 - Logs: `%USERPROFILE%\AppData\Roaming\Karaoke Eternal Server\logs`
 
 ### macOS
@@ -229,5 +229,7 @@ These folders keep the pre-rebrand `Karaoke Eternal Server` name so existing ins
 
 ### Linux
 
-- Database: `~/.config/Karaoke Eternal Server`
+- Database: `$XDG_CONFIG_HOME/Karaoke Eternal Server` if `XDG_CONFIG_HOME` is set, otherwise `~/.config/Karaoke Eternal Server`
 - Logs: `~/.config/Karaoke Eternal Server/logs`
+
+Older versions put `database.sqlite3` directly in `%APPDATA%` or `$XDG_CONFIG_HOME` when those were set, without the `Karaoke Eternal Server` folder. If a database is still there and none is in the new folder, the server keeps using the old one. To switch, stop the server and move `database.sqlite3` (and any `database.sqlite3-wal` / `-shm` files next to it) into the new folder.

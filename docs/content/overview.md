@@ -43,7 +43,7 @@ Music trivia that takes the gap between two singers, so the room has something t
 - **Five questions**, on an arcade cabinet on the TV, with four coloured keys on every phone in the room.
 - Anyone can play, whether or not they have a song queued. One answer each, first tap counts.
 - The right answer goes up for everyone at once, then how many got it. After the last question come the high scores on a podium, then the winner, then the next singer is on.
-- Questions come from the <a href="https://opentdb.com/" rel="noopener">Open Trivia Database</a>{{% icon-external %}} and are cached ahead of time, so a party in a basement with no internet still plays.
+- Questions come from the <a href="https://opentdb.com/" rel="noopener">Open Trivia Database</a>{{% icon-external %}}, fetched live each round - no internet when a round is due, and it's skipped silently.
 
 ### Singer Battle
 
@@ -55,9 +55,9 @@ One turn, two singers, and each of them picks the other's song. It runs on the T
 </div>
 
 - **Pick who you sing as.** Eight fighters; whoever you choose is who the room watches on stage.
-- **Throw a challenge.** Pick somebody in the room, then pick the song *they* have to sing. Their phone gets 45 seconds to accept - and the song they pick back is the one *you* sing. Neither of you sees the other's choice until it's on screen.
+- **Throw a challenge.** Pick somebody in the room, then pick the song *they* have to sing. Their invite shows the song and gives them 45 seconds to accept - the song they pick back is the one *you* sing.
 - **Two minutes each**, so a whole battle is about five minutes of the night and costs one place in the queue, not two.
-- **The room decides.** Everybody votes on their own phone - one vote each, anonymous, and nobody sees the count until the verdict. Hosts who would rather have it loud can switch the room to crowd-noise scoring instead.
+- **The room decides.** Everybody except the two fighters votes on their own phone - one vote each, anonymous. Turnout shows as it comes in, but the split stays hidden until the verdict. Hosts who would rather have it loud can switch the room to crowd-noise scoring instead.
 
 **Create your own fighters** with <a href="https://github.com/matt-antone/CharacterAssetGenerator" rel="noopener">CharacterAssetGenerator</a>{{% icon-external %}}.
 
@@ -66,11 +66,11 @@ One turn, two singers, and each of them picks the other's song. It runs on the T
 - **Nothing to install for guests** - it's a web app; joining is a QR code and a name.
 - **Guests welcome.** Let people in with an account, a new sign-up or as a guest, room by room.
 - **More than one room.** Each has its own queue and can be password-protected.
-- **Your library stays yours.** Point it at your folders; it scans <a href='{{< ref "docs/karaokearcade-server/#media-files" >}}'>MP3+G (including zipped) and MP4</a>.
+- **Your library stays yours.** Point it at your folders; it scans <a href='{{< ref "docs/karaokearcade-server/#media-files" >}}'>MP4 video, or MP3/M4A + CDG (MP3+G), loose or zipped</a>.
 - **Music-synced visualizations.** A WebGL visualizer runs behind the lyrics for MP3+G, and behind MP4 when <a href='{{< ref "docs/karaokearcade-app/#preferences-admin-only" >}}'>video background keying</a> is switched on for that folder - the key colour is detected for you.
 - **No ads, no telemetry, no cloud account.** Self-hosted, and ISC-licensed.
 
-Microphones are *not* required since the player itself only outputs music - this allows your audio setup to be as simple or complex as you like. See the <a href='{{< ref "faq.md/#recommended-audio-microphone-setup" >}}'>F.A.Q.</a> for more information.
+Microphones are *not* required since the player itself only outputs music - this allows your audio setup to be as simple or complex as you like. The one exception is crowd-noise battle scoring, which listens through the player machine's own microphone if you switch it on (needs a secure origin - localhost or https). See the <a href='{{< ref "faq.md/#recommended-audio-microphone-setup" >}}'>F.A.Q.</a> for more information.
 
 ## How KaraokeArcade compares
 
@@ -82,8 +82,8 @@ KaraokeArcade is a fork of <a href="https://github.com/bhj/KaraokeEternal" rel="
 | **MP3+G, MP4, visualizer** | Yes | Yes |
 | **QR-code joining, guest accounts** | Yes | Yes |
 | **Fair round-robin rotation** | Yes | Yes |
-| **Reorder your own songs** | Drag them on your *Me* tab | Host only |
-| **See how long until your turn** | Counts down in the header | Guess from the list |
+| **Reorder your own songs** | Drag them on your *Me* tab | Singer (own songs) or host |
+| **See how long until your turn** | Counts down in the header | Estimated wait shown per queue item |
 | **Step away without losing your spot** | Pause and resume | Remove and re-queue |
 | **Between songs** | Intermission names the next singer | Songs run back-to-back |
 | **Music trivia rounds** | Built in, takes its own turn | — |
@@ -106,7 +106,7 @@ KaraokeArcade has three parts. See <a href='{{< ref "docs/getting-started" >}}'>
 
 ## Installation
 
-There are several <a href='{{< ref "docs/karaokearcade-server#installation" >}}'>installation methods</a> available for KaraokeArcade Server.
+KaraokeArcade Server is <a href='{{< ref "docs/karaokearcade-server#installation" >}}'>installed from source</a>.
 
 ## Support
 

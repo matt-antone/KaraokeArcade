@@ -94,7 +94,7 @@ Both are free and ISC-licensed. If you want the original's simplicity, it's an e
 
 KaraokeArcade has three parts. [Getting Started](docs/content/docs/getting-started/index.md) walks through them step by step:
 
-- **[Server](docs/content/docs/karaokearcade-server/index.md)** — runs on a Windows PC, a Mac, a Raspberry Pi or a NAS, and serves both the app and your media. Several [installation methods](docs/content/docs/karaokearcade-server/index.md#installation) are available.
+- **[Server](docs/content/docs/karaokearcade-server/index.md)** — runs on a Windows PC, a Mac, a Raspberry Pi or a NAS, and serves both the app and your media. See [installation](docs/content/docs/karaokearcade-server/index.md#installation) (from source for now).
 - **[App](docs/content/docs/karaokearcade-app/index.md)** — the phone app everyone uses. Nothing to install.
 - **[Player](docs/content/docs/karaokearcade-app/index.md#player)** — the same app, running fullscreen on whatever is hooked up to your TV and speakers.
 

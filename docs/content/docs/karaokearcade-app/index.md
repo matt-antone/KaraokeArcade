@@ -35,7 +35,7 @@ The bottom navigation has three destinations for everyone - Library, Queue and M
 
 ## Status strip
 
-Once a player is in the room and you have something queued, a status strip appears at the top of every screen. It shows your place in the rotation, how long until your turn (counting down as the player plays), and the song you're up next with. When it's your turn it says so.
+A status strip appears at the top of every screen except the player. With nothing queued it shows an idle state; once you're in the rotation it shows your place, how long until your turn (counting down as the player plays), and the song you're up next with. When it's your turn it says so.
 
 The strip also carries the pause key. Pausing keeps your songs in the queue but takes you out of the rotation, so the party moves on without you - useful for a drink run or a phone call. Press it again to resume and you're back in line. While paused, your rows show a pause icon instead of a wait time.
 
@@ -48,11 +48,11 @@ The library lists available songs organized by artist. The header has a search f
   {{% img "app-library2.png" "Starred songs" /%}}
 </div>
 
-Tap an artist to expand it, then tap a song to queue it. Queued songs show `QUEUED` and go inert, and songs already sung tonight are dimmed - one tap is the only way to queue, so there's nothing to undo by accident.
+Tap an artist to expand it, then tap a song to queue it. Your own queued songs show `TAP TO REMOVE` - tap again to take them back out - while songs queued by others show `QUEUED` and stay inert. Songs already sung tonight are dimmed. If the room is paused or stopped, or you're not currently in a room, rows are disabled with a note explaining why.
 
-Every song row also has a star, with the number of stars that song has across the room. Starring is how you keep a shortlist; the star toggle in the search row filters down to it.
+Every un-queued song row also has a star, with the number of stars that song has across the room. Starring is how you keep a shortlist; the star toggle in the search row filters down to it.
 
-Songs show their duration, and any tags in the filename's trailing `[...]` group appear next to the artist. When a song has multiple versions (media files), admins see an italicized number after the title, and media in the folder highest in the [Media Folders](#preferences-admin-only) list will be used.
+Songs show their duration, and any tags in the filename's trailing `[...]` group appear next to the artist. When a song has multiple versions (media files), admins see a small number in parentheses after the title, and media in the folder highest in the [Media Folders](#preferences-admin-only) list will be used.
 
 ## Queue
 
@@ -111,9 +111,9 @@ Swiping left on a song reveals its available actions:
   </tbody>
 </table>
 
-Admins can manage anyone's queued songs, while standard users and guests can only manage their own. Replay and Skip act on the song that's playing right now. Songs already sung are locked and have no actions - use the Library to queue one again.
+Admins can manage anyone's queued songs, while standard users and guests can only manage their own. Replay and Skip act on the song that's playing right now. Songs already sung are locked and have no actions. They stay locked in the Library too - dimmed and inert - until the room is stopped, though you can still star them.
 
-Signing out removes your upcoming songs from the queue.
+Signing out removes your upcoming songs from the queue - this applies to standard users and guests; an admin's queue is left alone.
 
 ### The Me tab
 
@@ -156,7 +156,7 @@ Admins get a fourth navigation entry with everything that configures the party: 
 
 The Rooms panel allows admins to create, edit or remove rooms.
 
-KaraokeArcade uses "rooms" to organize sessions by time and space (spacetime?) Users choose an open room when signing in, and each room has its own queue. **Start each session with an empty queue** - either create a new room, or reuse one and press **Reset for New Night** first. Set the room to `closed` when finished.
+KaraokeArcade uses "rooms" to organize sessions by time and space (spacetime?) Users choose a room when signing in, and each room has its own queue.
 
 <div class="row">
   {{% img "app-settings-room.png" "Room editor" /%}}
@@ -164,21 +164,22 @@ KaraokeArcade uses "rooms" to organize sessions by time and space (spacetime?) U
 
 Rooms have a number of options, including:
 
-- **Name**: The room name users will see when signing in (if more than one open room)
+- **Name**: The room name users will see when signing in (if more than one room is open)
 - **Password**: An optional password users will be required to enter when signing in
-- **Status**: Rooms can have one of the following statuses:
-  - `open` Can be signed in to and have songs queued
-  - `closed` Can no longer be signed in to or have more songs queued. When closing, current occupants are unaffected and can continue playing through the existing queue
 - **Users**: Only users with existing accounts can join a room by default. You can optionally allow users to join with new accounts and/or as guests
-- **QR Code**: Displays a QR code in the room's player that will link users to the app, automatically choosing the room and optionally including the room's password if one is set
+- **QR Code**: Displays a QR code in the room's player that will link users to the app, automatically choosing the room. Options include **Show QR code**, **Include room password**, **Size** and **Opacity**
 - **Trivia**: Plays music trivia rounds between singers. See [Trivia](#trivia)
 - **Battle**: Lets singers challenge each other to a head-to-head turn, and chooses how the winner is decided. See [Battle](#battle)
 
-**Reset for New Night** hands a used room back in the state a new one arrives in: its queue is emptied, paused singers are un-paused, and the player's list of what has been sung is cleared, so the whole library is selectable again. Use it instead of creating a room per session. Each singer's own record of everything they have ever sung is separate and is not touched.
+Each room's status is controlled by the Play/Pause and Stop keys on its row in the Rooms panel, not from the room editor. A new room starts in **Play**:
+
+- **Play**: Normal operation - can be signed in to and have songs queued
+- **Paused**: The player pauses, and non-admins can't sign in or queue songs. Nothing is lost - press Play to resume
+- **Stopped**: With confirmation, empties the queue, un-pauses any paused singers, resets the trivia scoreboard, and clears the played list, so the whole library is selectable again. Use it to reset a room between sessions instead of creating a new one each time. Each singer's own record of everything they have ever sung is separate and is not touched
 
 <aside class="warn" role="note">
   {{% icon-warn %}}
-  <p>Removing a room will also remove its queue, so the history of songs played during that session will be lost.</p>
+  <p>Removing a room will also remove its queue and sign out everyone in it, so the history of songs played during that session will be lost.</p>
 </aside>
 
 ### Users (admin only)
@@ -197,7 +198,7 @@ The Player panel is the only place the player is managed from. It shows whether 
 - **Playback controls**: The room's transport (play/pause, skip and so on), shown once a player is connected.
 - **Show Join Code**: Displays the room's QR code and link so singers can join from their phones.
 - **ReplayGain (clip-safe)**: [ReplayGain](https://en.wikipedia.org/wiki/ReplayGain){{% icon-external %}} metadata tags allow the player to automatically minimize volume differences between songs, resulting in a better experience for all, and without affecting the dynamic range of each song (no compression). This option should generally only be enabled when you know all of your media is properly tagged. It normally reduces the player's overall volume significantly, so just turn your output up, and/or your mics down.
-- **Display**: The player's display options - CDG size and alpha, MP4 alpha, video background keying, and the visualizer and its sensitivity.
+- **Display**: The player's display options - the visualizer (on/off, presets, sensitivity) and the lyrics size/background. Video background keying is set per media folder instead - see the "Allow video background keying" option in [Media Folders](#preferences-admin-only).
 
 ### Trivia
 
@@ -205,17 +206,17 @@ Trivia gives the room something to do between singers, and gives the guests who 
 
 Once it's on, a **Trivia round sits in the queue like any other turn** and is spaced through the rotation the same way singers are - so it comes round about once per lap, however long the queue gets. There is always exactly one waiting: as one is asked, the next joins the rotation behind it. You can see it coming on the Queue tab.
 
-When the player reaches it, the round asks **five questions** back to back. The screen shows each question and its four answers; every phone in the room shows four coloured keys and nothing else, so the room looks up at the screen together rather than down at a dozen phones. Match your key to the answer on screen, or match the number - each key is numbered 1 to 4 in the same order on both, so the colours are never the only thing telling them apart.
+When the player reaches it, the round asks **five questions** back to back. The screen shows each question with its four answers labeled A-D; every phone in the room shows the question, a countdown, and four coloured keys with the answer text printed on them, so a guest can play without looking up at the screen at all.
 
 - **Play trivia rounds**: Turns rounds on for this room
 - **Answer time**: How long a question stays open, from 5 to 60 seconds
 - **Reset scores**: Clears this room's scoreboard and starts it empty again
 
-Anyone in the room can answer, whether or not they have a song queued. You get one answer per question - the first key you press is the one that counts - and when the time is up the screen shows the right answer before moving on to the next question. The scoreboard goes up after the fifth, then the next singer is on. Only people who have answered at least once appear on it.
+Anyone in the room can answer, whether or not they have a song queued. You get one answer per question - the first key you press is the one that counts. When the time is up, the correct answer stays on screen for about six seconds, then a quick count of how many got it right holds the stage for about three seconds before the next question. After the fifth question that count becomes the full scoreboard, then the next singer is on. Only people who have answered at least once appear on it.
 
-**Answer time** applies to each question, so a round takes roughly five times that plus the answer reveals - at the default 20 seconds that is a little over two minutes. Turn it down if that is longer than your room wants to wait between singers.
+**Answer time** applies to each question, so a round takes roughly five times that plus the answer reveals and counts between them - at the default 20 seconds that's about two and a half minutes. Turn it down if that is longer than your room wants to wait between singers.
 
-Questions come from the [Open Trivia Database](https://opentdb.com/){{% icon-external %}} (music category), and are cached on the server well ahead of time so a party on a LAN with no internet still plays. The cache is topped up whenever the server can reach the API; if a very long party runs through every music question there is, rounds carry on with the ones seen longest ago. Question content is licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/){{% icon-external %}}, and the attribution appears on the player screen during every round.
+Questions come from the [Open Trivia Database](https://opentdb.com/){{% icon-external %}} (music category), fetched live from the API each time a round comes up - nothing is cached ahead of time. If the server can't reach the internet when a round is due, that round is skipped silently and the party carries on. Repeats are avoided with an in-memory session token, which a server restart forgets. Question content is licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/){{% icon-external %}}, and the attribution appears on the player screen during every round.
 
 ### Battle
 
@@ -224,7 +225,7 @@ A battle is one turn with two singers in it, and each of them picks the other's 
 - **Allow singer battles**: Turns battles on for this room
 - **Judge singer battles by crowd noise**: Swaps the room vote for the microphone. Off by default - see [Deciding the winner](#deciding-the-winner)
 
-Once it's on, a **Battle** key appears in the [status strip](#status-strip) next to the pause key. Tapping it lists everyone else in the room; pick somebody and the app drops you into the library in *picking for them* mode, where the next song you tap is the one **they** will have to sing. Their phone then shows the challenge - who threw it and what they'd be singing - and it stays open for **45 seconds** before it lapses. Accepting puts them into the library the same way, and the song they pick is the one **you** sing. Neither of you sees the other's choice until the battle is on screen.
+The **Battle** key is always in the [status strip](#status-strip) next to the pause key - it's disabled with a tooltip when battles are off for the room. When they're on, tapping it lists everyone else in the room; pick somebody and the app drops you into the library in *picking for them* mode, where the next song you tap is the one **they** will have to sing. Their phone then shows the challenge - who threw it and what they'd be singing - and it stays open for **45 seconds** before it lapses. Their invite shows the song you picked for them before they decide. Accepting puts them into the library the same way, and the song they pick is the one **you** sing.
 
 Both singers also **pick a fighter** - one of eight, and whoever you pick is who the room watches on stage for your turn. Your own fighter is yours to choose; you do not get a say in your opponent's.
 
@@ -240,7 +241,7 @@ While a battle is on, every phone in the room carries a strip under the status s
 
 The room decides, and there are two ways it can. Which one a room uses is set in the room editor.
 
-**By vote (the default).** After both songs, every phone in the room shows a ballot for thirty seconds: two keys, one per singer. One vote each, and you can vote whether or not you sang or have anything queued. It is silent in both directions - nobody is told who voted for whom, and **nobody sees the count until the verdict**, including the TV. A tally filling up in public collects the undecided behind whoever is ahead, which measures who voted first rather than who sang better.
+**By vote (the default).** After both songs, every phone in the room except the two fighters' shows a ballot for thirty seconds: two keys, one per singer. One vote each, and you can vote whether or not you sang or have anything queued - the fighters themselves can't. Turnout ("N of M in") is shown as ballots arrive, but **the split between the two singers stays hidden until the verdict**, including on the TV. A split filling up in public would collect the undecided behind whoever is ahead, which measures who voted first rather than who sang better.
 
 **By crowd noise.** Switch on **Judge singer battles by crowd noise** and the ballot is replaced by the player listening through the microphone: it takes a reading while the room cheers for each singer in turn, and the loudest one wins. The score climbs on screen as it's measured, and the second singer's turn shows the number they have to beat.
 
@@ -267,7 +268,7 @@ The player is just another part of the app, and is designed to run fullscreen on
 
 To start a player, go to the system driving your audio, sign in to the desired room as an admin, and use **Open Player Here** in [Settings > Player](#player-admin-only). You can also navigate to `/player` directly.
 
-Once a player is in the room, the transport and display options in that same panel become the room's controls. Between songs the player runs a short intermission - roughly fifteen seconds - that names and pictures the next singer, so they have time to get to the mic, and shows the room's join QR code while it waits.
+Once a player is in the room, the transport and display options in that same panel become the room's controls. Between songs the player runs a short intermission - roughly fifteen seconds - that names and pictures the next singer, so they have time to get to the mic, and shows the room's join QR code while it waits, if **Show QR code** is on. The QR code never shows during a battle.
 
 <aside class="info" role="note">
   {{% icon-info %}}

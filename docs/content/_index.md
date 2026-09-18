@@ -29,9 +29,9 @@ modes:
     phone: images/trivia-phone.jpg
     lead: Five questions between singers.
     bullets:
-      - Every phone is a buzzer.
+      - Your phone's an answer pad.
       - High scores on a podium.
-      - Plays offline.
+      - Needs internet; skips quietly without it.
   - name: Singer Battle
     kicker: "03 · Fight"
     tv: images/battle-tv.jpg

@@ -30,10 +30,10 @@ const env = {
   KES_PORT: parseInt(process.env.KES_PORT, 10) || 0,
   KES_ROTATE_KEY: ['1', 'true'].includes(process.env.KES_ROTATE_KEY?.toLowerCase()),
   KES_SCAN: process.env.KES_SCAN?.trim(),
-  KES_SCANNER_CONSOLE_LEVEL: parseInt(process.env.KES_SCANNER_CONSOLE_LEVEL, 10) || undefined,
-  KES_SCANNER_LOG_LEVEL: parseInt(process.env.KES_SCANNER_LOG_LEVEL, 10) || undefined,
-  KES_SERVER_CONSOLE_LEVEL: parseInt(process.env.KES_SERVER_CONSOLE_LEVEL, 10) || undefined,
-  KES_SERVER_LOG_LEVEL: parseInt(process.env.KES_SERVER_LOG_LEVEL, 10) || undefined,
+  KES_SCANNER_CONSOLE_LEVEL: parseLevel(process.env.KES_SCANNER_CONSOLE_LEVEL),
+  KES_SCANNER_LOG_LEVEL: parseLevel(process.env.KES_SCANNER_LOG_LEVEL),
+  KES_SERVER_CONSOLE_LEVEL: parseLevel(process.env.KES_SERVER_CONSOLE_LEVEL),
+  KES_SERVER_LOG_LEVEL: parseLevel(process.env.KES_SERVER_LOG_LEVEL),
   KES_SERVER_URL: process.env.KES_SERVER_URL,
   KES_URL_PATH: process.env.KES_URL_PATH || '/',
   // support PUID/PGID convention
@@ -96,7 +96,7 @@ if (argv.help) {
 }
 
 if (argv.version) {
-  console.log(process.env.npm_package_version)
+  console.log(JSON.parse(fs.readFileSync(path.join(baseDir, 'package.json'), 'utf8')).version)
   process.exit(0) // eslint-disable-line n/no-process-exit
 }
 
@@ -113,7 +113,13 @@ for (const [opt, envVar] of Object.entries(opts)) {
 
 export default env
 
-function getAppPath (appName) {
+// 0 (off) is a valid level, so only NaN counts as unset
+function parseLevel (val: string | undefined) {
+  const n = parseInt(val, 10)
+  return Number.isNaN(n) ? undefined : n
+}
+
+function getAppPath (appName: string) {
   const home = os.homedir()
 
   switch (process.platform) {
@@ -122,11 +128,23 @@ function getAppPath (appName) {
     }
 
     case 'win32': {
-      return process.env.APPDATA || path.join(home, 'AppData', 'Roaming', appName)
+      return withLegacy(process.env.APPDATA, path.join(process.env.APPDATA || path.join(home, 'AppData', 'Roaming'), appName))
     }
 
     default: {
-      return process.env.XDG_CONFIG_HOME || path.join(home, '.config', appName)
+      return withLegacy(process.env.XDG_CONFIG_HOME, path.join(process.env.XDG_CONFIG_HOME || path.join(home, '.config'), appName))
     }
   }
+}
+
+// older builds put the database directly in APPDATA/XDG_CONFIG_HOME without the
+// app folder; keep using it there until the user moves it
+function withLegacy (legacyDir: string | undefined, dir: string) {
+  if (legacyDir
+    && !fs.existsSync(path.join(dir, 'database.sqlite3'))
+    && fs.existsSync(path.join(legacyDir, 'database.sqlite3'))) {
+    return legacyDir
+  }
+
+  return dir
 }

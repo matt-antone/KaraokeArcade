@@ -5,13 +5,13 @@ description: Getting started with KaraokeArcade and KaraokeArcade Server
 
 You'll want to have a few things to get started with KaraokeArcade:
 
-- **Songs**: KaraokeArcade supports MP4 video files as well as MP3 audio files that have lyrics in an accompanying CDG file (commonly known as [MP3+G](https://en.wikipedia.org/wiki/MP3%2BG){{% icon-external %}}). See the <a href='{{< ref "faq#where-can-i-download-karaoke-songs" >}}'>F.A.Q.</a> if you're looking for songs!
+- **Songs**: KaraokeArcade supports MP4 video files, as well as MP3 or M4A audio files that have lyrics in an accompanying CDG file (commonly known as [MP3+G](https://en.wikipedia.org/wiki/MP3%2BG){{% icon-external %}}), loose or zipped. See the <a href='{{< ref "faq#where-can-i-download-karaoke-songs" >}}'>F.A.Q.</a> if you're looking for songs!
 
 - **Server**: This can be a Windows PC, Mac, or a dedicated server like a Raspberry Pi or NAS. KaraokeArcade Server runs on pretty much anything to serve the web app and your media files.
 
 - **Player**: This will be the system that is connected to your display and speakers, running KaraokeArcade's player in a browser. It could be the same system as the server, but because the player is fully browser-based it doesn't need to be.
 
-Microphones are *not* required since the player itself only outputs music - this allows your audio setup to be as simple or complex as you like. See the <a href='{{< ref "faq#recommended-audio-microphone-setup" >}}'>F.A.Q.</a> for more information.
+Microphones are *not* required since the player itself only outputs music - this allows your audio setup to be as simple or complex as you like. The one exception is crowd-noise battle scoring, which listens through the player machine's own microphone if you switch it on. See the <a href='{{< ref "faq#recommended-audio-microphone-setup" >}}'>F.A.Q.</a> for more information.
 
 ## 1. Install KaraokeArcade Server
 
@@ -30,7 +30,7 @@ Once the server is running, browse to the web app at the **server URL**.
 
 Since this is your first time with KaraokeArcade, you'll be asked to create your **admin** account.
 
-Make sure you use a strong password and store it someplace safe, since admins can manage users, rooms, preferences and more.
+Make sure you use a strong password and store it someplace safe, since admins can manage users, rooms, preferences and more. You'll also pick a security question, which lets you reset the password from the sign-in screen if you forget it.
 
 <aside class="info" role="note">
   {{% icon-info %}}
@@ -39,7 +39,7 @@ Make sure you use a strong password and store it someplace safe, since admins ca
 
 ## 4. Add Media Folders
 
-Once signed in, you'll see an (unsurprisingly) empty library. Head to the Settings view by following the "Add media folders" link or tapping the knob icon in the bottom navigation area (it's there because you're an admin):
+Once signed in, you'll see an (unsurprisingly) empty library. Head to the Settings view by following the "Add media folders" link or tapping the sliders icon in the bottom navigation area (it's there because you're an admin):
 
 <div class="row">
   {{% img "app-settings.png" "Settings view" /%}}
@@ -55,7 +55,7 @@ Once the media scanner is finished, you should see your artists/songs back over 
   {{% img "app-library.png" "Library view" /%}}
 </div>
 
-In the Library view, queue a song by tapping an artist, then tapping a song. Go ahead and queue a few - the songs will glow to indicate they're queued. Pretty simple, right?
+In the Library view, queue a song by tapping an artist, then tapping a song. Go ahead and queue a few - each one sinks into a teal standby state to show it's queued, and tapping one of yours again takes it back out. Pretty simple, right?
 
 You can do a lot more in the Library view, but for now let's play some music!
 
@@ -74,7 +74,7 @@ Go to **Settings**, where the **Player** panel reports **"no player in room"**. 
   {{% img "app-player.jpg" "Player view" /%}}
 </div>
 
-Now that there's a player in the room, the playback and display controls appear in that same **Settings > Player** panel, along with the **Show Join Code** button for getting everyone else's phones into the room.
+The **Display** and **Show Join Code** buttons are always there in that same **Settings > Player** panel; now that there's a player in the room, playback controls appear there too.
 
 Go ahead and press play in the player to start the party!
 

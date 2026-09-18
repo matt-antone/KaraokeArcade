@@ -12,3 +12,5 @@ Yes, just place the following <a href='{{< ref "docs/karaokearcade-server/#metad
   title: '${meta.title}',
 }
 {{< /highlight >}}
+
+A file missing its artist or title tag is skipped, with a warning logged to the scanner log.

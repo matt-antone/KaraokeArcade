@@ -41,20 +41,12 @@ const Users = () => {
       <tr key={userId}>
         {userId === curUserId && (
           <td translate='no'>
-            <strong>{user.username}</strong>
-            {' '}
-            (
-            {user.name}
-            )
+            <strong>{user.name}</strong>
           </td>
         )}
         {userId !== curUserId && (
           <td>
-            <a data-user-id={userId} onClick={handleOpen}>{user.username}</a>
-            {' '}
-            (
-            {user.name}
-            )
+            <a data-user-id={userId} onClick={handleOpen}>{user.name}</a>
           </td>
         )}
         <td>{user.role}</td>

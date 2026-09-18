@@ -7,6 +7,8 @@ import User, {
   PASSWORD_MIN_LENGTH,
   USERNAME_MAX_LENGTH,
   USERNAME_MIN_LENGTH,
+  normalizeAnswer,
+  securityFields,
 } from './User.js'
 
 /**
@@ -28,28 +30,12 @@ export type Fail = (status: number, message?: string) => void
 interface Actor {
   userId: number
   role: string
-  password?: string
 }
 
 /** Only yourself, unless you are an admin. */
 export function assertMayUpdate (fail: Fail, actor: Actor | false, targetId: number): void {
   if (!actor) return fail(401)
   if (targetId !== actor.userId && actor.role !== 'admin') fail(401)
-}
-
-/**
- * Changing your own account means proving you still know the password for it.
- * An admin editing somebody else does not — they are not claiming to be that
- * person — and a guest has no password to prove.
- */
-export async function assertCurrentPassword (
-  fail: Fail,
-  { actor, targetId, isGuest, given }: { actor: Actor, targetId: number, isGuest: boolean, given?: string },
-): Promise<void> {
-  if (targetId !== actor.userId || isGuest) return
-
-  if (!given) return fail(422, 'Current password is required')
-  if (!(await crypto.compare(given, actor.password as string))) fail(401, 'Incorrect current password')
 }
 
 /** The trimmed username, once it is known to be free and the right length.
@@ -61,22 +47,22 @@ export function nextUsername (fail: Fail, username: string | undefined, isGuest:
   const next = username.trim()
 
   if (next.length < USERNAME_MIN_LENGTH || next.length > USERNAME_MAX_LENGTH) {
-    fail(400, `Username or email must have ${USERNAME_MIN_LENGTH}-${USERNAME_MAX_LENGTH} characters`)
+    fail(400, `Name must have ${USERNAME_MIN_LENGTH}-${USERNAME_MAX_LENGTH} characters`)
   }
 
-  if (User.getByUsername(next)) fail(409, 'Username or email is not available')
+  if (User.getByUsername(next)) fail(409, 'That name is taken')
 
   return next
 }
 
-/** The trimmed display name, or undefined to leave it alone. */
+/** A guest's trimmed name, or undefined to leave it alone. */
 export function nextName (fail: Fail, name: string | undefined): string | undefined {
   if (!name) return undefined
 
   const next = name.trim()
 
   if (next.length < NAME_MIN_LENGTH || next.length > NAME_MAX_LENGTH) {
-    fail(400, `Display name must have ${NAME_MIN_LENGTH}-${NAME_MAX_LENGTH} characters`)
+    fail(400, `Name must have ${NAME_MIN_LENGTH}-${NAME_MAX_LENGTH} characters`)
   }
 
   return next
@@ -124,4 +110,62 @@ export function assertImageSize (fail: Fail, size: number): void {
  *  typo or an attempt to make themselves an admin. */
 export function assertSelfSignupRole (fail: Fail, role: string): void {
   if (!['guest', 'standard'].includes(role)) fail(401, 'Invalid role')
+}
+
+/** A new security question and hashed answer, or undefined to leave them
+ *  alone. A guest has no password to reset. */
+export async function nextSecurity (
+  fail: Fail,
+  { securityQuestion, securityAnswer, isGuest }: { securityQuestion?: string, securityAnswer?: string, isGuest: boolean },
+): Promise<{ securityQuestion: string, securityAnswer: string } | undefined> {
+  if (isGuest) return undefined
+
+  try {
+    return await securityFields(securityQuestion, securityAnswer)
+  } catch (err) {
+    fail(400, err.message)
+  }
+}
+
+export const RESET_MAX_ATTEMPTS = 5
+export const RESET_LOCKOUT_MS = 15 * 60 * 1000
+
+// ponytail: in-memory and per-username, so a restart forgets it; move to a
+// table if restarts become a way around it
+const resetFailures = new Map<string, { count: number, lockedUntil: number }>()
+
+/**
+ * Whether the answer given is the one on the account, for a password reset.
+ *
+ * Wrong answers count against the username, and after RESET_MAX_ATTEMPTS the
+ * account refuses every answer (right ones too) for RESET_LOCKOUT_MS. Without
+ * that, a short answer is a few thousand guesses from anyone on the wifi.
+ */
+export async function assertSecurityAnswer (
+  fail: Fail,
+  user: { username: string, role: string, securityAnswer?: string | null } | false,
+  given: string | undefined,
+  now = Date.now(),
+): Promise<void> {
+  if (!user || user.role === 'guest' || !user.securityAnswer) {
+    return fail(404, 'That account has no security question. Ask the host to reset your password.')
+  }
+
+  const key = user.username.toLowerCase()
+  const entry = resetFailures.get(key)
+
+  if (entry && entry.lockedUntil > now) {
+    return fail(429, 'Too many wrong answers. Try again later or ask the host.')
+  }
+
+  if (given && await crypto.compare(normalizeAnswer(given), user.securityAnswer)) {
+    resetFailures.delete(key)
+    return
+  }
+
+  // a lockout that has run out starts the count again
+  const count = (!entry || entry.lockedUntil ? 0 : entry.count) + 1
+  resetFailures.set(key, { count, lockedUntil: count >= RESET_MAX_ATTEMPTS ? now + RESET_LOCKOUT_MS : 0 })
+
+  fail(401, 'Incorrect answer')
 }

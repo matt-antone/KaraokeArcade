@@ -12,13 +12,14 @@ import User from '../User/User.js'
 import mountDevLogin from './devLogin.js'
 import {
   type Fail,
-  assertCurrentPassword,
   assertImageSize,
   assertMayUpdate,
+  assertSecurityAnswer,
   assertSelfSignupRole,
   nextName,
   nextPassword,
   nextRole,
+  nextSecurity,
   nextUsername,
 } from './accountFields.js'
 import { QUEUE_PUSH } from '../../shared/actionTypes.js'
@@ -250,8 +251,7 @@ router.delete('/user/:userId', async (ctx) => {
 })
 
 /**
- * Every column the UPDATE will set, and the two values the re-issued token
- * needs afterwards.
+ * Every column the UPDATE will set.
  *
  * Separate from the route because it is six independent field rules that each
  * decide whether they have anything to say at all — an empty field means
@@ -263,8 +263,10 @@ async function buildUpdateFields (fail: Fail, ctx, req: RequestWithBody, user, t
   const isGuest = !!ctx.user.isGuest
   const fields = new Map()
 
+  // One name per account: a username is also what the room sees, so it is
+  // written to both columns. Only a guest, who has no username, sets a name.
   const username = nextUsername(fail, req.body.username, isGuest)
-  const name = nextName(fail, req.body.name)
+  const name = isGuest ? nextName(fail, req.body.name) : username
   const hashed = await nextPassword(fail, {
     newPassword: req.body.newPassword,
     newPasswordConfirm: req.body.newPasswordConfirm,
@@ -274,6 +276,17 @@ async function buildUpdateFields (fail: Fail, ctx, req: RequestWithBody, user, t
   if (username !== undefined) fields.set('username', username)
   if (name !== undefined) fields.set('name', name)
   if (hashed !== undefined) fields.set('password', hashed)
+
+  const security = await nextSecurity(fail, {
+    securityQuestion: req.body.securityQuestion,
+    securityAnswer: req.body.securityAnswer,
+    isGuest,
+  })
+
+  if (security) {
+    fields.set('securityQuestion', security.securityQuestion)
+    fields.set('securityAnswer', security.securityAnswer)
+  }
 
   // changing user image?
   if (req.files && req.files.image) {
@@ -294,10 +307,10 @@ async function buildUpdateFields (fail: Fail, ctx, req: RequestWithBody, user, t
   const role = nextRole(fail, req.body.role, user, targetId)
   if (role !== undefined) fields.set('roleId', role)
 
-  return { fields, username, name }
+  return { fields }
 }
 
-/** A changed display name shows on every queue row that singer owns, in every
+/** A changed name shows on every queue row that singer owns, in every
  *  room. @todo: only update rooms the user is in */
 function pushQueues (ctx): void {
   for (const { room, roomId } of Rooms.getActive(ctx.io)) {
@@ -305,36 +318,6 @@ function pushQueues (ctx): void {
       type: QUEUE_PUSH,
       payload: Queue.get(roomId),
     })
-  }
-}
-
-/**
- * The account as it now stands, for the token that goes back.
- *
- * A guest has no credentials to re-validate, so their updated name is simply
- * taken; everybody else is looked up again by whatever username and password
- * they now have, which is also the check that the UPDATE above did what it
- * said it did.
- */
-async function reissuedUser (
-  fail: Fail,
-  user: { role: string, name: string, username: string },
-  { username, name, password, newPassword }: {
-    username?: string
-    name?: string
-    password?: string
-    newPassword?: string
-  },
-) {
-  if (user.role === 'guest') return { ...user, name: name || user.name }
-
-  try {
-    return await User.validate({
-      username: username || user.username,
-      password: newPassword || password,
-    })
-  } catch (err) {
-    return fail(401, err.message)
   }
 }
 
@@ -349,12 +332,10 @@ router.put('/user/:userId', async (ctx) => {
   if (!user) return
 
   const req = ctx.request as unknown as RequestWithBody
-  const { password, newPassword } = req.body
 
-  await assertCurrentPassword(fail, { actor: user, targetId, isGuest: !!ctx.user.isGuest, given: password })
-
-  // validated
-  const { fields, username, name } = await buildUpdateFields(fail, ctx, req, user, targetId)
+  // Signed in is enough to change your own account, password included: the
+  // session already proves who you are.
+  const { fields } = await buildUpdateFields(fail, ctx, req, user, targetId)
 
   fields.set('dateUpdated', Math.floor(Date.now() / 1000))
 
@@ -378,10 +359,11 @@ router.put('/user/:userId', async (ctx) => {
     return
   }
 
-  const userCtx = createUserCtx(
-    await reissuedUser(fail, user, { username, name, password, newPassword }),
-    ctx.user.roomId || null,
-  )
+  // the account as it now stands, for the token that goes back
+  const updated = User.getById(targetId, true)
+  if (!updated) return ctx.throw(404)
+
+  const userCtx = createUserCtx(updated, ctx.user.roomId || null)
 
   // @todo: this should not extend the JWT expiry date
   setSessionCookie(ctx, userCtx)
@@ -401,7 +383,7 @@ router.put('/user/:userId', async (ctx) => {
 async function assertMaySignUp (
   fail: Fail,
   actor: { userId: number | null },
-  body: { role?: string, roomPassword?: string },
+  body: { role?: string, roomPassword?: string, securityQuestion?: string, securityAnswer?: string },
   // Not read off the body: it arrives as a multipart string and is parsed once
   // by the caller, which is the whole of the signup fix.
   roomId: number | null,
@@ -412,11 +394,22 @@ async function assertMaySignUp (
   // only possible roles; further validated per-room below
   assertSelfSignupRole(fail, body.role)
 
+  // the only way back in without the host if the password is forgotten
+  if (body.role !== 'guest') assertHasSecurity(fail, body)
+
   // new users must choose a room at the same time
   try {
     await Rooms.validate(roomId, body.roomPassword, { role: body.role })
   } catch (err) {
     fail(401, err.message)
+  }
+}
+
+/** Both halves of the security question, when an account is being made by the
+ *  person who will need it. Their lengths are checked by User.create. */
+function assertHasSecurity (fail: Fail, body: { securityQuestion?: string, securityAnswer?: string }) {
+  if (!body.securityQuestion?.trim() || !body.securityAnswer?.trim()) {
+    fail(422, 'Security question and answer are required')
   }
 }
 
@@ -490,9 +483,11 @@ router.post('/setup', async (ctx) => {
     ctx.throw(403)
   }
 
+  const req = ctx.request as unknown as RequestWithBody
+  assertHasSecurity((status, message) => ctx.throw(status, message), req.body)
+
   try {
     // create admin user
-    const req = ctx.request as unknown as RequestWithBody
     const userId = await User.create({ ...req.body, image } as any, 'admin')
     const user = User.getById(userId, true)
 
@@ -533,6 +528,54 @@ router.post('/setup', async (ctx) => {
   } catch (err) {
     ctx.throw(403, err.message)
   }
+})
+
+/**
+ * Forgot password, step one: the question on the account, so it can be asked.
+ * Tells a stranger whether the username exists — signup already does.
+ */
+router.post('/user/reset/question', (ctx) => {
+  const req = ctx.request as unknown as RequestWithBody
+  const username = typeof req.body.username === 'string' ? req.body.username.trim() : ''
+  const user = username ? User.getByUsername(username) : false
+
+  if (!user || user.role === 'guest' || !user.securityQuestion) {
+    return ctx.throw(404, 'That account has no security question. Ask the host to reset your password.')
+  }
+
+  ctx.body = { securityQuestion: user.securityQuestion }
+})
+
+/**
+ * Forgot password, step two: the right answer sets a new password. Does not
+ * sign in — the singer still picks a room at the sign-in screen, the same as
+ * any other time.
+ */
+router.post('/user/reset', async (ctx) => {
+  const req = ctx.request as unknown as RequestWithBody
+  const fail = (status: number, message?: string) => ctx.throw(status, message)
+  const username = typeof req.body.username === 'string' ? req.body.username.trim() : ''
+  const user = username ? User.getByUsername(username, true) : false
+
+  await assertSecurityAnswer(fail, user, req.body.securityAnswer)
+  if (!user) return
+
+  const hashed = await nextPassword(fail, {
+    newPassword: req.body.newPassword,
+    newPasswordConfirm: req.body.newPasswordConfirm,
+    isGuest: false,
+  })
+
+  if (!hashed) fail(422, 'New password is required')
+
+  const query = sql`
+    UPDATE users
+    SET password = ${hashed}, dateUpdated = ${Math.floor(Date.now() / 1000)}
+    WHERE userId = ${user.userId}
+  `
+  db.run(String(query), query.parameters)
+
+  ctx.body = {}
 })
 
 // get a user's image

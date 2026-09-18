@@ -27,7 +27,7 @@ const EditUser = ({ user, onClose }: EditUserProps) => {
     if (user && await confirm({
       title: 'Remove user',
       confirmLabel: 'Remove User',
-      message: `Remove the user "${user.username}"?\n\nTheir account and every song they have queued are deleted. This cannot be undone.`,
+      message: `Remove the user "${user.name}"?\n\nTheir account and every song they have queued are deleted. This cannot be undone.`,
     })) {
       dispatch(removeUser(user.userId))
     }
@@ -37,7 +37,7 @@ const EditUser = ({ user, onClose }: EditUserProps) => {
     <Modal
       className={styles.modal}
       onClose={onClose}
-      title={user ? user.username : 'Create User'}
+      title={user ? user.name : 'Create User'}
     >
       <AccountForm user={user} onSubmit={handleSubmit} showRole autoFocus={!user}>
         <div className={styles.btnContainer}>

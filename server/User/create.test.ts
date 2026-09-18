@@ -34,40 +34,51 @@ describe('creating a user', () => {
       'SELECT username, name, password FROM users WHERE userId = ?', [userId])!
 
     expect(row.username).toBe('newsinger')
-    expect(row.name).toBe('New Singer')
+    // one name per account: the username is also the name the room sees
+    expect(row.name).toBe('newsinger')
     // never the plaintext
     expect(row.password).not.toBe(ok.newPassword)
     expect(row.password.length).toBeGreaterThan(20)
   })
 
-  it('trims the username and the display name', async () => {
+  it('trims the username and ignores a separate display name', async () => {
     const userId = await User.create({ ...ok, username: '  spaced  ', name: '  Spaced Out  ' })
 
     const row = db.get<{ username: string, name: string }>(
       'SELECT username, name FROM users WHERE userId = ?', [userId])!
 
     expect(row.username).toBe('spaced')
-    expect(row.name).toBe('Spaced Out')
+    expect(row.name).toBe('spaced')
   })
 
   it.each([
-    ['Username or email is required', { username: '' }],
-    ['Username or email must have', { username: 'ab' }],
+    ['Name is required', { username: '' }],
+    ['Name must have', { username: 'ab' }],
     ['Password is required', { newPassword: '', newPasswordConfirm: '' }],
     ['Password must have at least', { newPassword: 'abc', newPasswordConfirm: 'abc' }],
     ['Password confirmation is required', { newPasswordConfirm: '' }],
     ['New passwords do not match', { newPasswordConfirm: 'something else' }],
-    ['Display name is required', { name: '' }],
-    ['Display name must have', { name: 'a' }],
   ])('refuses with "%s"', async (message, override) => {
     await expect(User.create({ ...ok, ...override })).rejects.toThrow(message)
+  })
+
+  it('stores the security question and only a hash of the answer', async () => {
+    const userId = await User.create({ ...ok, securityQuestion: 'What was the name of your first pet?', securityAnswer: 'Rex' })
+
+    const row = db.get<{ securityQuestion: string, securityAnswer: string }>(
+      'SELECT securityQuestion, securityAnswer FROM users WHERE userId = ?', [userId])!
+
+    expect(row.securityQuestion).toBe('What was the name of your first pet?')
+    expect(row.securityAnswer).not.toContain('rex')
+    // and never handed out without asking for credentials
+    expect((User.getById(userId) as { securityAnswer?: string }).securityAnswer).toBeUndefined()
   })
 
   it('refuses a username somebody already has', async () => {
     await User.create({ ...ok })
 
     await expect(User.create({ ...ok, name: 'Someone Else' }))
-      .rejects.toThrow('Username or email is not available')
+      .rejects.toThrow('That name is taken')
   })
 
   it('refuses an oversized image', async () => {
@@ -89,8 +100,9 @@ describe('creating a user', () => {
     expect(row.password).toBe('guest')
   })
 
-  it('still asks a guest for a display name', async () => {
-    await expect(User.create({}, 'guest')).rejects.toThrow('Display name is required')
+  it('still asks a guest for a name', async () => {
+    await expect(User.create({}, 'guest')).rejects.toThrow('Name is required')
+    await expect(User.create({ name: 'a' }, 'guest')).rejects.toThrow('Name must have')
   })
 
   it('gives two guests different usernames', async () => {

@@ -30,7 +30,7 @@ Once the server is running, browse to the web app at the **server URL**.
 
 Since this is your first time with KaraokeArcade, you'll be asked to create your **admin** account.
 
-Make sure you use a strong password and store it someplace safe, since admins can manage users, rooms, preferences and more.
+Make sure you use a strong password and store it someplace safe, since admins can manage users, rooms, preferences and more. You'll also pick a security question, which lets you reset the password from the sign-in screen if you forget it.
 
 <aside class="info" role="note">
   {{% icon-info %}}

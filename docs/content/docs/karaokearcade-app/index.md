@@ -129,7 +129,9 @@ The Me tab is your own list. **Drag to reorder** your upcoming songs - the order
 
 ## My Account
 
-The My Account view lets you change your username, password, display name or picture, and sign out.
+The My Account view lets you change your name, password, security question or picture, and sign out. Your name is what the queue and player show. You don't need your current password to make changes.
+
+Forgot your password? Tap **Forgot password?** on the sign-in screen, enter your name, answer your security question and set a new one. Five wrong answers lock that account's reset for 15 minutes. Accounts with no security question need an admin to reset the password.
 
 <div class="row">
   {{% img "app-account.png" "Account view" /%}}

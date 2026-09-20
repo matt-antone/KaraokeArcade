@@ -145,8 +145,8 @@ const invites = new Map<number, {
  *  cannot validate the value, only refuse to carry a hostile one. It is
  *  written to the queue row and read back out to every phone in the room, so
  *  an unbounded string from a socket is somebody else's problem later; the cap
- *  is generous next to the two characters a real id is. */
-const toSingerId = (id: unknown): string => (typeof id === 'string' ? id.slice(0, 32) : '')
+ *  is generous next to a `group/slug` path. */
+const toSingerId = (id: unknown): string => (typeof id === 'string' ? id.slice(0, 64) : '')
 
 /**
  * Emit to every socket belonging to these people, and to nobody else.

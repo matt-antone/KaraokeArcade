@@ -3,6 +3,9 @@
 Instructions for coding agents. Short on purpose — everything here is a rule that
 has been broken at least once.
 
+## graft skill
+always initate graph skill at session start. never commit grapt caches
+
 ## Check whether the PR is merged before you keep working on its branch
 
 **Before pushing to a branch, or continuing any work on it, check the state of its

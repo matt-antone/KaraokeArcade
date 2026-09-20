@@ -42,25 +42,49 @@
   flex: 1;
   min-height: 0;
   overflow: hidden auto;
-  padding: 0 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 6px 12px 14px;
   scrollbar-width: thin;
   scrollbar-color: var(--arc-rule) var(--arc-card);
 }
 
+/* One box per fighter group. A fieldset because the named groups want their
+   name cut into the top rule like a label on a cabinet, and a legend does that
+   notch natively. The shipped group has no legend and so is a plain box. */
+.box {
+  min-width: 0;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--arc-rule);
+  background-color: var(--arc-card);
+}
+
+.legend {
+  margin-left: -2px;
+  padding: 3px 6px;
+  background-color: var(--arc-one);
+  font-family: var(--font-arcade);
+  font-size: 8px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--arc-ground);
+}
+
+/* Head portraits, the smallest cut, four to a row. Fixed rather than fitted so
+   a group's fighters land in the same columns on every phone and the grid can
+   be talked about out loud across the room. */
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 7px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
 }
 
 .tile {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: stretch;
   overflow: hidden;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 1;
   padding: 0;
   border: none;
   background-color: var(--arc-tile);
@@ -82,66 +106,24 @@
   box-shadow: inset 0 0 0 2px var(--arc-mine);
 }
 
-.tilePending {
-  background-color: var(--arc-card);
-}
-
-.art {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-/* An unpicked fighter is present but not lit. Dimming art is the one thing
-   this cabinet does that the deck forbids, and it is right here: there is
-   nothing underneath a tile to ghost through, and a grid where the pick is the
-   only figure at full strength reads in one glance. */
-.tileArt {
+/* An unpicked fighter is present but not lit, so the pick is the only face at
+   full strength and reads in one glance. */
+.portrait {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
   opacity: 0.72;
 }
 
-.tileOn .tileArt {
+.tileOn .portrait {
   opacity: 1;
 }
 
-/* Spoken for by the other side. Still legible as a figure, plainly not
+/* Spoken for by the other side. Still legible as a face, plainly not
    available. */
-.tileArtTaken {
+.tileTaken .portrait {
   opacity: 0.3;
-}
-
-.locked {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-family: var(--font-display);
-  font-size: 26px;
-  color: var(--arc-rule);
-}
-
-.name {
-  position: relative;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  padding: 4px 3px;
-  background-color: var(--arc-ground);
-  font-family: var(--font-arcade);
-  font-size: 8px;
-  letter-spacing: 0.04em;
-  color: var(--arc-muted);
-  text-align: center;
-}
-
-.tileOn .name {
-  background-color: var(--arc-mine);
-  color: var(--arc-ground);
-}
-
-.tilePending .name {
-  color: var(--arc-quiet);
 }
 
 /* The third reading of the selection, and the one that survives a phone held
@@ -164,8 +146,8 @@
 .cornerBL,
 .cornerBR {
   position: absolute;
-  width: 13px;
-  height: 13px;
+  width: 10px;
+  height: 10px;
 
   &::before,
   &::after {
@@ -177,13 +159,13 @@
   }
 
   &::before {
-    width: 13px;
-    height: 4px;
+    width: 10px;
+    height: 3px;
   }
 
   &::after {
-    width: 4px;
-    height: 13px;
+    width: 3px;
+    height: 10px;
   }
 }
 
@@ -249,6 +231,15 @@
   overflow: hidden;
   background-color: var(--arc-ground);
   box-shadow: inset 0 0 0 2px var(--arc-mine);
+}
+
+/* The same head crop the grid draws, so the chip is plainly the tile that was
+   picked rather than a second portrait of them. */
+.chipPortrait {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
 }
 
 .chipText {

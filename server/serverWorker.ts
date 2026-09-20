@@ -165,6 +165,7 @@ async function serverWorker ({ env, startScanner, stopScanner, shutdownHandlers 
     ctx.io = io
     ctx.startScanner = startScanner
     ctx.stopScanner = stopScanner
+    ctx.assetsPath = env.KES_PATH_ASSETS
 
     await next()
   })

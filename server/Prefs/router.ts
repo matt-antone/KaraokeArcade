@@ -1,3 +1,4 @@
+import fs from 'fs'
 import path from 'path'
 import getLogger from '../lib/Log.js'
 import KoaRouter from '@koa/router'
@@ -41,6 +42,31 @@ router.get('/', (ctx) => {
 
   // non-admins only get roles
   ctx.body = { roles: prefs.roles }
+})
+
+// Battle fighter groups as { group: [slug, ...] }: every folder under
+// assets/battle/fighters, and every fighter folder in it that has its key art.
+// Anyone in a room picks a fighter, so this is not admin-only; it is folder
+// names, nothing more.
+router.get('/fighters', async (ctx) => {
+  if (!ctx.user.userId) ctx.throw(401)
+
+  const root = path.join(ctx.assetsPath, 'battle', 'fighters')
+  const dirs = async (dir: string) => (await fs.promises.readdir(dir, { withFileTypes: true }).catch(() => []))
+    .filter(d => d.isDirectory())
+    .map(d => d.name)
+    .sort()
+
+  const groups: Record<string, string[]> = {}
+
+  for (const group of await dirs(root)) {
+    const slugs = (await dirs(path.join(root, group)))
+      .filter(slug => fs.existsSync(path.join(root, group, slug, 'views', 'key.png')))
+
+    if (slugs.length) groups[group] = slugs
+  }
+
+  ctx.body = groups
 })
 
 // add a media path

@@ -40,7 +40,8 @@ const open = ({ userId = ME, invite = battleInvite() }: { userId?: number, invit
   const store = {
     getState: () => ({
       battle: { singers: [] as BattleSinger[], pending: null as BattleSinger | null, invite },
-      user: { userId, name: 'D_TEES' },
+      user: { userId, name: 'D_TEES', roomId: null },
+      rooms: { entities: {} },
     }),
     subscribe: () => () => {},
     dispatch: (action: UnknownAction) => {
@@ -96,8 +97,9 @@ describe('BattleInvite', () => {
     expect(screen.getByText('TAKEN')).toBeTruthy()
     const taken = screen.getByRole('button', { name: /BELTER/ }) as HTMLButtonElement
     expect(taken.disabled).toBe(true)
-    // and the footer chip names the one it fell back to, beside the tile
-    expect(screen.getAllByText('CROONER')).toHaveLength(2)
+    // and it fell back to the next one, lit on the grid and named on the chip
+    expect(screen.getByRole('button', { name: 'CROONER' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByText('CROONER')).toBeTruthy()
   })
 
   it('accepts with the singer that was picked', () => {

@@ -49,7 +49,8 @@ const open = ({ isOpen = true, outcome = null, singers = [], invite = null }: Fa
   const store = {
     getState: () => ({
       battle: { singers, pending: null as BattleSinger | null, invite },
-      user: { userId: ME, name: 'MIRA_K' },
+      user: { userId: ME, name: 'MIRA_K', roomId: null },
+      rooms: { entities: {} },
     }),
     subscribe: () => () => {},
     dispatch: (action: UnknownAction) => {
@@ -88,8 +89,8 @@ describe('BattleSetup', () => {
   it('opens on a singer, so NEXT is never the thing stopping somebody', () => {
     open({})
 
-    // the roster is built from the list, locked slots and all
-    expect(screen.getAllByText('?').length).toBeGreaterThan(0)
+    // the shipped roster is there before the group listing answers
+    expect(screen.getByRole('button', { name: 'BELTER' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'NEXT' })).toBeTruthy()
     // and the footer chip names the pick it arrived with
     expect(screen.getByText('SINGS FOR YOU')).toBeTruthy()

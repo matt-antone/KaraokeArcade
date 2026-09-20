@@ -208,7 +208,13 @@ const PlayerTrivia = ({ round, result, width, height }: PlayerTriviaProps) => {
       />
 
       <div className={styles.stage}>
-        <div className={styles.question} translate='no'>{round.question}</div>
+        <div
+          className={styles.question}
+          style={{ '--len': round.question.length } as React.CSSProperties}
+          translate='no'
+        >
+          {round.question}
+        </div>
       </div>
 
       <div className={styles.answers}>

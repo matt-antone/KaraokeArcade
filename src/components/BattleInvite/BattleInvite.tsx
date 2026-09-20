@@ -13,9 +13,7 @@ import useBattleIris, { BATTLE_TONE } from 'components/BattleStage/useBattleIris
 import { readLastBattleSinger, writeLastBattleSinger } from 'components/BattleStage/lastBattleSinger'
 import {
   BATTLE_LOCKUP,
-  BATTLE_SINGERS_PLAYABLE,
-  battleSingerFrontArt,
-  battleSingerKeyArt,
+  BATTLE_SINGERS,
   battleSingerOrDefault,
 } from 'lib/battleSingers'
 import { acceptBattle, declineBattle } from 'store/modules/battle'
@@ -51,7 +49,7 @@ const openingSinger = (takenId: string): string => {
   const want = battleSingerOrDefault(readLastBattleSinger())
   if (want.id !== takenId) return want.id
 
-  return BATTLE_SINGERS_PLAYABLE.find(s => s.id !== takenId)?.id ?? want.id
+  return BATTLE_SINGERS.find(s => s.id !== takenId)?.id ?? want.id
 }
 
 const BattleInvite = () => {
@@ -154,7 +152,7 @@ const BattleInvite = () => {
     <div className={clsx(styles.body, styles.slam)}>
       <div className={styles.glow} />
       <div className={styles.hero}>
-        <BattleSprite art={battleSingerFrontArt(theirs)} className={styles.heroArt} />
+        <BattleSprite singer={theirs} className={styles.heroArt} />
       </div>
 
       <div className={styles.topRow}>
@@ -209,13 +207,13 @@ const BattleInvite = () => {
             label: 'YOU',
             handle,
             tint: 'two',
-            plate: <BattleSprite art={battleSingerKeyArt(mine)} isFlipped />,
+            plate: <BattleSprite singer={mine} isFlipped />,
           }}
           them={{
             label: 'CHALLENGER',
             handle: challenger,
             tint: 'one',
-            plate: <BattleSprite art={battleSingerKeyArt(theirs)} />,
+            plate: <BattleSprite singer={theirs} />,
           }}
         />
 

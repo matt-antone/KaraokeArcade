@@ -1,29 +1,17 @@
-/* See BattleSprite.tsx. The outer element is the box and does the cropping;
-   the inner one is exactly one frame of the sheet.
+/* See BattleSprite.tsx: a head portrait filling its box.
 
-   The three numbers that matter are on .frame: bottom anchored, 111% of the
-   box height, sides allowed to overhang and be clipped. */
+   `contain` rather than `cover` because the box is square in a chip and tall
+   in a hero slot, and a cropped head reads as a mistake where a centred one
+   reads as a portrait. */
 .sprite {
   position: absolute;
   inset: 0;
-  overflow: hidden;
-}
-
-/* The ratio is FRAME_WIDTH / FRAME_HEIGHT in lib/battleSingers.ts, which
-   battleSingers.test.ts measures against the sheets themselves. */
-.frame {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  height: 111%;
-  aspect-ratio: 480 / 560;
-  transform: translateX(-50%);
-  background-repeat: no-repeat;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   image-rendering: pixelated;
 }
 
-/* Flipping the box rather than the frame keeps the frame's own centring
-   arithmetic out of the transform. */
 .flipped {
   transform: scaleX(-1);
 }

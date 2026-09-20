@@ -111,9 +111,7 @@
   text-align: center;
 }
 
-/* The hero pose takes whatever is left between the label and the name, and is
-   anchored to the bottom of it: the figure stands on the name rather than
-   floating above it. */
+/* The portrait takes whatever is left between the label and the name. */
 .hero {
   flex: 1;
   min-height: 0;
@@ -122,7 +120,6 @@
 }
 
 .heroArt {
-  background-size: auto 100%;
   animation: battle-setup-slam 320ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 
@@ -469,8 +466,6 @@
 }
 
 .answerHeroArt {
-  background-size: contain;
-  background-position: 50% 50%;
   animation: battle-setup-slam 340ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 

@@ -143,7 +143,7 @@
 .question {
   max-width: 20ch;
   font-family: var(--font-trivia);
-  font-size: 34px;
+  font-size: min(34px, calc(680px / var(--len, 20)));
   line-height: 1.35;
   text-wrap: pretty;
   color: #fff;

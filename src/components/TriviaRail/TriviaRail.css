@@ -58,11 +58,11 @@
   gap: 20px;
 
   .wordmark {
-    font-size: 22px;
+    font-size: 11px;
   }
 
   .meta {
-    font-size: 14px;
+    font-size: 7px;
   }
 
   &.timeBar {

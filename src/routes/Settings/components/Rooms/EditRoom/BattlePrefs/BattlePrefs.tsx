@@ -2,6 +2,8 @@ import React from 'react'
 import Accordion from 'components/Accordion/Accordion'
 import Icon from 'components/Icon/Icon'
 import InputCheckbox from 'components/InputCheckbox/InputCheckbox'
+import useBattleGroups from 'components/BattleStage/useBattleGroups'
+import { isBattleGroupOn } from 'lib/battleSingers'
 import { BATTLE_JUDGING_DEFAULT, type IRoomPrefs } from 'shared/types'
 import styles from './BattlePrefs.css'
 
@@ -13,6 +15,7 @@ interface BattlePrefsProps {
 const BattlePrefs = ({ onChange, prefs = {} }: BattlePrefsProps) => {
   const isEnabled = prefs?.battle?.isEnabled ?? false
   const judging = prefs?.battle?.judging ?? BATTLE_JUDGING_DEFAULT
+  const groups = useBattleGroups()
 
   const handleSetPref = (update: Partial<IRoomPrefs['battle']>) => {
     onChange({ ...prefs, battle: { ...prefs.battle, ...update } })
@@ -80,6 +83,21 @@ const BattlePrefs = ({ onChange, prefs = {} }: BattlePrefsProps) => {
                     the TV — until the verdict.
                   </p>
                 )}
+
+            {/* One switch per folder under assets/battle/fighters. Adding a
+                group is dropping a folder of fighters there; this is where a
+                room opts in to it. */}
+            {groups.map(group => (
+              <div key={group.name}>
+                <InputCheckbox
+                  label={`Fighters: ${group.name.replace(/[-_]/g, ' ')} (${group.singers.length})`}
+                  checked={isBattleGroupOn(prefs?.battle?.groups, group.name)}
+                  onChange={event => handleSetPref({
+                    groups: { ...prefs?.battle?.groups, [group.name]: event.currentTarget.checked },
+                  })}
+                />
+              </div>
+            ))}
           </>
         )}
       </div>

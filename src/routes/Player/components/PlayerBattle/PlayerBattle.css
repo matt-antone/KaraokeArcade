@@ -172,7 +172,7 @@
   left: 50%;
   height: 100%;
   max-width: 100%;
-  aspect-ratio: 480 / 560;
+  aspect-ratio: 1;
   transform: translateX(-50%);
   background-repeat: no-repeat;
   image-rendering: pixelated;
@@ -356,7 +356,7 @@
    scene hands off to the intro and the song without anybody appearing to
    change size or step off the floor between beats. */
 .pairVersus {
-  bottom: calc(31 * var(--px));
+  bottom: calc(41 * var(--px));
   width: calc(167 * var(--px));
   height: calc(167 * var(--px));
 }
@@ -999,8 +999,8 @@
    middle of the stage for the name and the verb above them. */
 .winSprite {
   bottom: calc(52 * var(--px));
-  width: calc(150 * var(--px));
-  height: calc(150 * var(--px));
+  width: calc(195 * var(--px));
+  height: calc(195 * var(--px));
 }
 
 .winSpriteOne { left: calc(2 * var(--px)); }

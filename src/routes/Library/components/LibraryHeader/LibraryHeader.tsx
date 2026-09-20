@@ -117,8 +117,8 @@ const LibraryHeader = () => {
           active={tab}
           onChange={id => dispatch(setTab(id))}
           tabs={[
-            { id: 'artists', label: 'Artists', count: artistsResult.length },
             { id: 'songs', label: 'Songs', count: songsResult.length },
+            { id: 'artists', label: 'Artists', count: artistsResult.length },
           ]}
         />
       </div>

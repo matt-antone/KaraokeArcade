@@ -5,8 +5,6 @@ import alertCue from 'lib/alertCue'
 import useBattleStage, { sideOfPhase } from 'lib/useBattleStage'
 import {
   BATTLE_LOCKUP,
-  battleSingerFrontArt,
-  battleSingerKeyArt,
   battleSingerOrDefault,
   battleSingerPortrait,
 } from 'lib/battleSingers'
@@ -225,7 +223,6 @@ const BattleVote = () => {
       <div className={styles.keys}>
         {([1, 2] as BattleSide[]).map((at) => {
           const fighter = sideOf(turn, at)
-          const art = battleSingerKeyArt(fighter.singer)
 
           return (
             <button
@@ -234,13 +231,7 @@ const BattleVote = () => {
               className={clsx(styles.key, at === 1 ? styles.keyOne : styles.keyTwo)}
               onClick={e => onVote(at, e)}
             >
-              {/* A pose is a 1x1 cell, so this reads the url straight rather than
-                  going through spriteCellBackground: .keyArt here and .heroArt
-                  below each have their own fit, and the sheet sizing that helper
-                  writes would override both. */}
-              {art && (
-                <span className={styles.keyArt} style={{ backgroundImage: `url('${art.url}')` }} />
-              )}
+              <img className={styles.keyArt} src={battleSingerPortrait(fighter.singer, 80)} alt='' />
               <span className={styles.keyText}>
                 <span className={clsx(styles.keyLabel, at === 1 ? styles.tintOne : styles.tintTwo)}>VOTE</span>
                 <span className={styles.keyName} translate='no'>{fighter.name}</span>
@@ -314,7 +305,6 @@ const BattleVote = () => {
   const isDraw = one.score === two.score
   const didWinOne = one.score > two.score
   const winner = didWinOne ? one : two
-  const winArt = battleSingerFrontArt(winner.singer)
   const wasRight = (vote?.side === 1) === didWinOne
 
   /** RESULT · the verdict, the tally it was hidden behind, and whether this
@@ -327,9 +317,7 @@ const BattleVote = () => {
       </div>
 
       <div className={styles.hero}>
-        {!isDraw && winArt && (
-          <div className={styles.heroArt} style={{ backgroundImage: `url('${winArt.url}')` }} />
-        )}
+        {!isDraw && <img className={styles.heroArt} src={battleSingerPortrait(winner.singer, 80)} alt='' />}
       </div>
 
       <div className={styles.plates}>

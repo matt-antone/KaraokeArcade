@@ -13,9 +13,6 @@ import type { BattleRect } from 'components/BattleStage/useBattleIris'
 import { readLastBattleSinger, writeLastBattleSinger } from 'components/BattleStage/lastBattleSinger'
 import {
   BATTLE_LOCKUP,
-  BATTLE_SINGERS,
-  battleSingerFrontArt,
-  battleSingerKeyArt,
   battleSingerOrDefault,
   battleSingerPortrait,
 } from 'lib/battleSingers'
@@ -224,20 +221,12 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
       <div className={styles.selectedHead}>YOU SELECTED</div>
 
       <div className={styles.hero}>
-        <BattleSprite art={battleSingerFrontArt(singer)} className={styles.heroArt} />
+        <BattleSprite singer={singer} className={styles.heroArt} />
       </div>
 
       <div className={styles.selectedName} translate='no'>{singer.name}</div>
       <div className={styles.selectedTag}>
-        SINGER
-        {' '}
-        {BATTLE_SINGERS.indexOf(singer) + 1}
-        {' '}
-        OF
-        {' '}
-        {BATTLE_SINGERS.length}
-        {' '}
-        &middot; SINGS FOR
+        SINGS FOR
         {' '}
         {handle}
       </div>
@@ -272,7 +261,7 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
 
       <div className={styles.carried}>
         <div className={styles.carriedChip} ref={slotRef}>
-          {!flyer && <BattleSprite art={battleSingerKeyArt(singer)} />}
+          {!flyer && <BattleSprite singer={singer} />}
         </div>
         <div className={styles.carriedName} translate='no'>{singer.name}</div>
         <BattleKey
@@ -389,7 +378,7 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
             label: 'YOU',
             handle,
             tint: 'one',
-            plate: !flyer && <BattleSprite art={battleSingerKeyArt(singer)} isFlipped />,
+            plate: !flyer && <BattleSprite singer={singer} isFlipped />,
           }}
           them={{
             label: 'OPPONENT',
@@ -451,7 +440,7 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
       {invite && (
         <div className={styles.answerHero}>
           <BattleSprite
-            art={battleSingerFrontArt(battleSingerOrDefault(invite.opponentSingerId))}
+            singer={battleSingerOrDefault(invite.opponentSingerId)}
             className={styles.answerHeroArt}
           />
         </div>
@@ -591,7 +580,7 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
             height: `${flyer.rect.height}px`,
           }}
         >
-          <BattleSprite art={battleSingerKeyArt(singer)} isFlipped={flyer.isFlipped} />
+          <BattleSprite singer={singer} isFlipped={flyer.isFlipped} />
         </div>
       )}
     >

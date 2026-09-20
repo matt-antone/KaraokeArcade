@@ -150,6 +150,10 @@ export interface IRoomPrefs {
     /** How a fight is decided. Absent on every room made before there was a
      *  choice, which reads as the default — see BATTLE_JUDGING_DEFAULT. */
     judging?: BattleJudgingPref
+    /** Which fighter groups (folders under assets/battle/fighters) the
+     *  chooser shows, by folder name. Read through isBattleGroupOn: `default`
+     *  is on unless set false, every other group off unless set true. */
+    groups?: Record<string, boolean>
   }
   user?: {
     isNewAllowed?: boolean

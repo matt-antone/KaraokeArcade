@@ -1,15 +1,16 @@
 /** The Singer Battle roster.
  *
- *  Nine slots, eight of them drawn. This is static client data rather than a
- *  table because a roster is art, not content: a slot exists when the artist
- *  has delivered the PNGs for it, and nothing an operator can do in Settings
- *  should be able to add a tenth. The server never holds the roster — only the
- *  id a fighter picked, which is a short string on the invite and the queue
- *  row.
+ *  Fighters live in groups: one folder per group under assets/battle/fighters,
+ *  one folder per fighter inside it. `default` ships with the app; an admin
+ *  adds a group by dropping a folder of fighters next to it, and turns it on
+ *  per room in Settings. The server lists the folders (GET /api/prefs/fighters)
+ *  and otherwise never holds the roster — only the id a fighter picked, which
+ *  is a short string on the invite and the queue row.
  *
- *  Tiles are built from this list rather than from a hardcoded pair, so a slot
- *  lights up the moment its art lands and `pending` comes off. See
- *  docs/singer-battle/design/ASSETS.md for what is still missing.
+ *  A fighter's id is its `group/slug` path, so anything that only has an id —
+ *  the stage, the queue, the vote — can draw it without the list. The eight
+ *  default fighters keep the p1–p8 ids they had before groups, because those
+ *  are already written onto queue rows and phones' last picks.
  */
 
 /** Where the art is served from. `assets/` is koa-static'd off KES_PATH_ASSETS
@@ -18,16 +19,17 @@
 const ART = 'assets/battle'
 const FIGHTERS = `${ART}/fighters`
 
-/** Sheets are a fixed grid of 480×560 cells, eight to a row, however many rows
+/** Sheets are a fixed grid of 560×560 cells, eight to a row, however many rows
  *  the loop needs. Both numbers are the artist's, not ours: they are what the
  *  delivered sheets are cut to, and a sheet that disagreed would draw every
  *  frame slightly off rather than fail. battleSingers.test.ts measures them. */
 export const SHEET_COLS = 8
-export const FRAME_WIDTH = 480
+export const FRAME_WIDTH = 560
 export const FRAME_HEIGHT = 560
 
-/** Every delivered set is drawn at 4fps. */
-export const FRAME_MS = 250
+/** Sets are drawn at 8fps. The dance sheets are authored at 6fps and run a
+ *  touch quick here; per-set rates are not worth a second clock yet. */
+export const FRAME_MS = 125
 
 /** The animation sets a fighter can be drawn in. Every fighter has all four.
  *  Belter's `entrance`, `flinch` and `guard` sheets are also delivered under
@@ -50,51 +52,76 @@ export const ONE_SHOT_SETS: ReadonlySet<BattleSingerLoop> = new Set<BattleSinger
 
 export interface RosterSinger {
   id: string
-  /** The art directory this fighter's sheets live in. Separate from `id`
-   *  because the id is written onto invites and queue rows and so cannot be
-   *  renamed, while the folder is named for the character. Empty on a slot
-   *  with no art, which nothing asks for a path to. */
+  /** The group folder under assets/battle/fighters. */
+  group: string
+  /** The fighter's folder inside its group. Separate from `id` because the
+   *  default fighters' ids predate groups and cannot be renamed. */
   slug: string
   /** Roster name, always drawn in caps. Not a person's name — the person keeps
    *  their own handle and this is who they are singing as. */
   name: string
-  /** No art drawn yet: the tile renders as a locked `?` and cannot be picked. */
-  pending?: boolean
   /** Frame counts per set. A set absent from here is not drawn for this
    *  fighter and callers fall back to one that is. */
   loops: Partial<Record<BattleSingerLoop, number>>
 }
 
-/** Ordered as the select grid draws them, which is now simply p1 through p9:
- *  every drawn fighter is finished, so there is no longer a reason to lead
- *  with a subset. */
+/** Every delivered set is two rows of eight. A group that ships something else
+ *  needs a manifest; until one does, this is the convention. */
+const LOOPS = { sing: 16, dance: 16, ko: 16, victory: 16 }
+
+export const DEFAULT_GROUP = 'default'
+
+const fighter = (id: string, group: string, slug: string, name = slug.replace(/-/g, ' ').toUpperCase()): RosterSinger =>
+  ({ id, group, slug, name, loops: LOOPS })
+
+/** The shipped group, in select-grid order, under the ids they had before
+ *  groups existed. */
 export const BATTLE_SINGERS: RosterSinger[] = [
-  { id: 'p1', slug: 'belter', name: 'BELTER', loops: { sing: 8, dance: 16, ko: 8, victory: 8 } },
-  { id: 'p2', slug: 'crooner', name: 'CROONER', loops: { sing: 8, dance: 16, ko: 8, victory: 8 } },
-  { id: 'p3', slug: 'hype-man', name: 'HYPEMAN', loops: { sing: 8, dance: 16, ko: 8, victory: 8 } },
-  { id: 'p4', slug: 'diva', name: 'DIVA', loops: { sing: 8, dance: 16, ko: 8, victory: 8 } },
-  { id: 'p5', slug: 'screamer', name: 'SCREAMER', loops: { sing: 8, dance: 16, ko: 8, victory: 8 } },
-  { id: 'p6', slug: 'outlaw', name: 'OUTLAW', loops: { sing: 8, dance: 16, ko: 8, victory: 8 } },
-  { id: 'p7', slug: 'idol', name: 'IDOL', loops: { sing: 8, dance: 16, ko: 8, victory: 8 } },
-  { id: 'p8', slug: 'heavyweight', name: 'HEAVYWEIGHT', loops: { sing: 8, dance: 16, ko: 8, victory: 8 } },
-  { id: 'p9', slug: '', name: 'TBD', pending: true, loops: {} },
+  fighter('p1', DEFAULT_GROUP, 'belter'),
+  fighter('p2', DEFAULT_GROUP, 'crooner'),
+  fighter('p3', DEFAULT_GROUP, 'hype-man', 'HYPEMAN'),
+  fighter('p4', DEFAULT_GROUP, 'diva'),
+  fighter('p5', DEFAULT_GROUP, 'screamer'),
+  fighter('p6', DEFAULT_GROUP, 'outlaw'),
+  fighter('p7', DEFAULT_GROUP, 'idol'),
+  fighter('p8', DEFAULT_GROUP, 'heavyweight'),
 ]
 
-/** The ones a person can actually be. */
-export const BATTLE_SINGERS_PLAYABLE = BATTLE_SINGERS.filter(s => !s.pending)
+/** A folder name that is safe to put in a url(). Ids arrive from other phones
+ *  by way of the server, which only caps their length, so this is the check
+ *  that keeps one from writing into the stage's CSS. */
+const NAME = /^[a-z0-9][a-z0-9_-]*$/i
 
-const getBattleSinger = (id?: string | null): RosterSinger | null =>
-  (id ? BATTLE_SINGERS.find(s => s.id === id) ?? null : null)
+export const isBattleFolderName = (name: string): boolean => NAME.test(name)
 
-/** The roster id to draw for a side, falling back to the first playable
- *  fighter. A battle started before this feature shipped has no id recorded,
- *  and a stage with nobody standing on it is worse than a stage with the
- *  default. */
-export const battleSingerOrDefault = (id?: string | null): RosterSinger => {
-  const singer = getBattleSinger(id)
+/** The fighter at `group/slug`, reusing a default fighter's legacy id. */
+export const battleSingerAt = (group: string, slug: string): RosterSinger =>
+  (group === DEFAULT_GROUP && BATTLE_SINGERS.find(s => s.slug === slug))
+  || fighter(`${group}/${slug}`, group, slug)
 
-  return singer && !singer.pending ? singer : BATTLE_SINGERS_PLAYABLE[0]
+const getBattleSinger = (id?: string | null): RosterSinger | null => {
+  if (!id) return null
+
+  const legacy = BATTLE_SINGERS.find(s => s.id === id)
+  if (legacy) return legacy
+
+  const [group, slug, ...rest] = id.split('/')
+
+  return !rest.length && slug && isBattleFolderName(group) && isBattleFolderName(slug)
+    ? battleSingerAt(group, slug)
+    : null
 }
+
+/** The fighter to draw for an id, falling back to the first default fighter.
+ *  A battle started before the roster shipped has no id recorded, and a stage
+ *  with nobody standing on it is worse than a stage with the default. */
+export const battleSingerOrDefault = (id?: string | null): RosterSinger =>
+  getBattleSinger(id) ?? BATTLE_SINGERS[0]
+
+/** Whether a room shows a group. `default` is on unless a host turns it off;
+ *  any other group is off until one turns it on. */
+export const isBattleGroupOn = (groups: Record<string, boolean> | undefined, group: string): boolean =>
+  (group === DEFAULT_GROUP ? groups?.[group] !== false : groups?.[group] === true)
 
 /** Which set this fighter can actually show for the one that was asked for.
  *  Every drawn fighter has all four today, so this only does anything if a
@@ -102,8 +129,6 @@ export const battleSingerOrDefault = (id?: string | null): RosterSinger => {
 export const battleSingerLoop = (singer: RosterSinger, want: BattleSingerLoop): BattleSingerLoop => {
   if (singer.loops[want]) return want
 
-  // Something is drawn for every non-pending fighter, so this only falls
-  // through on a pending slot, which no beat draws a loop for anyway.
   return (Object.keys(singer.loops)[0] as BattleSingerLoop) ?? 'sing'
 }
 
@@ -139,7 +164,7 @@ export const battleSingerCell = (singer: RosterSinger, loop: BattleSingerLoop, t
   const frame = ((tick % count) + count) % count
 
   return {
-    url: `${FIGHTERS}/${singer.slug}/${loop}.png`,
+    url: `${FIGHTERS}/${singer.group}/${singer.slug}/${loop}-sheet.png`,
     cols: SHEET_COLS,
     rows: Math.ceil(count / SHEET_COLS),
     col: frame % SHEET_COLS,
@@ -167,24 +192,22 @@ export const spriteCellBackground = (cell: SpriteCell) => ({
   backgroundPosition: `${axis(cell.col, cell.cols)} ${axis(cell.row, cell.rows)}`,
 })
 
-const pose = (singer: RosterSinger, name: string): SpriteCell | null =>
-  (singer.pending
-    ? null
-    : { url: `${FIGHTERS}/${singer.slug}/${name}.png`, cols: 1, rows: 1, col: 0, row: 0 })
+const view = (singer: RosterSinger, name: string) => `${FIGHTERS}/${singer.group}/${singer.slug}/views/${name}.png`
 
-/** Single poses. `key` is the tile pose, `front` the full-bleed hero. Both are
- *  null for a slot with no art drawn, and BattleSprite draws nothing for a
- *  null rather than fetching the page itself through `url('')`. */
-export const battleSingerKeyArt = (singer: RosterSinger): SpriteCell | null => pose(singer, 'key')
+const pose = (singer: RosterSinger, name: string): SpriteCell =>
+  ({ url: view(singer, name), cols: 1, rows: 1, col: 0, row: 0 })
 
-export const battleSingerFrontArt = (singer: RosterSinger): SpriteCell | null => pose(singer, 'front')
+/** Single poses. `key` is the tile pose, `front` the full-bleed hero. */
+export const battleSingerKeyArt = (singer: RosterSinger): SpriteCell => pose(singer, 'key')
 
-/** The square head crop, for the HUD chip and anywhere else a fighter has to
- *  be named in a row of text. Cut from the same key pose the tiles draw, so it
- *  cannot drift out of step with the rest of a fighter's art the way the
- *  separately-drawn wave-1 portraits did. */
-export const battleSingerPortrait = (singer: RosterSinger): string =>
-  `${FIGHTERS}/${singer.slug}/portrait.png`
+export const battleSingerFrontArt = (singer: RosterSinger): SpriteCell => pose(singer, 'front')
+
+/** The square head crop. Two cuts of the same drawing, named for the size they
+ *  are meant to be drawn at and delivered at 4× that: 34 for a chip or a grid
+ *  tile, 80 for a hero slot or a versus plate. Asking for the small one where
+ *  the big one belongs is a blurry fighter, not a broken one. */
+export const battleSingerPortrait = (singer: RosterSinger, size: 34 | 80 = 34): string =>
+  view(singer, `portrait-${size}`)
 
 /** The one non-pixel asset in the set: render it with `image-rendering: auto`. */
 export const BATTLE_LOCKUP = `${ART}/logo-singer-battle.png`

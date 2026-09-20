@@ -1,8 +1,9 @@
 import React from 'react'
 import clsx from 'clsx'
-import { BATTLE_SINGERS, battleSingerKeyArt, battleSingerOrDefault } from 'lib/battleSingers'
+import { DEFAULT_GROUP, battleSingerOrDefault, battleSingerPortrait, isBattleGroupOn } from 'lib/battleSingers'
+import { useAppSelector } from 'store/hooks'
 import BattleKey from './BattleKey'
-import BattleSprite from './BattleSprite'
+import useBattleGroups from './useBattleGroups'
 import styles from './BattleSingerSelect.css'
 
 /**
@@ -14,9 +15,10 @@ import styles from './BattleSingerSelect.css'
  * opponent's grid ends up a step behind the challenger's the first time the
  * roster grows.
  *
- * The grid is built from BATTLE_SINGERS rather than from the two fighters that
- * happen to be drawn, so a slot lights up the moment its art lands and nothing
- * here has to be touched.
+ * Fighters come in groups — one boxed grid of head portraits per group the
+ * room has switched on. The shipped group's box is untitled because it is the
+ * roster; any other group is an addition and is named on its box, so a room
+ * that switched on HALLOWEEN can see where the costumes start.
  *
  * Selection reads three ways at once — ring, name plate, blinking bracket —
  * because this is a dark room and a phone at arm's length, and any one of the
@@ -49,7 +51,14 @@ const BattleSingerSelect = ({
   selectedId, lastId, takenId, slotRef, isSlotHidden, onPick, onNext,
 }: BattleSingerSelectProps) => {
   const picked = battleSingerOrDefault(selectedId)
-  const pickedArt = battleSingerKeyArt(picked)
+  const prefs = useAppSelector(state => (state.user.roomId === null
+    ? undefined
+    : state.rooms.entities[state.user.roomId]?.prefs?.battle?.groups))
+  const all = useBattleGroups()
+  const on = all.filter(g => isBattleGroupOn(prefs, g.name))
+  // a room that switched everything off still gets somebody to be
+  const groups = on.length ? on : all.filter(g => g.name === DEFAULT_GROUP)
+  const count = groups.reduce((n, g) => n + g.singers.length, 0)
 
   return (
     <div className={styles.body}>
@@ -62,57 +71,57 @@ const BattleSingerSelect = ({
         <div className={styles.lede}>
           THIS IS WHO SINGS FOR YOU TONIGHT &middot;
           {' '}
-          {BATTLE_SINGERS.length}
+          {count}
           {' '}
           SINGERS
         </div>
       </div>
 
       <div className={styles.scroller}>
-        <div className={styles.grid}>
-          {BATTLE_SINGERS.map((singer) => {
-            const art = battleSingerKeyArt(singer)
-            const isSelected = singer.id === selectedId
-            const isTaken = singer.id === takenId
-            const isOff = !!singer.pending || isTaken
+        {groups.map(group => (
+          <fieldset key={group.name} className={styles.box}>
+            {group.name !== DEFAULT_GROUP && (
+              <legend className={styles.legend} translate='no'>{group.name.replace(/[-_]/g, ' ')}</legend>
+            )}
 
-            return (
-              <button
-                key={singer.id}
-                type='button'
-                disabled={isOff}
-                className={clsx(
-                  styles.tile,
-                  isSelected && styles.tileOn,
-                  singer.pending && styles.tilePending,
-                )}
-                onClick={e => onPick(singer.id, e)}
-              >
-                <span className={styles.art}>
-                  <BattleSprite art={art} className={clsx(styles.tileArt, isTaken && styles.tileArtTaken)} />
-                  {!art && <span className={styles.locked}>?</span>}
-                </span>
+            <div className={styles.grid}>
+              {group.singers.map((singer) => {
+                const isSelected = singer.id === selectedId
+                const isTaken = singer.id === takenId
 
-                <span className={styles.name} translate='no'>{singer.name}</span>
+                return (
+                  <button
+                    key={singer.id}
+                    type='button'
+                    disabled={isTaken}
+                    aria-label={singer.name}
+                    aria-pressed={isSelected}
+                    title={singer.name}
+                    className={clsx(styles.tile, isSelected && styles.tileOn, isTaken && styles.tileTaken)}
+                    onClick={e => onPick(singer.id, e)}
+                  >
+                    <img className={styles.portrait} src={battleSingerPortrait(singer)} alt='' loading='lazy' />
 
-                {isSelected && (
-                  <span className={styles.cursor}>
-                    {CORNERS.map(corner => <span key={corner} className={styles[corner]} />)}
-                  </span>
-                )}
+                    {isSelected && (
+                      <span className={styles.cursor}>
+                        {CORNERS.map(corner => <span key={corner} className={styles[corner]} />)}
+                      </span>
+                    )}
 
-                {isTaken && <span className={styles.tag}>TAKEN</span>}
-                {!isSelected && !isTaken && singer.id === lastId && <span className={styles.tag}>LAST</span>}
-              </button>
-            )
-          })}
-        </div>
+                    {isTaken && <span className={styles.tag}>TAKEN</span>}
+                    {!isSelected && !isTaken && singer.id === lastId && <span className={styles.tag}>LAST</span>}
+                  </button>
+                )
+              })}
+            </div>
+          </fieldset>
+        ))}
       </div>
 
       <div className={styles.footer}>
         <div className={styles.chipRow}>
           <div className={styles.chip} ref={slotRef}>
-            {!isSlotHidden && <BattleSprite art={pickedArt} />}
+            {!isSlotHidden && <img className={styles.chipPortrait} src={battleSingerPortrait(picked)} alt='' />}
           </div>
           <div className={styles.chipText}>
             <div className={styles.chipLegend}>SINGS FOR YOU</div>

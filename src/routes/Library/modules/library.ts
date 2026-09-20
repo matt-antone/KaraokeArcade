@@ -52,7 +52,7 @@ const initialState: LibraryState = {
   version: 0,
   filterStr: '',
   filterStarred: false,
-  tab: 'artists',
+  tab: 'songs',
   scrollRow: 0,
   expandedArtists: [],
   expandedArtistResults: [],

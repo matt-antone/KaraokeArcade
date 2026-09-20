@@ -317,6 +317,24 @@ class Rooms {
     return false
   }
 
+  /** QueueIds the room's player has already left the stage on, per its own
+   *  status — the only record of "sung" a queue row ever gets, since a song's
+   *  row otherwise stays in the table forever (see Queue.remove: nothing
+   *  calls it when a song merely finishes). */
+  static getPlayerHistory (io, roomId: number): number[] {
+    for (const sock of io.of('/').sockets.values()) {
+      if (sock.user && sock.user.roomId === roomId && sock._lastPlayerStatus) {
+        try {
+          return JSON.parse(sock._lastPlayerStatus.historyJSON ?? '[]')
+        } catch {
+          return []
+        }
+      }
+    }
+
+    return []
+  }
+
   /**
    * Remember that a user has been in a room
    */

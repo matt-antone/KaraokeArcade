@@ -126,8 +126,18 @@ class Trivia {
       // round counts, not only songs — a battle is a turn somebody sings, and
       // a queue made entirely of battles read as zero songs, so trivia never
       // got queued in a room that was doing nothing but battling.
-      const query = sql`SELECT COUNT(*) AS count FROM queue WHERE roomId = ${roomId} AND type <> 'trivia'`
-      if ((db.get<{ count: number }>(String(query), query.parameters)?.count ?? 0) === 0) return removed
+      //
+      // A sung row is never removed or marked (unlike trivia's own datePlayed)
+      // — it stays in the table all night so a replay can still find it — so
+      // counting the table alone sees every song the room ever played and
+      // never reaches zero again. The player's own history is the only place
+      // "already sung" is recorded, so that is what has to be excluded here,
+      // or a room down to nothing but trivia keeps being handed another round.
+      const history = new Set(Rooms.getPlayerHistory(io, roomId))
+      const query = sql`SELECT queueId FROM queue WHERE roomId = ${roomId} AND type <> 'trivia'`
+      const stillToSing = db.all<{ queueId: number }>(String(query), query.parameters)
+        .filter(row => !history.has(row.queueId))
+      if (stillToSing.length === 0) return removed
 
       // and nothing on stage: a round added to an idle room is the first thing
       // the room sees when someone finally presses play, ahead of the singer

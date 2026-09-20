@@ -19,9 +19,9 @@ interface Emitted { type: string, payload: TriviaRound | TriviaResult | unknown 
 
 /** Enough of socket.io's server to see what the room was told, with a player
  *  in the room that is playing — a round is only queued while one is. */
-function fakeIo ({ isPlaying = true } = {}) {
+function fakeIo ({ isPlaying = true, historyJSON = '[]' } = {}) {
   const emitted: Emitted[] = []
-  const sockets = new Map([['p', { user: { roomId: ROOM_ID }, _lastPlayerStatus: { isPlaying } }]])
+  const sockets = new Map([['p', { user: { roomId: ROOM_ID }, _lastPlayerStatus: { isPlaying, historyJSON } }]])
 
   return {
     emitted,
@@ -311,6 +311,22 @@ describe('trivia rounds', () => {
     const next = Queue.getPendingTriviaId(ROOM_ID)
     expect(next).not.toBeNull()
     expect(next).not.toBe(first)
+  })
+
+  it('stops requeuing once the only song left has actually been sung', async () => {
+    const { lastID: songQueueId } = queueSong(ALICE)
+    Trivia.syncQueue(playerIo, ROOM_ID)
+    const queueId = Queue.getPendingTriviaId(ROOM_ID)!
+
+    // the room's only song has actually been sung — the player says so in its
+    // history — so there is nothing left to take a turn between
+    const sungIo = fakeIo({ historyJSON: JSON.stringify([songQueueId]) })
+
+    await Trivia.startRound(sungIo, ROOM_ID, queueId)
+    Trivia.closeRound(sungIo, ROOM_ID)
+
+    expect(Queue.getPendingTriviaId(ROOM_ID)).toBeNull()
+    expect(Trivia.syncQueue(sungIo, ROOM_ID)).toBe(false)
   })
 
   it('never runs two rounds at once, however many callers ask', async () => {

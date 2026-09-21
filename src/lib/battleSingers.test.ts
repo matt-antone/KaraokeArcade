@@ -7,9 +7,8 @@ import {
   BATTLE_STAGE_PLATE,
   FRAME_HEIGHT,
   FRAME_WIDTH,
-  SHEET_COLS,
   battleSingerCell,
-  battleSingerFrameCount,
+  battleSingerSet,
   battleSingerFrontArt,
   battleSingerKeyArt,
   battleSingerAt,
@@ -49,10 +48,27 @@ const pngSize = (url: string) => {
   return { width: head.readUInt32BE(0), height: head.readUInt32BE(4) }
 }
 
-/** Every fighter in every group folder, as the chooser would build them. */
+/** Every fighter in every group folder, as the chooser would build them: on
+ *  their manifest, which is what the server hands the chooser at runtime.
+ *
+ *  Reading the manifest here rather than restating its numbers is the point of
+ *  the exercise. The grid used to be a constant in this module and the sheets
+ *  were measured against it; now the sheets are measured against the file that
+ *  claims to describe them, so a 24-frame sheet described as sixteen fails
+ *  here instead of drawing two thirds of a loop on the stage. */
 const FIGHTERS = join(ASSETS, 'assets', 'battle', 'fighters')
 const dirs = (dir: string) => readdirSync(dir, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name)
-const ALL = dirs(FIGHTERS).flatMap(group => dirs(join(FIGHTERS, group)).map(slug => battleSingerAt(group, slug)))
+
+const manifestOf = (group: string, slug: string) =>
+  JSON.parse(readFileSync(join(FIGHTERS, group, slug, 'manifest.json'), 'utf8')) as {
+    cell: [number, number]
+    sets: Record<string, { frames: number, fps: number, columns: number }>
+  }
+
+const setsOf = (group: string, slug: string) => manifestOf(group, slug).sets
+
+const ALL = dirs(FIGHTERS)
+  .flatMap(group => dirs(join(FIGHTERS, group)).map(slug => battleSingerAt(group, slug, setsOf(group, slug))))
 
 const loopsOf = (singer: typeof BATTLE_SINGERS[number]) =>
   Object.keys(singer.loops) as BattleSingerLoop[]
@@ -76,11 +92,12 @@ describe('battle roster', () => {
     for (const singer of ALL) {
       for (const loop of loopsOf(singer)) {
         const cell = battleSingerCell(singer, loop, 0)
+        const { frames, columns } = battleSingerSet(singer, loop)
         const { width, height } = pngSize(cell.url)
-        const rows = Math.ceil(battleSingerFrameCount(singer, loop) / SHEET_COLS)
+        const rows = Math.ceil(frames / columns)
 
-        if (width !== SHEET_COLS * FRAME_WIDTH || height !== rows * FRAME_HEIGHT) {
-          wrong.push(`${cell.url} is ${width}×${height}, expected ${SHEET_COLS * FRAME_WIDTH}×${rows * FRAME_HEIGHT}`)
+        if (width !== columns * FRAME_WIDTH || height !== rows * FRAME_HEIGHT) {
+          wrong.push(`${cell.url} is ${width}×${height}, expected ${columns * FRAME_WIDTH}×${rows * FRAME_HEIGHT}`)
         }
       }
     }
@@ -91,7 +108,7 @@ describe('battle roster', () => {
   it('walks a loop across the sheet and wraps rather than running off the end', () => {
     const belter = BATTLE_SINGERS.find(s => s.id === 'p1')!
 
-    // every set is sixteen, so frame 8 is the start of the second row
+    // sixteen frames on eight columns, so frame 8 is the start of the second row
     expect(battleSingerCell(belter, 'dance', 8)).toMatchObject({ col: 0, row: 1 })
     expect(battleSingerCell(belter, 'dance', 15)).toMatchObject({ col: 7, row: 1 })
     expect(battleSingerCell(belter, 'dance', 16)).toMatchObject({ col: 0, row: 0 })
@@ -120,6 +137,41 @@ describe('battle roster', () => {
     expect(spriteCellBackground(battleSingerCell(belter, 'dance', 0)).backgroundSize).toBe('800% 200%')
     expect(spriteCellBackground(battleSingerCell(belter, 'sing', 0)).backgroundSize).toBe('800% 200%')
     expect(spriteCellBackground(battleSingerKeyArt(belter)!).backgroundSize).toBe('100% 100%')
+  })
+
+  it('cuts a set that is not two rows of eight on its own grid', () => {
+    // The reason the grid stopped being a constant: a dance traced from a
+    // two-second step comes back as 24 frames, which is three rows, and the
+    // third row does not exist if the count is assumed.
+    const long = battleSingerAt('default', 'belter', { dance: { frames: 24, fps: 12, columns: 8 } })
+
+    expect(battleSingerCell(long, 'dance', 0)).toMatchObject({ cols: 8, rows: 3, col: 0, row: 0 })
+    expect(battleSingerCell(long, 'dance', 16)).toMatchObject({ col: 0, row: 2 })
+    expect(battleSingerCell(long, 'dance', 23)).toMatchObject({ col: 7, row: 2 })
+    // and it wraps at its own count, not at sixteen
+    expect(battleSingerCell(long, 'dance', 24)).toMatchObject({ col: 0, row: 0 })
+    expect(spriteCellBackground(battleSingerCell(long, 'dance', 0)).backgroundSize).toBe('800% 300%')
+  })
+
+  it('reads a rate per set per fighter, and a sane one', () => {
+    // fps reaches the browser as a setInterval period, so a zero or a NaN in a
+    // manifest is a busy loop or a dead sprite rather than a wrong-looking
+    // dance. The cell has to agree with the CSS aspect-ratio too.
+    for (const singer of ALL) {
+      const { cell, sets } = manifestOf(singer.group, singer.slug)
+
+      expect(cell).toEqual([FRAME_WIDTH, FRAME_HEIGHT])
+
+      for (const loop of loopsOf(singer)) {
+        const { frames, fps, columns } = battleSingerSet(singer, loop)
+
+        expect(sets[loop]).toBeDefined()
+        expect(frames).toBeGreaterThan(0)
+        expect(columns).toBeGreaterThan(0)
+        expect(fps).toBeGreaterThan(0)
+        expect(Number.isFinite(1000 / fps)).toBe(true)
+      }
+    }
   })
 
   it('has a portrait for everyone who can be picked', () => {

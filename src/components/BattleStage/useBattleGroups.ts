@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react'
-import HttpApi from 'lib/HttpApi'
+import { useMemo } from 'react'
+import { useFighterListing } from 'lib/fighterSets'
 import {
   BATTLE_SINGERS,
   DEFAULT_GROUP,
   battleSingerAt,
-  isBattleFolderName,
   type RosterSinger,
 } from 'lib/battleSingers'
 
@@ -17,48 +16,33 @@ export interface BattleGroup {
  *  shipped eight to pick from. */
 const SHIPPED: BattleGroup[] = [{ name: DEFAULT_GROUP, singers: BATTLE_SINGERS }]
 
-const api = new HttpApi('prefs')
+/** Every fighter group on disk, default first.
+ *
+ *  The listing carries each fighter's manifest alongside their folder name, so
+ *  a fighter built here is drawn on their own frame count and fps rather than
+ *  on the defaults — which is what the chooser's preview sprites need, and the
+ *  same data the stage reads through useFighterSet. */
+export default function useBattleGroups (): BattleGroup[] {
+  const listing = useFighterListing()
 
-// ponytail: fetched once per page load; a group dropped in mid-session shows
-// after a reload, which is also when an admin would go and switch it on.
-let request: Promise<BattleGroup[]> | null = null
-
-const load = () => {
-  request ??= api.get<Record<string, string[]>>('/fighters')
-    .then(folders => Object.entries(folders)
-      .filter(([group]) => isBattleFolderName(group))
-      .map(([group, slugs]) => ({
+  return useMemo(() => {
+    const groups = Object.entries(listing)
+      .map(([group, fighters]) => ({
         name: group,
-        singers: slugs.filter(isBattleFolderName).map(slug => battleSingerAt(group, slug)),
+        singers: Object.entries(fighters).map(([slug, sets]) => battleSingerAt(group, slug, sets)),
       }))
       // shipped fighters keep their p1–p8 order; everyone else is alphabetical
       .map(g => (g.name === DEFAULT_GROUP
-        ? { ...g, singers: g.singers.sort((a, b) => BATTLE_SINGERS.indexOf(a) - BATTLE_SINGERS.indexOf(b)) }
+        ? {
+            ...g,
+            singers: [...g.singers].sort((a, b) =>
+              BATTLE_SINGERS.findIndex(s => s.slug === a.slug) - BATTLE_SINGERS.findIndex(s => s.slug === b.slug)),
+          }
         : g))
       .filter(g => g.singers.length)
       // default first, then the rest by name
-      .sort((a, b) => Number(b.name === DEFAULT_GROUP) - Number(a.name === DEFAULT_GROUP) || a.name.localeCompare(b.name)))
-    .then(groups => (groups.length ? groups : SHIPPED))
-    .catch(() => {
-      request = null
-      return SHIPPED
-    })
+      .sort((a, b) => Number(b.name === DEFAULT_GROUP) - Number(a.name === DEFAULT_GROUP) || a.name.localeCompare(b.name))
 
-  return request
-}
-
-/** Every fighter group on disk, default first. */
-export default function useBattleGroups (): BattleGroup[] {
-  const [groups, setGroups] = useState(SHIPPED)
-
-  useEffect(() => {
-    let isLive = true
-    void load().then(g => isLive && setGroups(g))
-
-    return () => {
-      isLive = false
-    }
-  }, [])
-
-  return groups
+    return groups.length ? groups : SHIPPED
+  }, [listing])
 }

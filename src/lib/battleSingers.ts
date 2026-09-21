@@ -19,17 +19,43 @@
 const ART = 'assets/battle'
 const FIGHTERS = `${ART}/fighters`
 
-/** Sheets are a fixed grid of 560×560 cells, eight to a row, however many rows
- *  the loop needs. Both numbers are the artist's, not ours: they are what the
- *  delivered sheets are cut to, and a sheet that disagreed would draw every
- *  frame slightly off rather than fail. battleSingers.test.ts measures them. */
-export const SHEET_COLS = 8
+/** The cell a sheet is cut into. Still the artist's number rather than ours,
+ *  and still written into the aspect-ratio in BattleSprite.css and
+ *  PlayerBattle.css, which is why it stays a constant while the grid around it
+ *  no longer is. Every delivered manifest carries the same 560; the day one
+ *  does not, these two are what has to move with it. */
 export const FRAME_WIDTH = 560
 export const FRAME_HEIGHT = 560
 
-/** Sets are drawn at 8fps. The dance sheets are authored at 6fps and run a
- *  touch quick here; per-set rates are not worth a second clock yet. */
-export const FRAME_MS = 125
+/** How one set of one fighter is cut and played.
+ *
+ *  All three of these used to be constants, on the assumption that every sheet
+ *  was sixteen frames of a two-row grid at 8fps. That held until the art
+ *  started tracing each dance from its own motion source: a step whose natural
+ *  cycle is two seconds comes back as 24 frames at 12fps, and played on the
+ *  old clock it ran two thirds of the loop at two thirds speed. So the numbers
+ *  come from the fighter's manifest.json now, per set — two fighters can
+ *  disagree about `dance`, and one fighter can disagree with themself between
+ *  `dance` and `ko`.
+ *
+ *  `columns` is here for the same reason as `fps` rather than because anything
+ *  ships a different grid today. Nothing does. Leaving it hardcoded next to
+ *  two fields that are read would be the identical trap one field over. */
+export interface SetSpec {
+  frames: number
+  fps: number
+  columns: number
+}
+
+/** What a set is until its manifest says otherwise: the grid every sheet was
+ *  cut to before the manifests existed. A fighter whose manifest is missing or
+ *  unreadable draws on these rather than not drawing — a sixteen-frame read of
+ *  a 24-frame sheet is wrong, but it is a fighter on the stage, and the
+ *  alternative on a TV box mid-battle is an empty box. */
+export const DEFAULT_SET: SetSpec = { frames: 16, fps: 8, columns: 8 }
+
+/** A set's frame period in ms, which is what the sprite clock ticks on. */
+export const setFrameMs = (set: SetSpec): number => 1000 / set.fps
 
 /** The animation sets a fighter can be drawn in. Every fighter has all four.
  *  Belter's `entrance`, `flinch` and `guard` sheets are also delivered under
@@ -60,19 +86,30 @@ export interface RosterSinger {
   /** Roster name, always drawn in caps. Not a person's name — the person keeps
    *  their own handle and this is who they are singing as. */
   name: string
-  /** Frame counts per set. A set absent from here is not drawn for this
-   *  fighter and callers fall back to one that is. */
-  loops: Partial<Record<BattleSingerLoop, number>>
+  /** How each set is cut and played. A set absent from here is not drawn for
+   *  this fighter and callers fall back to one that is. */
+  loops: Partial<Record<BattleSingerLoop, SetSpec>>
 }
 
-/** Every delivered set is two rows of eight. A group that ships something else
- *  needs a manifest; until one does, this is the convention. */
-const LOOPS = { sing: 16, dance: 16, ko: 16, victory: 16 }
+/** The four sets on the default spec, for a fighter whose manifest has not
+ *  arrived yet. The server reads the real numbers off disk and hands them down
+ *  with the roster — see fighterSets.ts — so this is the shape, not the truth. */
+const LOOPS: Record<BattleSingerLoop, SetSpec> = {
+  sing: DEFAULT_SET,
+  dance: DEFAULT_SET,
+  ko: DEFAULT_SET,
+  victory: DEFAULT_SET,
+}
 
 export const DEFAULT_GROUP = 'default'
 
-const fighter = (id: string, group: string, slug: string, name = slug.replace(/-/g, ' ').toUpperCase()): RosterSinger =>
-  ({ id, group, slug, name, loops: LOOPS })
+const fighter = (
+  id: string,
+  group: string,
+  slug: string,
+  name = slug.replace(/-/g, ' ').toUpperCase(),
+  loops: Partial<Record<BattleSingerLoop, SetSpec>> = LOOPS,
+): RosterSinger => ({ id, group, slug, name, loops })
 
 /** The shipped group, in select-grid order, under the ids they had before
  *  groups existed. */
@@ -94,10 +131,23 @@ const NAME = /^[a-z0-9][a-z0-9_-]*$/i
 
 export const isBattleFolderName = (name: string): boolean => NAME.test(name)
 
-/** The fighter at `group/slug`, reusing a default fighter's legacy id. */
-export const battleSingerAt = (group: string, slug: string): RosterSinger =>
-  (group === DEFAULT_GROUP && BATTLE_SINGERS.find(s => s.slug === slug))
-  || fighter(`${group}/${slug}`, group, slug)
+/** The fighter at `group/slug`, reusing a default fighter's legacy id.
+ *
+ *  `loops` is the fighter's manifest if the caller has it. Nobody resolving a
+ *  fighter from an id alone does — a queue row carries `halloween/deb`, not
+ *  her frame counts — so the default is the shape and useFighterSet supplies
+ *  the numbers once the roster has been listed. */
+export const battleSingerAt = (
+  group: string,
+  slug: string,
+  loops?: Partial<Record<BattleSingerLoop, SetSpec>>,
+): RosterSinger => {
+  const shipped = group === DEFAULT_GROUP && BATTLE_SINGERS.find(s => s.slug === slug)
+
+  if (shipped) return loops ? { ...shipped, loops } : shipped
+
+  return fighter(`${group}/${slug}`, group, slug, undefined, loops)
+}
 
 const getBattleSinger = (id?: string | null): RosterSinger | null => {
   if (!id) return null
@@ -132,8 +182,10 @@ export const battleSingerLoop = (singer: RosterSinger, want: BattleSingerLoop): 
   return (Object.keys(singer.loops)[0] as BattleSingerLoop) ?? 'sing'
 }
 
-export const battleSingerFrameCount = (singer: RosterSinger, loop: BattleSingerLoop): number =>
-  singer.loops[loop] ?? 1
+/** How this fighter's set is cut and played, defaulted rather than absent: a
+ *  caller has already been through battleSingerLoop and is drawing something. */
+export const battleSingerSet = (singer: RosterSinger, loop: BattleSingerLoop): SetSpec =>
+  singer.loops[loop] ?? DEFAULT_SET
 
 /**
  * One drawable thing: a cell of a grid, in a PNG.
@@ -160,15 +212,15 @@ export interface SpriteCell {
  *  Frames run left to right and then wrap to the next row, which is how the
  *  sixteen-frame dance sheets are cut: two rows of eight. */
 export const battleSingerCell = (singer: RosterSinger, loop: BattleSingerLoop, tick: number): SpriteCell => {
-  const count = battleSingerFrameCount(singer, loop)
+  const { frames: count, columns } = battleSingerSet(singer, loop)
   const frame = ((tick % count) + count) % count
 
   return {
     url: `${FIGHTERS}/${singer.group}/${singer.slug}/${loop}-sheet.png`,
-    cols: SHEET_COLS,
-    rows: Math.ceil(count / SHEET_COLS),
-    col: frame % SHEET_COLS,
-    row: Math.floor(frame / SHEET_COLS),
+    cols: columns,
+    rows: Math.ceil(count / columns),
+    col: frame % columns,
+    row: Math.floor(frame / columns),
   }
 }
 

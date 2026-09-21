@@ -1,11 +1,12 @@
 import { useEffect } from 'react'
 import useNow from 'lib/useNow'
+import { useFighterSet } from 'lib/fighterSets'
 import {
-  FRAME_MS,
   ONE_SHOT_SETS,
   battleSingerCell,
-  battleSingerFrameCount,
   battleSingerLoop,
+  battleSingerSet,
+  setFrameMs,
   type BattleSingerLoop,
   type RosterSinger,
   type SpriteCell,
@@ -44,6 +45,13 @@ import {
  * that either is in cache or is not; there is no longer a per-frame stall to
  * pre-empt, which is the main thing the packed sheets bought.
  *
+ * The rate is the set's own, off the fighter's manifest, not one rate for the
+ * room: a dance traced from a two-second step is 24 frames at 12fps while the
+ * ko beside it is sixteen at 8. Two fighters at the same rate still share a
+ * frame, because the index is still the wall clock divided by the period
+ * rather than a counter — they need no clock between them to agree, and two
+ * at different rates have nothing to agree about.
+ *
  * `want` is what the beat would like to see, not what it gets: a fighter
  * missing the set that was asked for falls back to one they have rather than
  * to a 404, which is battleSingerLoop's job.
@@ -54,19 +62,25 @@ export default function useSpriteFrame (
   elapsedMs?: number,
 ): SpriteCell {
   const loop = battleSingerLoop(singer, want)
-  const now = useNow(FRAME_MS)
+  const set = useFighterSet(singer.group, singer.slug, loop, battleSingerSet(singer, loop))
+  const frameMs = setFrameMs(set)
+  const now = useNow(frameMs)
 
   useEffect(() => {
     const img = new Image()
     img.src = battleSingerCell(singer, loop, 0).url
   }, [loop, singer])
 
-  if (ONE_SHOT_SETS.has(loop)) {
-    const last = battleSingerFrameCount(singer, loop) - 1
-    const frame = elapsedMs === undefined ? last : Math.floor(elapsedMs / FRAME_MS)
+  // The cell is cut from `set` rather than from `singer.loops`, which for a
+  // fighter resolved off a queue row is still the default sixteen.
+  const drawn = { ...singer, loops: { ...singer.loops, [loop]: set } }
 
-    return battleSingerCell(singer, loop, Math.min(last, Math.max(0, frame)))
+  if (ONE_SHOT_SETS.has(loop)) {
+    const last = set.frames - 1
+    const frame = elapsedMs === undefined ? last : Math.floor(elapsedMs / frameMs)
+
+    return battleSingerCell(drawn, loop, Math.min(last, Math.max(0, frame)))
   }
 
-  return battleSingerCell(singer, loop, Math.floor(now / FRAME_MS))
+  return battleSingerCell(drawn, loop, Math.floor(now / frameMs))
 }

@@ -6,6 +6,7 @@ import { requireAdmin } from '../lib/util.js'
 import getFolders from '../lib/getFolders.js'
 import getWindowsDrives from '../lib/getWindowsDrives.js'
 import getServerUrl from '../lib/getServerUrl.js'
+import fighterSets from './fighterSets.js'
 import Prefs from './Prefs.js'
 import Media from '../Media/Media.js'
 import pushQueuesAndLibrary from '../lib/pushQueuesAndLibrary.js'
@@ -44,10 +45,17 @@ router.get('/', (ctx) => {
   ctx.body = { roles: prefs.roles }
 })
 
-// Battle fighter groups as { group: [slug, ...] }: every folder under
-// assets/battle/fighters, and every fighter folder in it that has its key art.
-// Anyone in a room picks a fighter, so this is not admin-only; it is folder
-// names, nothing more.
+// Battle fighter groups as { group: { slug: { set: {frames, fps, columns} } } }:
+// every folder under assets/battle/fighters, every fighter folder in it that
+// has its key art, and how each of that fighter's sets is cut and played.
+//
+// The numbers ride along with the listing rather than being fetched per
+// fighter because this walk is already opening every fighter's folder, and
+// because the stage resolves a fighter from an id on a queue row — it never
+// visits the chooser, so a second request keyed on the chooser would leave it
+// drawing a 24-frame dance as sixteen.
+//
+// Anyone in a room picks a fighter, so this is not admin-only.
 router.get('/fighters', async (ctx) => {
   if (!ctx.user.userId) ctx.throw(401)
 
@@ -57,13 +65,17 @@ router.get('/fighters', async (ctx) => {
     .map(d => d.name)
     .sort()
 
-  const groups: Record<string, string[]> = {}
+  const groups: Record<string, Record<string, Awaited<ReturnType<typeof fighterSets>>>> = {}
 
   for (const group of await dirs(root)) {
     const slugs = (await dirs(path.join(root, group)))
       .filter(slug => fs.existsSync(path.join(root, group, slug, 'views', 'key.png')))
 
-    if (slugs.length) groups[group] = slugs
+    if (!slugs.length) continue
+
+    groups[group] = Object.fromEntries(await Promise.all(
+      slugs.map(async slug => [slug, await fighterSets(path.join(root, group, slug))] as const),
+    ))
   }
 
   ctx.body = groups

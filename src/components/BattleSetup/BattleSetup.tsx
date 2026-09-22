@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import { useNavigate } from 'react-router'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
-import UserImage from 'components/UserImage/UserImage'
+import UserAvatar from 'components/UserAvatar/UserAvatar'
 import BattleFrame from 'components/BattleStage/BattleFrame'
 import BattleKey from 'components/BattleStage/BattleKey'
 import BattleSingerSelect from 'components/BattleStage/BattleSingerSelect'
@@ -314,10 +314,9 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
             className={clsx(styles.row, person.userId === oppUserId && styles.rowOn)}
             onClick={() => setOppUserId(person.userId)}
           >
-            <UserImage
+            <UserAvatar
               className={styles.avatar}
-              userId={person.userId}
-              dateUpdated={person.dateUpdated}
+              avatarId={person.avatarId}
             />
             <span className={styles.rowName} translate='no'>{person.name}</span>
             {person.userId === oppUserId && <span className={styles.rowMark}>&#9654; PICKED</span>}
@@ -385,10 +384,10 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
             handle: opponent.name,
             tint: 'two',
             plate: (
-              <UserImage
+              <UserAvatar
                 className={styles.plateImage}
-                userId={opponent.userId}
-                dateUpdated={opponent.dateUpdated}
+                avatarId={opponent.avatarId}
+                size={80}
               />
             ),
           }}

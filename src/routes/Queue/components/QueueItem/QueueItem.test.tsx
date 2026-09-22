@@ -34,6 +34,7 @@ const base = {
   title: 'Surrender',
   userDateUpdated: 0,
   userDisplayName: 'Robin',
+  userAvatarId: 'p3',
   userId: 3,
   onMoveClick: () => {},
 }
@@ -49,6 +50,25 @@ const renderItem = (props: Partial<typeof base> & Record<string, unknown> = {}) 
     chip: container.querySelector('.wait'),
   }
 }
+
+describe('QueueItem', () => {
+  it('draws the singer as the character on their account', () => {
+    // An ordinary row follows the account, so a singer who changes character
+    // mid-night changes on every row they own. Only a battle row, which keeps
+    // its own snapshot, does not.
+    const { container } = renderItem({ userAvatarId: 'halloween/hex' })
+
+    expect(container.querySelector('img')?.getAttribute('src'))
+      .toBe('assets/battle/fighters/halloween/hex/views/portrait-34.png')
+  })
+
+  it('draws the first playable fighter for an account that has not picked', () => {
+    const { container } = renderItem({ userAvatarId: null })
+
+    expect(container.querySelector('img')?.getAttribute('src'))
+      .toBe('assets/battle/fighters/default/belter/views/portrait-34.png')
+  })
+})
 
 describe('QueueItem actions', () => {
   it('offers every permitted action on a live row', () => {

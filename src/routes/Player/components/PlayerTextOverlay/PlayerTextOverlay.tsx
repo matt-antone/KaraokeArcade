@@ -6,7 +6,7 @@ import { requestPlay } from 'store/modules/status'
 import CornerPanel from './CornerPanel/CornerPanel'
 import PlayerHeadline from './PlayerHeadline/PlayerHeadline'
 import Icon from 'components/Icon/Icon'
-import UserImage from 'components/UserImage/UserImage'
+import UserAvatar from 'components/UserAvatar/UserAvatar'
 import VuMeter from 'components/VuMeter/VuMeter'
 import useNow from 'lib/useNow'
 import { isBattleItem, isTriviaItem, type QueueItem } from 'shared/types'
@@ -95,10 +95,10 @@ const Intermission = ({
         </div>
       )}
       {nextQueueItem && (
-        <UserImage
-          userId={nextQueueItem.userId}
-          dateUpdated={nextQueueItem.userDateUpdated}
-          className={styles.nextUserImage}
+        <UserAvatar
+          avatarId={nextQueueItem.userAvatarId}
+          size={80}
+          className={styles.nextAvatar}
         />
       )}
       <PlayerHeadline tone='vu'>{nextQueueItem ? nextQueueItem.userDisplayName : 'Up next'}</PlayerHeadline>

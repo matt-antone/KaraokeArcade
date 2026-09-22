@@ -26,7 +26,7 @@ export const triviaResult = (over: Partial<TriviaResult> = {}): TriviaResult => 
   questionCount: 5,
   isFinal: false,
   correctIdx: 0,
-  scores: [{ userId: 42, name: 'Dot Matrix', score: 3, numAnswered: 4 }],
+  scores: [{ userId: 42, name: 'Dot Matrix', score: 3, numAnswered: 4, avatarId: 'p1' }],
   numCorrect: 1,
   // already past, so the beat after the answer is what a bare call renders
   scoresFrom: Date.now() - 1000,

@@ -163,12 +163,16 @@ const QueueList = () => {
             userId: item.userId,
             name: item.userDisplayName,
             dateUpdated: item.userDateUpdated,
+            singerId: item.singerId,
+            avatarId: item.userAvatarId,
             ...songNameOf(item.songId),
           }}
           opponent={{
             userId: item.opponentUserId,
             name: item.opponentDisplayName,
             dateUpdated: item.opponentDateUpdated,
+            singerId: item.opponentSingerId,
+            avatarId: item.opponentAvatarId,
             ...songNameOf(item.opponentSongId),
           }}
         />

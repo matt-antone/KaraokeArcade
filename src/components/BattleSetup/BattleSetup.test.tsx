@@ -49,7 +49,7 @@ const open = ({ isOpen = true, outcome = null, singers = [], invite = null }: Fa
   const store = {
     getState: () => ({
       battle: { singers, pending: null as BattleSinger | null, invite },
-      user: { userId: ME, name: 'MIRA_K', roomId: null },
+      user: { userId: ME, name: 'MIRA_K', roomId: null as number | null },
       rooms: { entities: {} },
     }),
     subscribe: () => () => {},
@@ -117,6 +117,31 @@ describe('BattleSetup', () => {
     fireEvent.change(screen.getByPlaceholderText('SEARCH THE ROOM'), { target: { value: 'zz' } })
     expect(screen.getByText(/NOBODY HERE BY THAT NAME/)).toBeTruthy()
     expect(screen.queryByRole('button', { name: /D_TEES/ })).toBeNull()
+  })
+
+  it('shows the room as faces, and carries the opponent\'s onto the versus plate', () => {
+    // Picking somebody out of a dark room by reading a list of handles is the
+    // thing the avatar is for -- and the plate on the next step has to be the
+    // same person, or the confirm screen is describing a different fight.
+    open({
+      singers: [
+        battleSinger({ userId: THEM, name: 'D_TEES', avatarId: 'halloween/hex' }),
+        battleSinger({ userId: 3, name: 'SAL', avatarId: 'p4' }),
+      ],
+    })
+    toOpponents()
+
+    const rowArt = () => Array.from(document.querySelectorAll('img'))
+      .map(img => img.getAttribute('src'))
+
+    expect(rowArt()).toContain('assets/battle/fighters/halloween/hex/views/portrait-34.png')
+    expect(rowArt()).toContain('assets/battle/fighters/default/diva/views/portrait-34.png')
+
+    fireEvent.click(screen.getByRole('button', { name: /D_TEES/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'BATTLE D_TEES' }))
+    settle()
+
+    expect(rowArt()).toContain('assets/battle/fighters/halloween/hex/views/portrait-80.png')
   })
 
   it('will not send a challenge to nobody', () => {

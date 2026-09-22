@@ -7,6 +7,7 @@ import {
   assertMayUpdate,
   assertSecurityAnswer,
   assertSelfSignupRole,
+  nextAvatarId,
   nextName,
   nextPassword,
   nextRole,
@@ -297,5 +298,51 @@ describe('nextSecurity', () => {
     await nextSecurity(fail, { securityAnswer: 'rex', isGuest: false })
 
     expect(calls.map(c => c[0])).toEqual([400, 400])
+  })
+})
+
+describe('nextAvatarId', () => {
+  it('leaves the column alone when the form says nothing about it', () => {
+    const { calls, fail } = recorder()
+
+    // three ways a form can say "not this field": every other rule in here
+    // reads an absent value the same way, and none of them mean "clear it"
+    expect(nextAvatarId(fail, undefined)).toBeUndefined()
+    expect(nextAvatarId(fail, null)).toBeUndefined()
+    expect(nextAvatarId(fail, '')).toBeUndefined()
+    expect(calls).toEqual([])
+  })
+
+  it('accepts both id shapes the grid can offer, including a capitalised group', () => {
+    const { calls, fail } = recorder()
+
+    // A group folder called `Halloween` passes the client's own filter and is
+    // drawn on the grid, so a case-sensitive check here would 422 a fighter
+    // the singer just tapped. Both ends share one regex precisely so they
+    // cannot disagree about this.
+    expect(nextAvatarId(fail, 'Halloween/Hex')).toBe('Halloween/Hex')
+    expect(nextAvatarId(fail, 'halloween/hex')).toBe('halloween/hex')
+    expect(nextAvatarId(fail, 'p1')).toBe('p1')
+    expect(calls).toEqual([])
+  })
+
+  it('refuses anything that would not survive being put in a url()', () => {
+    // This value reaches every other phone in the room and is interpolated
+    // into CSS there. Nothing downstream re-checks it, so this is the check.
+    for (const hostile of [
+      '../../etc/passwd',
+      'default/belter/../../..',
+      'p1\') url(\'http://evil',
+      'group/slug/extra',
+      '-leading-dash',
+      'a'.repeat(65),
+      42,
+      {},
+    ]) {
+      const { calls, fail } = recorder()
+
+      expect(nextAvatarId(fail, hostile)).toBeUndefined()
+      expect(calls).toEqual([[422, 'Invalid character']])
+    }
   })
 })

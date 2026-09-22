@@ -120,14 +120,14 @@
   color: var(--ink-2);
 }
 
-.nextUserImage {
+.nextAvatar {
   width: 22vh;
   height: 22vh;
   margin-bottom: 2vh;
 }
 
 /* the fallback avatar glyph reads as "off" against the stage wash */
-.container .nextUserImage svg {
+.container .nextAvatar svg {
   color: var(--ink-5);
 }
 

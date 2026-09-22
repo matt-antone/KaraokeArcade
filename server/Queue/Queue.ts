@@ -27,6 +27,11 @@ interface QueueRow {
   rgTrackPeak: number
   userDisplayName: string
   userDateUpdated: number
+  userAvatarId: string | null
+  /** The battle row's own snapshot of who the two of them fought as (017).
+   *  NULL on every non-battle row, and on a battle queued before 017. */
+  singerId: string | null
+  opponentSingerId: string | null
   pathId: number
   pathData: string
   opponentSongId: number | null
@@ -37,6 +42,7 @@ interface QueueRow {
   opponentRgTrackPeak: number | null
   opponentDisplayName: string | null
   opponentDateUpdated: number | null
+  opponentAvatarId: string | null
   opponentPathId: number | null
   opponentPathData: string | null
 }
@@ -70,6 +76,14 @@ function shapeRow (
   item.opponentUserId = row.opponentUserId ?? 0
   item.opponentDisplayName = row.opponentDisplayName ?? ''
   item.opponentDateUpdated = row.opponentDateUpdated ?? 0
+
+  // Null rather than 0/'': an avatar that is absent means "this account has
+  // not picked one", which battleSingerOrDefault answers with the first
+  // playable fighter. There is no sentinel to invent here.
+  item.userAvatarId = row.userAvatarId ?? null
+  item.opponentAvatarId = row.opponentAvatarId ?? null
+  item.singerId = row.singerId ?? null
+  item.opponentSingerId = row.opponentSingerId ?? null
   item.opponentMediaId = row.opponentMediaId ?? 0
   item.opponentMediaType = row.type === 'battle' ? getType(row.opponentRelPath as string) : null
   item.opponentIsVideoKeyingEnabled = !!oppPathPrefs?.isVideoKeyingEnabled
@@ -362,10 +376,13 @@ class Queue {
         queue.keyChange, queue.datePlayed, queue.opponentSongId, queue.opponentUserId,
         media.mediaId, media.relPath, media.rgTrackGain, media.rgTrackPeak,
         users.name AS userDisplayName, users.dateUpdated AS userDateUpdated,
+        users.avatarId AS userAvatarId,
+        queue.singerId, queue.opponentSingerId,
         paths.pathId, paths.data AS pathData,
         oppMedia.mediaId AS opponentMediaId, oppMedia.relPath AS opponentRelPath,
         oppMedia.rgTrackGain AS opponentRgTrackGain, oppMedia.rgTrackPeak AS opponentRgTrackPeak,
         oppUsers.name AS opponentDisplayName, oppUsers.dateUpdated AS opponentDateUpdated,
+        oppUsers.avatarId AS opponentAvatarId,
         oppPaths.pathId AS opponentPathId, oppPaths.data AS opponentPathData
       FROM queue
         LEFT JOIN users ON users.userId = queue.userId

@@ -1,6 +1,7 @@
 import React from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router'
 import { useAppSelector } from 'store/hooks'
+import AvatarPicker from 'components/BattleStage/AvatarPicker'
 
 import AccountView from 'routes/Account/views/AccountView'
 import LibraryView from 'routes/Library/views/LibraryView'
@@ -83,12 +84,15 @@ interface RequireAuthProps {
   redirectTo: string
 }
 
-const RequireAuth = ({
+/** Exported for its own tests: every route in the table goes through it, and
+ *  standing a real view up behind it to ask one question about the gate tests
+ *  the view instead. */
+export const RequireAuth = ({
   children,
   path,
   redirectTo,
 }: RequireAuthProps) => {
-  const { isAdmin, userId } = useAppSelector(state => state.user)
+  const { avatarId, isAdmin, userId } = useAppSelector(state => state.user)
   const location = useLocation()
 
   // signed out: sign in first (checked before the admin-only paths below so
@@ -103,6 +107,23 @@ const RequireAuth = ({
 
   if ((path === '/player' || path === '/settings') && !isAdmin) {
     return <Navigate to='/' replace />
+  }
+
+  // Signed in with nobody to be yet: ask, once, before anything else renders.
+  // Here rather than in the app shell because this is already the app's one
+  // "you can't be here yet" seam, and because it is the only place that knows
+  // which path is being entered -- which /player needs it to.
+  //
+  // Falsy rather than === null: this slice is persisted, so a store rehydrated
+  // from before the column shipped has no key here at all and reads undefined.
+  //
+  // /player is exempt and must stay exempt. It is the television: a signed-in
+  // admin route that nothing backfills an avatarId for, so a gate without this
+  // line puts a character picker on the TV on first boot after 020. Anything
+  // added to this list is a screen that has to work for somebody who has not
+  // picked yet.
+  if (!avatarId && path !== '/player') {
+    return <AvatarPicker />
   }
 
   return children

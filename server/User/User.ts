@@ -3,7 +3,7 @@ import sql from 'sqlate'
 import crypto from '../lib/crypto.js'
 import Queue from '../Queue/Queue.js'
 import { randomChars } from '../lib/util.js'
-import { SongHistoryItem, User as UserType } from '../../shared/types.js'
+import { SongHistoryItem, User as UserType, isAvatarId } from '../../shared/types.js'
 import { SECURITY_QUESTIONS } from '../../shared/securityQuestions.js'
 
 type ServerUser = UserType & {
@@ -176,6 +176,7 @@ class User {
     newPasswordConfirm,
     name,
     image,
+    avatarId,
     securityQuestion,
     securityAnswer,
   }: {
@@ -184,6 +185,7 @@ class User {
     newPasswordConfirm?: string
     name?: string
     image?: Buffer
+    avatarId?: string
     securityQuestion?: string
     securityAnswer?: string
   }, role = 'standard') {
@@ -220,6 +222,18 @@ class User {
     }
     fields.set('dateCreated', Math.floor(Date.now() / 1000))
     fields.set('roleId', sql`(SELECT roleId FROM roles WHERE name = ${role})`)
+
+    // Which fighter they are. Normally absent: a new account has not been
+    // asked yet, and NULL is what makes the sign-in gate ask. Checked with the
+    // same predicate the update path uses -- it reaches a CSS url() on every
+    // other phone in the room either way it got here.
+    if (avatarId) {
+      if (!isAvatarId(avatarId)) {
+        throw new Error('Invalid character')
+      }
+
+      fields.set('avatarId', avatarId)
+    }
 
     // user image?
     if (image) {

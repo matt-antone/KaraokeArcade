@@ -40,7 +40,7 @@ const open = ({ userId = ME, invite = battleInvite() }: { userId?: number, invit
   const store = {
     getState: () => ({
       battle: { singers: [] as BattleSinger[], pending: null as BattleSinger | null, invite },
-      user: { userId, name: 'D_TEES', roomId: null },
+      user: { userId, name: 'D_TEES', roomId: null as number | null },
       rooms: { entities: {} },
     }),
     subscribe: () => () => {},

@@ -15,6 +15,7 @@ import {
   BATTLE_VERSUS_MS,
   BATTLE_WINNER_MS,
   clampBattleScore,
+  isAvatarId,
   type BattleInvite,
   type BattleInviteEnd,
   type BattleJudging,
@@ -142,11 +143,18 @@ const invites = new Map<number, {
  *  somebody is singing as.
  *
  *  The server never looks one up — the roster is client-side art — so this
- *  cannot validate the value, only refuse to carry a hostile one. It is
- *  written to the queue row and read back out to every phone in the room, so
- *  an unbounded string from a socket is somebody else's problem later; the cap
- *  is generous next to a `group/slug` path. */
-const toSingerId = (id: unknown): string => (typeof id === 'string' ? id.slice(0, 64) : '')
+ *  cannot tell a real fighter from a plausible one, only refuse to carry a
+ *  hostile string. It is written to the queue row and read back out to every
+ *  phone in the room, where it lands inside a CSS url(), so the shape check is
+ *  the same isAvatarId the avatarId write path uses.
+ *
+ *  It coerces and never throws. Anything unusable becomes '', which
+ *  COALESCE(queue.singerId, '') and battleSingerOrDefault already read as "the
+ *  first playable fighter" — that is what lets a session that predates the
+ *  roster, or one that has not refreshed since the avatar shipped, start a
+ *  battle instead of meeting a 500. Refusing a value here means replacing it,
+ *  not rejecting the request. */
+const toSingerId = (id: unknown): string => (isAvatarId(id) ? id : '')
 
 /**
  * Emit to every socket belonging to these people, and to nobody else.
@@ -186,7 +194,7 @@ async function emitToUsers (io, roomId: number, userIds: number[], action): Prom
  *  token, and the invite is the thing the other fighter is looking at. */
 function getSinger (userId: number): BattleSinger | null {
   const query = sql`
-    SELECT userId, name, dateUpdated
+    SELECT userId, name, dateUpdated, avatarId
     FROM users
     WHERE userId = ${userId}
   `
@@ -250,9 +258,11 @@ function getFighters (roomId: number, queueId: number): BattleFighters | null {
       challenger.userId AS challengerUserId,
       challenger.name AS challengerName,
       challenger.dateUpdated AS challengerDateUpdated,
+      challenger.avatarId AS challengerAvatarId,
       opponent.userId AS opponentUserId,
       opponent.name AS opponentName,
       opponent.dateUpdated AS opponentDateUpdated,
+      opponent.avatarId AS opponentAvatarId,
       COALESCE(queue.singerId, '') AS challengerSingerId,
       COALESCE(queue.opponentSingerId, '') AS opponentSingerId,
       challengerSong.songId AS challengerSongId,
@@ -277,9 +287,11 @@ function getFighters (roomId: number, queueId: number): BattleFighters | null {
     challengerUserId: number
     challengerName: string
     challengerDateUpdated: number
+    challengerAvatarId: string | null
     opponentUserId: number
     opponentName: string
     opponentDateUpdated: number
+    opponentAvatarId: string | null
     challengerSingerId: string
     opponentSingerId: string
     challengerSongId: number
@@ -297,9 +309,11 @@ function getFighters (roomId: number, queueId: number): BattleFighters | null {
     challengerUserId: row.challengerUserId,
     challengerName: row.challengerName,
     challengerDateUpdated: row.challengerDateUpdated,
+    challengerAvatarId: row.challengerAvatarId,
     opponentUserId: row.opponentUserId,
     opponentName: row.opponentName,
     opponentDateUpdated: row.opponentDateUpdated,
+    opponentAvatarId: row.opponentAvatarId,
     challengerSingerId: row.challengerSingerId,
     opponentSingerId: row.opponentSingerId,
     challengerSong: {
@@ -359,7 +373,15 @@ class Battle {
       if (s._lastPlayerStatus) continue
       if (singers.has(userId)) continue
 
-      singers.set(userId, { userId, name: s.user.name, dateUpdated: s.user.dateUpdated })
+      // avatarId rides the JWT (createUserCtx), which is the only thing a
+      // socket carries about its owner. A session signed before the column
+      // shipped has no copy of it and draws the default until it refreshes.
+      singers.set(userId, {
+        userId,
+        name: s.user.name,
+        dateUpdated: s.user.dateUpdated,
+        avatarId: s.user.avatarId ?? null,
+      })
     }
 
     return [...singers.values()].sort((a, b) => a.name.localeCompare(b.name))
@@ -415,9 +437,11 @@ class Battle {
       challengerUserId: challenger.userId,
       challengerName: challenger.name,
       challengerDateUpdated: challenger.dateUpdated,
+      challengerAvatarId: challenger.avatarId,
       opponentUserId: opponent.userId,
       opponentName: opponent.name,
       opponentDateUpdated: opponent.dateUpdated,
+      opponentAvatarId: opponent.avatarId,
       songId: song.songId,
       artist: song.artist,
       title: song.title,

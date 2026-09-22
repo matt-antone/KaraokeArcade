@@ -423,7 +423,7 @@ class Trivia {
    *  Nobody who has not played appears, which is the whole rule. */
   static getScores (roomId: number): TriviaScore[] {
     const query = sql`
-      SELECT triviaScores.userId, users.name, score, numAnswered
+      SELECT triviaScores.userId, users.name, users.avatarId, score, numAnswered
       FROM triviaScores
         INNER JOIN users USING(userId)
       WHERE roomId = ${roomId}

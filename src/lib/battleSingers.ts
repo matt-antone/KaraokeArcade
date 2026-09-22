@@ -12,6 +12,7 @@
  *  default fighters keep the p1–p8 ids they had before groups, because those
  *  are already written onto queue rows and phones' last picks.
  */
+import { isBattleFolderName } from 'shared/types'
 
 /** Where the art is served from. `assets/` is koa-static'd off KES_PATH_ASSETS
  *  (server/serverWorker.ts), so these are plain relative URLs — the same way
@@ -125,11 +126,13 @@ export const BATTLE_SINGERS: RosterSinger[] = [
 ]
 
 /** A folder name that is safe to put in a url(). Ids arrive from other phones
- *  by way of the server, which only caps their length, so this is the check
- *  that keeps one from writing into the stage's CSS. */
-const NAME = /^[a-z0-9][a-z0-9_-]*$/i
-
-export const isBattleFolderName = (name: string): boolean => NAME.test(name)
+ *  by way of the server, so this is the check that keeps one from writing into
+ *  the stage's CSS.
+ *
+ *  Lives in shared/types.ts and is re-exported here: the server refuses a
+ *  hostile avatarId with the same regex, and two copies of it would drift into
+ *  a fighter the grid offers and the server then rejects. */
+export { isBattleFolderName }
 
 /** The fighter at `group/slug`, reusing a default fighter's legacy id.
  *

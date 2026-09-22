@@ -701,3 +701,80 @@ describe('the beats', () => {
     expect(vi.getTimerCount()).toBe(0)
   })
 })
+
+/**
+ * The avatar is an account-level fact, and every surface that names a person
+ * has to be able to draw it — otherwise a character is only ever visible to
+ * the person who picked it.
+ *
+ * The two ids on a battle row are the other half: the row keeps its own
+ * snapshot of who fought, so a fight looks the same on every screen and keeps
+ * looking that way after somebody changes their character mid-night.
+ */
+describe('the avatar on the wire', () => {
+  beforeEach(setupRoom)
+  afterEach(teardownRoom)
+
+  const setAvatar = (userId: number, avatarId: string) =>
+    db.run('UPDATE users SET avatarId = ? WHERE userId = ?', [avatarId, userId])
+
+  it('carries a singer\'s avatar onto every other phone\'s queue', () => {
+    setAvatar(ALICE, 'halloween/hex')
+    queueSong(ALICE)
+
+    const { entities } = Queue.get(ROOM_ID)
+
+    expect(entities[1].userAvatarId).toBe('halloween/hex')
+  })
+
+  it('puts both the snapshot and the live id on a battle row', async () => {
+    const io = fakeIo()
+    queueSong(ALICE)
+    await negotiate(io, { queueId: 1, challengerSingerId: 'p1', opponentSingerId: 'p2' })
+
+    // Alice changes her mind about who she is, after the match was made
+    setAvatar(ALICE, 'halloween/hex')
+
+    const row = Queue.get(ROOM_ID).entities[1]
+
+    // both halves are on the row, or QueueBattleItem cannot draw the fight as
+    // it was fought while the ordinary rows follow the account
+    expect(row.singerId).toBe('p1')
+    expect(row.opponentSingerId).toBe('p2')
+    expect(row.userAvatarId).toBe('halloween/hex')
+  })
+
+  it('carries the live avatar on a battle turn beside the snapshot', async () => {
+    const io = fakeIo()
+    queueSong(ALICE)
+    await negotiate(io, { queueId: 1, challengerSingerId: 'p1', opponentSingerId: 'p2' })
+    setAvatar(ALICE, 'halloween/hex')
+
+    Battle.startTurn(io, ROOM_ID, 1, false)
+    const turn = io.emitted.find(e => e.type === BATTLE_TURN)?.payload as BattleTurn
+
+    expect(turn.challengerSingerId).toBe('p1')
+    expect(turn.challengerAvatarId).toBe('halloween/hex')
+  })
+
+  it('reads a hostile singer id as nobody rather than refusing the battle', async () => {
+    const io = fakeIo()
+    queueSong(ALICE)
+
+    // An unrefreshed session, a broken client, or somebody poking the socket.
+    // Whichever it is, a room mid-party does not lose its fight over it: the
+    // value is replaced, not rejected, and battleSingerOrDefault draws the
+    // first playable fighter from the empty string.
+    await negotiate(io, {
+      queueId: 1,
+      challengerSingerId: 'p1\') url(\'http://evil',
+      opponentSingerId: '../../etc/passwd',
+    })
+
+    const row = db.get<{ singerId: string, opponentSingerId: string }>(
+      'SELECT singerId, opponentSingerId FROM queue WHERE queueId = 1')
+
+    expect(row.singerId).toBe('')
+    expect(row.opponentSingerId).toBe('')
+  })
+})

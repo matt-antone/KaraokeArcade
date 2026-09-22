@@ -449,9 +449,19 @@ describe('trivia answers and scores', () => {
     answer(BOB, (correctIdx + 1) % 4)
 
     expect(Trivia.getScores(ROOM_ID)).toEqual([
-      { userId: ALICE, name: 'Alice', score: 1, numAnswered: 1 },
-      { userId: BOB, name: 'Bob', score: 0, numAnswered: 1 },
+      { userId: ALICE, name: 'Alice', score: 1, numAnswered: 1, avatarId: null },
+      { userId: BOB, name: 'Bob', score: 0, numAnswered: 1, avatarId: null },
     ])
+  })
+
+  it('puts each player\'s character on the scoreboard', async () => {
+    // The scoreboard is the one surface that draws people who are not in the
+    // queue and not in a battle, so it is its own join and its own chance to
+    // ship a name with no face beside it.
+    db.run('UPDATE users SET avatarId = ? WHERE userId = ?', ['halloween/hex', ALICE])
+    answer(ALICE, correctIdx)
+
+    expect(Trivia.getScores(ROOM_ID)[0].avatarId).toBe('halloween/hex')
   })
 
   it('takes the first answer only, so nobody can walk to the right key', async () => {

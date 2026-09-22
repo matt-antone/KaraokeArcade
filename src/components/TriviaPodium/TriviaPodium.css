@@ -10,6 +10,11 @@
   align-items: center;
 }
 
+/* Sized per variant below, like everything else on a column. */
+.avatar {
+  width: 100%;
+}
+
 /* Wraps rather than truncating: a clip box would slice the glow off square. */
 .name {
   max-width: 100%;
@@ -71,10 +76,12 @@
   gap: 18px;
 
   .column { gap: 8px; width: 200px; }
+  .avatar { width: 88px; }
   .name { font-size: 18px; }
   .score { font-size: 32px; }
   .block { font-size: 38px; }
   .p0 { width: 230px; }
+  .p0 .avatar { width: 112px; }
   .p0 .name { font-size: 24px; }
   .p0 .score { font-size: 44px; }
   .p0 .block { height: 154px; font-size: 54px; }
@@ -87,10 +94,12 @@
   gap: 8px;
 
   .column { gap: 4px; width: 78px; }
+  .avatar { width: 40px; }
   .name { font-size: 10px; }
   .score { font-size: 18px; }
   .block { font-size: 22px; }
   .p0 { width: 88px; }
+  .p0 .avatar { width: 48px; }
   .p0 .name { font-size: 12px; }
   .p0 .score { font-size: 22px; }
   .p0 .block { height: 84px; font-size: 30px; }

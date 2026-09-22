@@ -16,6 +16,7 @@ import {
   assertMayUpdate,
   assertSecurityAnswer,
   assertSelfSignupRole,
+  nextAvatarId,
   nextName,
   nextPassword,
   nextRole,
@@ -54,16 +55,12 @@ const setSessionCookie = (ctx, userCtx) => {
   })
 }
 
-// Development only, and off unless KES_DEV_LOGIN is set: sign in as an admin
-// without a password, from loopback. See devLogin.ts for why it mints the
-// ordinary session cookie rather than teaching any guard a new way to say yes.
-mountDevLogin(router, setSessionCookie)
-
 // Takes the "raw" object returned by the User class and massages it
 // into the shape used by the client (state.user) and in server-side
 // routers. Should be used to generate the JWT.
 const createUserCtx = (user, roomId) => {
   return {
+    avatarId: user.avatarId ?? null,
     dateCreated: user.dateCreated,
     dateUpdated: user.dateUpdated,
     isAdmin: user.role === 'admin',
@@ -74,6 +71,11 @@ const createUserCtx = (user, roomId) => {
     username: user.username,
   }
 }
+
+// Development only, and off unless KES_DEV_LOGIN is set: sign in as an admin
+// without a password, from loopback. See devLogin.ts for why it mints the
+// ordinary session cookie rather than teaching any guard a new way to say yes.
+mountDevLogin(router, setSessionCookie, createUserCtx)
 
 // login
 router.post('/login', async (ctx) => {
@@ -302,6 +304,10 @@ async function buildUpdateFields (fail: Fail, ctx, req: RequestWithBody, user, t
   } else if (req.body.image === 'null') {
     fields.set('image', null)
   }
+
+  // changing which fighter they are?
+  const avatarId = nextAvatarId(fail, req.body.avatarId)
+  if (avatarId !== undefined) fields.set('avatarId', avatarId)
 
   // changing role?
   const role = nextRole(fail, req.body.role, user, targetId)

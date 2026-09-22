@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import mountDevLogin, { isDevLoginEnabled, isLoopback } from './devLogin.js'
+import { db } from '../lib/Database.js'
 
 vi.mock('../lib/Database.js', () => ({ db: { get: vi.fn() } }))
 
@@ -50,7 +51,7 @@ describe('mountDevLogin', () => {
     vi.stubEnv('KES_DEV_LOGIN', '')
     const { router, post, get } = fakeRouter()
 
-    expect(mountDevLogin(router, vi.fn())).toBe(false)
+    expect(mountDevLogin(router, vi.fn(), vi.fn())).toBe(false)
     expect(post).not.toHaveBeenCalled()
     expect(get).not.toHaveBeenCalled()
     vi.unstubAllEnvs()
@@ -61,9 +62,43 @@ describe('mountDevLogin', () => {
     vi.stubEnv('KES_DEV_LOGIN', '1')
     const { router, post, get } = fakeRouter()
 
-    expect(mountDevLogin(router, vi.fn())).toBe(true)
+    expect(mountDevLogin(router, vi.fn(), vi.fn())).toBe(true)
     expect(post).toHaveBeenCalledWith('/dev-login', expect.any(Function))
     expect(get).toHaveBeenCalledWith('/dev-login', expect.any(Function))
+    vi.unstubAllEnvs()
+  })
+
+  /**
+   * The dev admin is an ordinary account with an ordinary session, and the
+   * field this would have dropped is the one that decides whether the app asks
+   * you who you are. A hand-built second copy of the session payload would
+   * have left the dev admin meeting the character picker on every sign-in
+   * forever, which is why the payload is built in exactly one place now.
+   */
+  it('signs in through the shared session payload, so a new field cannot be dropped', () => {
+    vi.stubEnv('NODE_ENV', 'development')
+    vi.stubEnv('KES_DEV_LOGIN', '1')
+    const { router, post } = fakeRouter()
+
+    vi.mocked(db.get).mockReturnValue({
+      userId: 7,
+      username: 'admin',
+      name: 'Admin',
+      dateCreated: 0,
+      dateUpdated: 0,
+      avatarId: 'halloween/hex',
+      role: 'admin',
+    })
+
+    const createUserCtx = vi.fn((user, roomId) => ({ ...user, roomId }))
+    mountDevLogin(router, vi.fn(), createUserCtx)
+
+    const handler = post.mock.calls[0][1]
+    const ctx = { request: { ip: '127.0.0.1', body: { roomId: '3' } }, query: {}, body: undefined as unknown }
+    handler(ctx)
+
+    expect(createUserCtx).toHaveBeenCalledWith(expect.objectContaining({ userId: 7 }), 3)
+    expect(ctx.body).toMatchObject({ avatarId: 'halloween/hex', roomId: 3 })
     vi.unstubAllEnvs()
   })
 })

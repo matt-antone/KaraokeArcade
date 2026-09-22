@@ -3,7 +3,7 @@ import sql from 'sqlate'
 import crypto from '../lib/crypto.js'
 import Queue from '../Queue/Queue.js'
 import { randomChars } from '../lib/util.js'
-import { SongHistoryItem, User as UserType } from '../../shared/types.js'
+import { SongHistoryItem, User as UserType, isAvatarId } from '../../shared/types.js'
 import { SECURITY_QUESTIONS } from '../../shared/securityQuestions.js'
 
 type ServerUser = UserType & {
@@ -11,11 +11,9 @@ type ServerUser = UserType & {
   password?: string // only populated if requesting creds
   securityQuestion?: string | null
   securityAnswer?: string | null // hash; only populated if requesting creds
-  image?: string
   rooms?: number[] // populated in router
 }
 
-export const IMG_MAX_LENGTH = 51200 // 50KB
 export const USERNAME_MIN_LENGTH = 3
 export const USERNAME_MAX_LENGTH = 50 // shown on the queue and player, so no longer than a name
 export const PASSWORD_MIN_LENGTH = 6
@@ -175,7 +173,7 @@ class User {
     newPassword,
     newPasswordConfirm,
     name,
-    image,
+    avatarId,
     securityQuestion,
     securityAnswer,
   }: {
@@ -183,7 +181,7 @@ class User {
     newPassword?: string
     newPasswordConfirm?: string
     name?: string
-    image?: Buffer
+    avatarId?: string
     securityQuestion?: string
     securityAnswer?: string
   }, role = 'standard') {
@@ -221,13 +219,16 @@ class User {
     fields.set('dateCreated', Math.floor(Date.now() / 1000))
     fields.set('roleId', sql`(SELECT roleId FROM roles WHERE name = ${role})`)
 
-    // user image?
-    if (image) {
-      if (image.length > IMG_MAX_LENGTH) {
-        throw new Error('Invalid image')
+    // Which fighter they are. Normally absent: a new account has not been
+    // asked yet, and NULL is what makes the sign-in gate ask. Checked with the
+    // same predicate the update path uses -- it reaches a CSS url() on every
+    // other phone in the room either way it got here.
+    if (avatarId) {
+      if (!isAvatarId(avatarId)) {
+        throw new Error('Invalid character')
       }
 
-      fields.set('image', image)
+      fields.set('avatarId', avatarId)
     }
 
     const query = sql`

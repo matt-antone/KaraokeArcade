@@ -1,0 +1,36 @@
+-- Up
+-- A singer is now a fighter everywhere, not only on the battle stage. The
+-- roster that Singer Battle drew from becomes the app-wide avatar: the face on
+-- the queue row, on the player's up-next overlay, on the trivia scoreboard and
+-- in the challenge list. This column is where that choice lives.
+--
+-- Text, not an integer keyed at anything -- the same call 017 made for the
+-- queue's two singer columns, for the same reason. The roster is client-side
+-- art (src/lib/battleSingers.ts): a fighter exists because an artist delivered
+-- the PNGs for it, and the server holds no copy of the list and no opinion
+-- about it. It stores the short id a phone picked and hands it back to every
+-- other phone. A lookup table here would be a second place to forget when the
+-- ninth fighter lands, and a foreign key would make the roster an operator's
+-- to edit, which it is not.
+--
+-- The value has the id shape 017 already writes: a legacy `p1`-`p8`, or a
+-- `group/slug` path. It is validated on the way in, because it is interpolated
+-- into a CSS url() on other people's phones.
+--
+-- Nullable, and nothing backfills it. NULL is not a gap to be filled later --
+-- it *is* the mechanism. A falsy avatarId is what makes the app ask somebody
+-- who they are at sign-in, exactly once, and a backfill would silently answer
+-- that question on their behalf with a stranger's face.
+--
+-- A battle keeps snapshotting its own two ids onto the queue row and is
+-- unaffected by anything here. 017 settled that: the fight is drawn as it was
+-- fought, and this column is who the account is right now. The two disagree
+-- the moment somebody changes their avatar mid-night, which is correct.
+ALTER TABLE users ADD COLUMN "avatarId" text;
+
+-- Down
+-- One column, carrying one cosmetic choice. Dropping it costs every account
+-- the character they picked and nothing else: they are asked again on the next
+-- sign-in, which is the same thing that happens to an account created before
+-- this ran. Nothing that decides who sings, or when, is in here.
+ALTER TABLE users DROP COLUMN "avatarId";

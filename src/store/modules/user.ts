@@ -131,9 +131,19 @@ export const createAccount = createAsyncThunk<void, FormData, { state: RootState
 // ------------------------------------
 // Update account
 // ------------------------------------
-export const updateAccount = createAsyncThunk<void, FormData, { state: RootState }>(
+/** `isSilent` is for the sign-in gate, which writes exactly one field and is a
+ *  stranger's first interaction with the app. The account form's "Account
+ *  updated successfully." dialog is right where somebody deliberately went to
+ *  a settings screen and pressed save; it is wrong as the thing that greets
+ *  you for tapping a character. */
+export const updateAccount = createAsyncThunk<
+  void,
+  FormData | { data: FormData, isSilent?: boolean },
+  { state: RootState }
+>(
   ACCOUNT_UPDATE,
-  async (data: FormData, thunkAPI) => {
+  async (arg, thunkAPI) => {
+    const { data, isSilent } = arg instanceof FormData ? { data: arg, isSilent: false } : arg
     const { userId } = thunkAPI.getState().user
 
     const user = await api.put(`user/${userId}`, {
@@ -141,7 +151,7 @@ export const updateAccount = createAsyncThunk<void, FormData, { state: RootState
     })
 
     thunkAPI.dispatch(receiveAccount(user))
-    alert('Account updated successfully.')
+    if (!isSilent) alert('Account updated successfully.')
   },
 )
 
@@ -212,6 +222,10 @@ export interface UserState {
   isGuest: boolean
   dateCreated: number
   dateUpdated: number
+  /** Which fighter this account is. Null until they pick — and read as falsy
+   *  rather than `=== null`, because this slice is persisted and a store
+   *  rehydrated from before the column shipped has no key here at all. */
+  avatarId: string | null
   history: SongHistoryItem[]
 }
 
@@ -224,6 +238,7 @@ const initialState: UserState = {
   isGuest: false,
   dateCreated: 0,
   dateUpdated: 0,
+  avatarId: null,
   history: [],
 }
 

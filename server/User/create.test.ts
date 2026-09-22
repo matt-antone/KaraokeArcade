@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { db, open, close } from '../lib/Database.js'
-import User, { IMG_MAX_LENGTH } from './User.js'
+import User from './User.js'
 
 /**
  * Every way User.create says no, and the two ways it says yes.
@@ -79,11 +79,6 @@ describe('creating a user', () => {
 
     await expect(User.create({ ...ok, name: 'Someone Else' }))
       .rejects.toThrow('That name is taken')
-  })
-
-  it('refuses an oversized image', async () => {
-    await expect(User.create({ ...ok, image: Buffer.alloc(IMG_MAX_LENGTH + 1) }))
-      .rejects.toThrow('Invalid image')
   })
 
   // A guest never types a username or a password, so none of the rules above

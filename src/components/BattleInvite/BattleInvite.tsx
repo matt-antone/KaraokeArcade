@@ -6,14 +6,11 @@ import alertCue from 'lib/alertCue'
 import useNow from 'lib/useNow'
 import BattleFrame from 'components/BattleStage/BattleFrame'
 import BattleKey from 'components/BattleStage/BattleKey'
-import BattleSingerSelect from 'components/BattleStage/BattleSingerSelect'
 import BattleSprite from 'components/BattleStage/BattleSprite'
 import BattleVersus, { BattleSummary } from 'components/BattleStage/BattleVersus'
 import useBattleIris, { BATTLE_TONE } from 'components/BattleStage/useBattleIris'
-import { readLastBattleSinger, writeLastBattleSinger } from 'components/BattleStage/lastBattleSinger'
 import {
   BATTLE_LOCKUP,
-  BATTLE_SINGERS,
   battleSingerOrDefault,
 } from 'lib/battleSingers'
 import { acceptBattle, declineBattle } from 'store/modules/battle'
@@ -24,7 +21,7 @@ import styles from './BattleInvite.css'
  * The opponent's phone: somebody has picked you, and the offer has a clock on
  * it.
  *
- *     INVITE -> SINGER -> CONFIRM -> HANDOFF, off to pick their song
+ *     INVITE -> CONFIRM -> HANDOFF, off to pick their song
  *        |  \
  *        |   -> DECLINED
  *        -> TOO SLOW, on its own, at the expiry the server set
@@ -40,17 +37,7 @@ import styles from './BattleInvite.css'
  * the first without showing the second is asking somebody to sign a blank.
  */
 
-type Step = 'invite' | 'singer' | 'confirm' | 'handoff' | 'declined' | 'timeout'
-
-/** Whoever the challenger is singing as is spoken for, so a phone whose last
- *  singer was that one opens on somebody else rather than on a tile it is not
- *  allowed to keep. */
-const openingSinger = (takenId: string): string => {
-  const want = battleSingerOrDefault(readLastBattleSinger())
-  if (want.id !== takenId) return want.id
-
-  return BATTLE_SINGERS.find(s => s.id !== takenId)?.id ?? want.id
-}
+type Step = 'invite' | 'confirm' | 'handoff' | 'declined' | 'timeout'
 
 const BattleInvite = () => {
   const dispatch = useAppDispatch()
@@ -59,6 +46,7 @@ const BattleInvite = () => {
   const userId = useAppSelector(state => state.user.userId)
   const handle = useAppSelector(state => state.user.name) ?? ''
   const invite = useAppSelector(state => state.battle.invite)
+  const avatarId = useAppSelector(state => state.user.avatarId)
 
   /* The offer, kept after the store lets go of it.
 
@@ -69,7 +57,6 @@ const BattleInvite = () => {
      this — an effect would paint the empty frame first. */
   const [offer, setOffer] = useState<Invite | null>(invite)
   const [step, setStep] = useState<Step>('invite')
-  const [singerId, setSingerId] = useState(() => openingSinger(invite?.challengerSingerId ?? ''))
   const [isHandedOff, setIsHandedOff] = useState(false)
   /* Set on the tap that answers. Declining clears the invite from the store
      before the screen reporting it is up, and without this the frame reads as
@@ -79,11 +66,10 @@ const BattleInvite = () => {
 
   if (invite && invite !== offer) {
     setOffer(invite)
-    /* A second challenge is not the first one continuing: whoever this
-       challenger is singing as may be somebody else entirely, and a selection
-       left over from the last invite can be the tile this one has taken. */
+    /* A second challenge is not the first one continuing: it is a different
+       person asking, and the screen starts over rather than resuming wherever
+       the last one was abandoned. */
     if (invite.challengerUserId !== offer?.challengerUserId) {
-      setSingerId(openingSinger(invite.challengerSingerId))
       setStep('invite')
       setIsAnswering(false)
       setIsHandedOff(false)
@@ -113,12 +99,12 @@ const BattleInvite = () => {
      the one that actually ends the invite. A challenge withdrawn by the
      challenger reads as the same thing from this side — the phone is not told
      which, and either way there is nothing left to answer. */
-  const isPending = step === 'invite' || step === 'singer' || step === 'confirm'
+  const isPending = step === 'invite' || step === 'confirm'
   const shown: Step = isPending && !isAnswering && (msLeft === 0 || !invite) ? 'timeout' : step
 
   const challenger = offer.challengerName
   const theirs = battleSingerOrDefault(offer.challengerSingerId)
-  const mine = battleSingerOrDefault(singerId)
+  const mine = battleSingerOrDefault(avatarId)
   const song = `${offer.title} — ${offer.artist}`
   const seconds = Math.ceil(msLeft / 1000)
   const clock = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')} LEFT`
@@ -134,18 +120,16 @@ const BattleInvite = () => {
 
   const handleConfirm = (e: React.MouseEvent<HTMLElement>) => {
     setIsAnswering(true)
-    writeLastBattleSinger(singerId)
-    // ASSUMED SIGNATURE: acceptBattle(singerId) — picking who you sing as is
-    // part of accepting, and this is the only screen that knows it.
-    dispatch(acceptBattle(singerId))
+    // The fighter still rides the acceptance and is still snapshotted onto the
+    // queue row (017). It comes off the account now rather than off a grid
+    // shown between the ask and the answer.
+    dispatch(acceptBattle(mine.id))
     burst(e, BATTLE_TONE.two, () => setStep('handoff'))
   }
 
-  const handleBack = (e: React.MouseEvent<HTMLElement>) => burst(e, BATTLE_TONE.quiet, () => (
-    setStep(was => (was === 'confirm' ? 'singer' : 'invite'))
-  ))
+  const handleBack = (e: React.MouseEvent<HTMLElement>) => burst(e, BATTLE_TONE.quiet, () => setStep('invite'))
 
-  const done = shown === 'handoff' ? 3 : shown === 'confirm' ? 2 : shown === 'singer' ? 1 : 0
+  const done = shown === 'handoff' ? 2 : shown === 'confirm' ? 1 : 0
 
   /** INVITE · who it is from, what it would cost you, and how long you have. */
   const ask = (
@@ -181,7 +165,7 @@ const BattleInvite = () => {
 
       <div className={clsx(styles.footer, styles.footerStack)}>
         <div className={styles.terms}>ACCEPT AND YOU EACH PICK THE OTHER&rsquo;S SONG</div>
-        <BattleKey onClick={e => burst(e, BATTLE_TONE.two, () => setStep('singer'))}>ACCEPT</BattleKey>
+        <BattleKey onClick={e => burst(e, BATTLE_TONE.two, () => setStep('confirm'))}>ACCEPT</BattleKey>
         <BattleKey variant='ghost' onClick={handleDecline}>DECLINE</BattleKey>
       </div>
     </div>
@@ -220,12 +204,9 @@ const BattleInvite = () => {
         <BattleSummary
           isWide
           rows={[
-            {
-              label: 'YOUR SINGER',
-              value: mine.name,
-              tint: 'two',
-              onEdit: e => burst(e, BATTLE_TONE.quiet, () => setStep('singer')),
-            },
+            // no onEdit: who you sing as is your account now, and changing it
+            // is an Account-page decision rather than a step of one challenge
+            { label: 'YOUR SINGER', value: mine.name, tint: 'two' },
             { label: 'THEIR SINGER', value: theirs.name, tint: 'one' },
             { label: 'YOU SING', value: song, tint: 'gold' },
             { label: 'FORMAT', value: '2 MINUTE FORMAT' },
@@ -302,21 +283,13 @@ const BattleInvite = () => {
   return (
     <BattleFrame
       variant='invite'
-      title={shown === 'invite' ? 'CHALLENGE' : shown === 'singer' ? 'YOUR SINGER' : 'SINGER BATTLE'}
-      pips={[done > 0, done > 1, done > 2]}
+      title={shown === 'invite' ? 'CHALLENGE' : 'SINGER BATTLE'}
+      pips={[done > 0, done > 1]}
       iris={iris}
       frameRef={frameRef}
-      onBack={shown === 'singer' || shown === 'confirm' ? handleBack : undefined}
+      onBack={shown === 'confirm' ? handleBack : undefined}
     >
       {shown === 'invite' && ask}
-      {shown === 'singer' && (
-        <BattleSingerSelect
-          selectedId={singerId}
-          takenId={offer.challengerSingerId}
-          onPick={id => setSingerId(id)}
-          onNext={e => burst(e, BATTLE_TONE.two, () => setStep('confirm'))}
-        />
-      )}
       {shown === 'confirm' && confirm}
       {shown === 'handoff' && handoff}
       {(shown === 'declined' || shown === 'timeout') && ended}

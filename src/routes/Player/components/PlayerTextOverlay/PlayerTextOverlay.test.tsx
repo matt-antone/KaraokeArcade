@@ -5,7 +5,6 @@ import { describe, it, expect } from 'vitest'
 import PlayerTextOverlay from './PlayerTextOverlay'
 import type { QueueItem } from 'shared/types'
 
-// UserImage builds its src from document.baseURI
 globalThis.document = { baseURI: 'http://localhost/' } as Document
 
 // just enough store for the connected component's hooks
@@ -19,12 +18,12 @@ const nextQueueItem = {
   queueId: 2,
   userId: 42,
   userDisplayName: 'Dot Matrix',
-  userDateUpdated: 1234,
+  userAvatarId: 'halloween/hex',
 } as QueueItem
 
 const comingUpQueueItems = [
-  { queueId: 3, userId: 43, userDisplayName: 'Barf', userDateUpdated: 1 },
-  { queueId: 4, userId: 44, userDisplayName: 'Lone Starr', userDateUpdated: 1 },
+  { queueId: 3, userId: 43, userDisplayName: 'Barf' },
+  { queueId: 4, userId: 44, userDisplayName: 'Lone Starr' },
 ] as QueueItem[]
 
 const render = (props = {}) => renderToStaticMarkup(
@@ -47,8 +46,10 @@ const render = (props = {}) => renderToStaticMarkup(
 )
 
 describe('PlayerTextOverlay intermission', () => {
-  it('shows the next singer\'s image', () => {
-    expect(render()).toContain('api/user/42/image?v=1234')
+  it('draws the next singer as their own fighter', () => {
+    // the live account id, not a snapshot and not an upload: the overlay names
+    // whoever is up next, and who they are is an account-level fact
+    expect(render()).toContain('assets/battle/fighters/halloween/hex/views/portrait-80.png')
   })
 
   it('shows the next singer\'s name without an "up next" prefix', () => {

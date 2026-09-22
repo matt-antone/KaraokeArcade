@@ -95,8 +95,10 @@ export interface QueueItem {
   mediaId: number
   rgTrackGain: number
   rgTrackPeak: number
-  userDateUpdated: number
   userDisplayName: string
+  /** Which fighter this singer is right now, off their account. Every ordinary
+   *  row draws this one. Null on an account that has not picked. */
+  userAvatarId: string | null
   mediaType: 'cdg' | 'mp4'
   isOptimistic?: false
   isVideoKeyingEnabled: boolean
@@ -107,7 +109,13 @@ export interface QueueItem {
   opponentUserId: number
   opponentSongId: number
   opponentDisplayName: string
-  opponentDateUpdated: number
+  opponentAvatarId: string | null
+  /** Battle rows only: who the two of them fought *as*, snapshotted onto the
+   *  row at match time (017). A battle row draws these and falls back to the
+   *  live avatar above only for a row queued before that snapshot existed --
+   *  if the row is a battle, the row decides; otherwise the account decides. */
+  singerId: string | null
+  opponentSingerId: string | null
   /** The opponent's half of the turn, resolved from its own media row. Null on
    *  a row with no second song. */
   opponentMediaId: number
@@ -205,6 +213,38 @@ export interface Path {
   }
 }
 
+/** A roster folder name that is safe to put in a url().
+ *
+ *  Here rather than in src/lib/battleSingers.ts because both ends need the
+ *  same answer and this is the only module they share: the client filters the
+ *  fighter listing with it, and the server refuses a hostile id with it. Two
+ *  copies would drift, and the way they would drift is a fighter the grid
+ *  offers and the server then rejects.
+ *
+ *  Case-insensitive on purpose. An admin drops a folder called `Halloween`,
+ *  the listing accepts it and the grid shows it; a case-sensitive server check
+ *  would 422 a fighter the singer just tapped. */
+const AVATAR_NAME = /^[a-z0-9][a-z0-9_-]*$/i
+
+export const isBattleFolderName = (name: string): boolean => AVATAR_NAME.test(name)
+
+/** A whole roster id, in either shape it comes in: a legacy `p1`-`p8` from
+ *  before fighters had groups, or a `group/slug` path.
+ *
+ *  This is a trust boundary. The value arrives from somebody's phone, is
+ *  stored, and is then handed to every other phone in the room, where it is
+ *  interpolated into a CSS url(). Nothing downstream re-checks it. */
+export const isAvatarId = (id: unknown): id is string => {
+  // 64 is the cap the queue's singer columns have always applied, so a socket
+  // cannot hand the database an unbounded string. Generous next to a
+  // `group/slug` path.
+  if (typeof id !== 'string' || !id || id.length > 64) return false
+
+  const parts = id.split('/')
+
+  return parts.length <= 2 && parts.every(isBattleFolderName)
+}
+
 export interface User {
   userId: number
   username: string
@@ -213,6 +253,9 @@ export interface User {
   isGuest: boolean // todo: client and server ctx only
   dateCreated: number
   dateUpdated: number
+  /** Which fighter this account is, app-wide. Null until they pick, which is
+   *  what the sign-in gate asks for and what the Account page changes. */
+  avatarId: string | null
 }
 
 export interface UserWithRole extends User {
@@ -316,6 +359,9 @@ export interface TriviaScore {
   name: string
   score: number
   numAnswered: number
+  /** The face beside the name on the podium and the scoreboard rows. Live off
+   *  the account: a scoreboard is who is playing, not who fought. */
+  avatarId: string | null
 }
 
 export interface TriviaResult {
@@ -475,10 +521,8 @@ export interface BattleTurn {
   sentAt: number
   challengerUserId: number
   challengerName: string
-  challengerDateUpdated: number
   opponentUserId: number
   opponentName: string
-  opponentDateUpdated: number
   /** Who each of them is singing *as* — a roster id from BATTLE_SINGERS, which
    *  is client-side art rather than anything the server holds a copy of. The
    *  server carries the string and nothing else; the stage looks up the
@@ -486,6 +530,12 @@ export interface BattleTurn {
    *  battleSingerOrDefault covers. */
   challengerSingerId: string
   opponentSingerId: string
+  /** Who each of them is *right now*, off their account, as distinct from the
+   *  snapshot above. Carried so a surface that follows the account rather than
+   *  the fight has it without a second lookup; the stage itself draws the
+   *  snapshot, because a battle is drawn as it was fought. */
+  challengerAvatarId: string | null
+  opponentAvatarId: string | null
   /** What each fighter sings, already resolved to artist and title so the
    *  splash does not have to reach into the library. */
   challengerSong: BattleSong
@@ -528,7 +578,9 @@ export interface BattleSong {
 export interface BattleSinger {
   userId: number
   name: string
-  dateUpdated: number
+  /** The face on the row, so a challenger picks a person by sight rather than
+   *  by reading a list of names in a dark room. */
+  avatarId: string | null
 }
 
 /** A challenge that has been thrown and not yet answered. The challenger holds
@@ -537,24 +589,30 @@ export interface BattleSinger {
 export interface BattleInvite {
   challengerUserId: number
   challengerName: string
-  challengerDateUpdated: number
   opponentUserId: number
   opponentName: string
-  opponentDateUpdated: number
   /** The song the challenger picked for the opponent to sing. Shown on the
    *  invite because "do you want to battle" and "singing this" are one
    *  decision, not two. */
   songId: number
   artist: string
   title: string
-  /** Who the challenger is singing as, chosen before the invite went out. The
-   *  opponent's invite draws this fighter full-bleed behind the ask, and their
-   *  own select grid marks the tile TAKEN — two people cannot sing as the same
-   *  fighter in one battle. */
+  /** Who the challenger is singing as. The opponent's invite draws this
+   *  fighter full-bleed behind the ask.
+   *
+   *  Two people may now sing as the same fighter. The old rule against it was
+   *  enforced at pick time, on a grid that no longer exists: the fighter is
+   *  the account's, and there is no moment in a challenge at which to refuse
+   *  one. The stage has always drawn two identical defaults for a battle
+   *  fought before the roster shipped, so it is a case it already handles. */
   challengerSingerId: string
-  /** Who the opponent picked. Empty until they accept, because picking is part
-   *  of accepting. */
+  /** Who the opponent is singing as, filled in when they accept. */
   opponentSingerId: string
+  /** Who each of them is on their account right now, read from the users table
+   *  when the invite is built. The snapshot above is what the fight is drawn
+   *  as; these are who the two people are. */
+  challengerAvatarId: string | null
+  opponentAvatarId: string | null
   /** Epoch ms this challenge lapses. Server-authoritative: the phone counts
    *  down to it for the clock on screen, and the server is what actually ends
    *  it. See BATTLE_INVITE_MS. */

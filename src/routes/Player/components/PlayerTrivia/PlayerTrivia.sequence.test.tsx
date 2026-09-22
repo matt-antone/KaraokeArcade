@@ -34,7 +34,7 @@ const result: TriviaResult = {
   questionCount: 5,
   isFinal: false,
   correctIdx: 0,
-  scores: [{ userId: 42, name: 'Dot Matrix', score: 3, numAnswered: 2 }],
+  scores: [{ userId: 42, name: 'Dot Matrix', score: 3, numAnswered: 2, avatarId: 'p1' }],
   numCorrect: 2,
   scoresFrom: SERVER_T0 + 26000,
   boardFrom: null,

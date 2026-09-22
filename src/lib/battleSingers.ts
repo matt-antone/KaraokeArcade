@@ -12,6 +12,7 @@
  *  default fighters keep the p1–p8 ids they had before groups, because those
  *  are already written onto queue rows and phones' last picks.
  */
+import { isBattleFolderName } from 'shared/types'
 
 /** Where the art is served from. `assets/` is koa-static'd off KES_PATH_ASSETS
  *  (server/serverWorker.ts), so these are plain relative URLs — the same way
@@ -125,11 +126,13 @@ export const BATTLE_SINGERS: RosterSinger[] = [
 ]
 
 /** A folder name that is safe to put in a url(). Ids arrive from other phones
- *  by way of the server, which only caps their length, so this is the check
- *  that keeps one from writing into the stage's CSS. */
-const NAME = /^[a-z0-9][a-z0-9_-]*$/i
-
-export const isBattleFolderName = (name: string): boolean => NAME.test(name)
+ *  by way of the server, so this is the check that keeps one from writing into
+ *  the stage's CSS.
+ *
+ *  Lives in shared/types.ts and is re-exported here: the server refuses a
+ *  hostile avatarId with the same regex, and two copies of it would drift into
+ *  a fighter the grid offers and the server then rejects. */
+export { isBattleFolderName }
 
 /** The fighter at `group/slug`, reusing a default fighter's legacy id.
  *
@@ -267,3 +270,28 @@ export const BATTLE_LOCKUP = `${ART}/logo-singer-battle.png`
 /** The only finished stage plate. Wider than the stage's 12:7 on purpose so it
  *  can pan; ballroom and rooftop are specced but not drawn. */
 export const BATTLE_STAGE_PLATE = `${ART}/stage-dive-bar.png`
+
+/** Where a fighter's own stage would live, if they have one.
+ *
+ *  A sibling of `view()` rather than a call to it: `view()` hardcodes
+ *  `/views/` and the `.png` suffix, and a location sits at the fighter's root.
+ *  Same FIGHTERS constant either way, so the id in the path is the validated
+ *  one.
+ *
+ *  The file name is fixed by convention and resolved here rather than read out
+ *  of the fighter's manifest. The manifest declares the background --
+ *  `"location": { "file": "location.png", "size": [2048, 1152] }` -- and the
+ *  tests hold the art to that declaration, but nothing reads the key at
+ *  runtime. Two reasons, and the weaker one is size. The stronger: the
+ *  listing that would carry it is `{}` until its fetch lands, so a
+ *  listing-driven background would draw the dive bar and then pop to the
+ *  fighter's art mid-fight. And server/Prefs/fighterSets.ts is a numeric-only
+ *  parser; `location.file` would be the first *string* taken out of a file an
+ *  admin dropped in a folder, which is a different validation class whose
+ *  failure mode is the url() injection the avatar id is checked against.
+ *  Resolving by convention means the client never has to trust the string.
+ *
+ *  A fighter with no such file is the ordinary case: the <img> 404s and falls
+ *  back to BATTLE_STAGE_PLATE, the same bargain every portrait makes. */
+export const battleSingerStage = (singer: RosterSinger): string =>
+  `${FIGHTERS}/${singer.group}/${singer.slug}/location.png`

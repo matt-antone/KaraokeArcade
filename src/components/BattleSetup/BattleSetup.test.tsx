@@ -49,7 +49,7 @@ const open = ({ isOpen = true, outcome = null, singers = [], invite = null }: Fa
   const store = {
     getState: () => ({
       battle: { singers, pending: null as BattleSinger | null, invite },
-      user: { userId: ME, name: 'MIRA_K', roomId: null },
+      user: { userId: ME, name: 'MIRA_K', roomId: null as number | null, avatarId: 'p1' },
       rooms: { entities: {} },
     }),
     subscribe: () => () => {},
@@ -72,8 +72,6 @@ const open = ({ isOpen = true, outcome = null, singers = [], invite = null }: Fa
 
 /** Step one to the opponent list, which is where most of this lives. */
 const toOpponents = () => {
-  fireEvent.click(screen.getByRole('button', { name: 'NEXT' }))
-  settle()
   fireEvent.click(screen.getByRole('button', { name: 'PICK OPPONENT' }))
   settle()
 }
@@ -81,29 +79,18 @@ const toOpponents = () => {
 describe('BattleSetup', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    localStorage.clear()
   })
 
   afterEach(() => vi.useRealTimers())
 
-  it('opens on a singer, so NEXT is never the thing stopping somebody', () => {
+  it('opens on the account\'s own fighter, with nothing to pick first', () => {
     open({})
 
-    // the shipped roster is there before the group listing answers
-    expect(screen.getByRole('button', { name: 'BELTER' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'NEXT' })).toBeTruthy()
-    // and the footer chip names the pick it arrived with
-    expect(screen.getByText('SINGS FOR YOU')).toBeTruthy()
-  })
-
-  it('remembers who this phone sang as last', () => {
-    localStorage.setItem('battleSingerId', 'p1')
-    open({})
-
-    fireEvent.click(screen.getByRole('button', { name: 'NEXT' }))
-    settle()
-
+    // The flow is one step shorter than it was: who you sing as is settled at
+    // sign-in, so a challenge starts by stating it rather than asking for it.
+    expect(screen.getByText('YOU SING AS')).toBeTruthy()
     expect(screen.getByText('BELTER')).toBeTruthy()
+    expect(screen.queryByText(/PICK A\s*SINGER/)).toBeNull()
   })
 
   it('offers the room, and nothing outside it', () => {
@@ -119,6 +106,31 @@ describe('BattleSetup', () => {
     expect(screen.queryByRole('button', { name: /D_TEES/ })).toBeNull()
   })
 
+  it('shows the room as faces, and carries the opponent\'s onto the versus plate', () => {
+    // Picking somebody out of a dark room by reading a list of handles is the
+    // thing the avatar is for -- and the plate on the next step has to be the
+    // same person, or the confirm screen is describing a different fight.
+    open({
+      singers: [
+        battleSinger({ userId: THEM, name: 'D_TEES', avatarId: 'halloween/hex' }),
+        battleSinger({ userId: 3, name: 'SAL', avatarId: 'p4' }),
+      ],
+    })
+    toOpponents()
+
+    const rowArt = () => Array.from(document.querySelectorAll('img'))
+      .map(img => img.getAttribute('src'))
+
+    expect(rowArt()).toContain('assets/battle/fighters/halloween/hex/views/portrait-34.png')
+    expect(rowArt()).toContain('assets/battle/fighters/default/diva/views/portrait-34.png')
+
+    fireEvent.click(screen.getByRole('button', { name: /D_TEES/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'BATTLE D_TEES' }))
+    settle()
+
+    expect(rowArt()).toContain('assets/battle/fighters/halloween/hex/views/portrait-80.png')
+  })
+
   it('will not send a challenge to nobody', () => {
     open({ singers: [battleSinger({ userId: THEM, name: 'D_TEES' })] })
     toOpponents()
@@ -131,7 +143,6 @@ describe('BattleSetup', () => {
   })
 
   it('carries both halves of the choice into the library', () => {
-    localStorage.setItem('battleSingerId', 'p1')
     const { dispatched, closed } = open({ singers: [battleSinger({ userId: THEM, name: 'D_TEES' })] })
 
     toOpponents()
@@ -149,7 +160,8 @@ describe('BattleSetup', () => {
 
     // the opponent and the singer, together — see the note at the top. Both
     // ride into pick mode because the challenge is not thrown here: the song
-    // is chosen in the library, and by then this screen is gone.
+    // is chosen in the library, and by then this screen is gone. The singer
+    // comes off the account rather than off a grid shown three steps ago.
     expect(dispatched).toHaveLength(1)
     expect(dispatched[0].payload).toMatchObject({ singer: { userId: THEM }, singerId: 'p1' })
 
@@ -158,7 +170,6 @@ describe('BattleSetup', () => {
       vi.advanceTimersByTime(1200)
     })
     expect(closed).toEqual([true])
-    expect(localStorage.getItem('battleSingerId')).toBe('p1')
   })
 
   it('sends nothing when it is called off', () => {

@@ -152,6 +152,14 @@ dialog.reveal {
   color: var(--arc-text-rank);
 }
 
+/* align-self because the row is baseline-aligned for its three bits of text,
+   and a square has no baseline to align to -- it would hang off the bottom. */
+.scoreAvatar {
+  width: 24px;
+  flex: none;
+  align-self: center;
+}
+
 .scoreName {
   flex: 1;
   overflow: hidden;

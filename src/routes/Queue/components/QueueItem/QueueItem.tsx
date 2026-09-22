@@ -6,7 +6,7 @@ import ButtonStar from 'components/ButtonStar/ButtonStar'
 import Icon from 'components/Icon/Icon'
 import SwipeRow from 'components/SwipeRow/SwipeRow'
 import type { SwipeAction } from 'components/SwipeRow/constants'
-import UserImage from 'components/UserImage/UserImage'
+import UserAvatar from 'components/UserAvatar/UserAvatar'
 import { requestPlayNext, requestReplay } from 'store/modules/status'
 import { toggleSongStarred } from 'store/modules/userStars'
 import { showErrorMessage } from 'store/modules/ui'
@@ -43,8 +43,10 @@ interface QueueItemProps {
   songId: number
   starCount: number
   title: string
-  userDateUpdated: number
   userDisplayName: string
+  /** Which fighter this singer is, off their account. An ordinary row follows
+   *  the account; only a battle row follows its own snapshot. */
+  userAvatarId: string | null
   userId: number
   wait?: string
   /** Off on the Me tab, where the list is already your own songs. */
@@ -134,9 +136,8 @@ const QueueItem = ({
   starCount,
   showStar = true,
   title,
-  userDateUpdated,
+  userAvatarId,
   userDisplayName,
-  userId,
   wait,
 }: QueueItemProps) => {
   const [isOpen, setOpen] = useState(false)
@@ -193,7 +194,7 @@ const QueueItem = ({
           )}
 
           <div className={styles.imageContainer}>
-            <UserImage userId={userId} dateUpdated={userDateUpdated} className={styles.avatar} />
+            <UserAvatar avatarId={userAvatarId} className={styles.avatar} />
             {/* the chip marks the playing row and the waits ahead of it */}
             <WaitChip isCurrent={isCurrent} isUpcoming={isUpcoming} isPaused={isPaused} wait={wait} />
           </div>

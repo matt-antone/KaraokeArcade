@@ -69,6 +69,30 @@ describe('TriviaDialog', () => {
     expect(board).toContain('Dot Matrix')
   })
 
+  it('puts each player\'s character on the board beside their name', () => {
+    // A scoreboard of bare names is the one surface where the room cannot tell
+    // who anybody is: nobody is on stage, so there is nothing else to go on.
+    const board = render({
+      round: triviaRound(),
+      result: triviaResult({
+        isFinal: true,
+        boardFrom: Date.now() - 500,
+        scores: [
+          { userId: 1, name: 'Dot Matrix', score: 3, numAnswered: 3, avatarId: 'p1' },
+          { userId: 2, name: 'Barf', score: 2, numAnswered: 3, avatarId: 'halloween/hex' },
+          { userId: 3, name: 'Vespa', score: 2, numAnswered: 2, avatarId: 'p3' },
+          // fourth and below is a scoreboard row rather than a podium block
+          { userId: 4, name: 'Lone Starr', score: 1, numAnswered: 3, avatarId: 'p4' },
+        ],
+      }),
+    })
+
+    // the podium, drawn at the larger cut
+    expect(board).toContain('assets/battle/fighters/halloween/hex/views/portrait-80.png')
+    // and the rows under it
+    expect(board).toContain('assets/battle/fighters/default/diva/views/portrait-34.png')
+  })
+
   /** The whole round is in the hand: nobody has to look up at the TV to play. */
   it('carries the question and all four answers while answering is open', () => {
     const markup = renderOpen()

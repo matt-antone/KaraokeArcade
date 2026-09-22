@@ -1,6 +1,6 @@
 import React from 'react'
 import clsx from 'clsx'
-import UserImage from 'components/UserImage/UserImage'
+import UserAvatar from 'components/UserAvatar/UserAvatar'
 import styles from './QueueBattleItem.css'
 
 /** One side of the fight, already resolved: the queue row carries ids, and
@@ -8,7 +8,14 @@ import styles from './QueueBattleItem.css'
 interface BattleFighter {
   userId: number
   name: string
-  dateUpdated: number
+  /** Who they fought *as*, snapshotted onto the row at match time (017). This
+   *  is what the row draws: a battle looks the same on every screen and keeps
+   *  looking that way after somebody changes their character mid-night. */
+  singerId: string | null
+  /** Who they are on their account right now. Only reached for a battle
+   *  queued before the snapshot existed -- if the row is a battle, the row
+   *  decides; otherwise the account decides. */
+  avatarId: string | null
   title: string
   artist: string
 }
@@ -59,10 +66,9 @@ const QueueBattleItem = ({ isCurrent, isPlayed, challenger, opponent }: QueueBat
 
         {sides.map(side => (
           <div key={side.userId} className={clsx(styles.fighter, side.sideClass)}>
-            <UserImage
+            <UserAvatar
               className={styles.avatar}
-              userId={side.userId}
-              dateUpdated={side.dateUpdated}
+              avatarId={side.singerId || side.avatarId}
             />
 
             <div className={styles.primary}>

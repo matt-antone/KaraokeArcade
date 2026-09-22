@@ -1,7 +1,7 @@
 import sql from 'sqlate'
 import crypto from '../lib/crypto.js'
+import { isAvatarId } from '../../shared/types.js'
 import User, {
-  IMG_MAX_LENGTH,
   NAME_MAX_LENGTH,
   NAME_MIN_LENGTH,
   PASSWORD_MIN_LENGTH,
@@ -99,11 +99,29 @@ export function nextRole (fail: Fail, role: string | undefined, actor: Actor, ta
   return sql`(SELECT roleId FROM roles WHERE name = ${role})`
 }
 
-/** An uploaded avatar, refused if it is too big to sit in the users table. */
-export function assertImageSize (fail: Fail, size: number): void {
-  if (size > IMG_MAX_LENGTH) {
-    fail(413, `Image must not exceed ${Math.floor(IMG_MAX_LENGTH / 1024)}KB`)
+/** Which fighter this account is, or undefined to leave it alone.
+ *
+ *  Refuses rather than coerces, unlike Battle's toSingerId. The two are the
+ *  same shape check on two different paths, and the difference is who is
+ *  asking: this one is somebody tapping a tile they can see, so a value that
+ *  is not a roster id is a broken client or an attack, and answering it with
+ *  the default fighter would write a lie into the users table and hide the
+ *  bug. toSingerId is handed whatever an unrefreshed session still believes,
+ *  mid-battle, where a refusal costs the room a fight.
+ *
+ *  The id is interpolated into a CSS url() on every other phone in the room,
+ *  which is why the check is here at all and why it is the same regex the
+ *  client filters the fighter listing with. */
+export function nextAvatarId (fail: Fail, avatarId: unknown): string | undefined {
+  if (avatarId === undefined || avatarId === null || avatarId === '') return undefined
+
+  if (!isAvatarId(avatarId)) {
+    fail(422, 'Invalid character')
+
+    return undefined
   }
+
+  return avatarId
 }
 
 /** The two roles somebody may sign themselves up as. Anything else is either a

@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from 'store/hooks'
 import AnswerKey, { type AnswerKeyState } from 'components/AnswerKey/AnswerKey'
 import Modal from 'components/Modal/Modal'
 import TriviaPodium from 'components/TriviaPodium/TriviaPodium'
+import UserAvatar from 'components/UserAvatar/UserAvatar'
 import TriviaRail from 'components/TriviaRail/TriviaRail'
 import TriviaTally from 'components/TriviaTally/TriviaTally'
 import alertCue from 'lib/alertCue'
@@ -118,6 +119,7 @@ const TriviaDialog = () => {
                         )}
                       >
                         <span className={styles.rank}>{String(rank + 1).padStart(2, '0')}</span>
+                        <UserAvatar className={styles.scoreAvatar} avatarId={s.avatarId} />
                         <span className={styles.scoreName} translate='no'>{s.name}</span>
                         <span className={styles.score}>{s.score}</span>
                       </div>

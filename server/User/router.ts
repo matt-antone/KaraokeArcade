@@ -1,4 +1,3 @@
-import fsPromises from 'node:fs/promises'
 import { db } from '../lib/Database.js'
 import sql from 'sqlate'
 import jsonWebToken from 'jsonwebtoken'
@@ -12,10 +11,10 @@ import User from '../User/User.js'
 import mountDevLogin from './devLogin.js'
 import {
   type Fail,
-  assertImageSize,
   assertMayUpdate,
   assertSecurityAnswer,
   assertSelfSignupRole,
+  nextAvatarId,
   nextName,
   nextPassword,
   nextRole,
@@ -23,7 +22,6 @@ import {
   nextUsername,
 } from './accountFields.js'
 import { QUEUE_PUSH } from '../../shared/actionTypes.js'
-import { IMG_MAX_LENGTH } from './User.js'
 
 interface File {
   filepath: string
@@ -36,7 +34,6 @@ interface RequestWithBody {
 }
 
 const router = new KoaRouter({ prefix: '/api' })
-const { readFile, unlink: deleteFile } = fsPromises
 const { sign: jwtSign } = jsonWebToken
 
 // The JWT carries the room association (see createUserCtx), so a session-scoped
@@ -54,16 +51,12 @@ const setSessionCookie = (ctx, userCtx) => {
   })
 }
 
-// Development only, and off unless KES_DEV_LOGIN is set: sign in as an admin
-// without a password, from loopback. See devLogin.ts for why it mints the
-// ordinary session cookie rather than teaching any guard a new way to say yes.
-mountDevLogin(router, setSessionCookie)
-
 // Takes the "raw" object returned by the User class and massages it
 // into the shape used by the client (state.user) and in server-side
 // routers. Should be used to generate the JWT.
 const createUserCtx = (user, roomId) => {
   return {
+    avatarId: user.avatarId ?? null,
     dateCreated: user.dateCreated,
     dateUpdated: user.dateUpdated,
     isAdmin: user.role === 'admin',
@@ -74,6 +67,11 @@ const createUserCtx = (user, roomId) => {
     username: user.username,
   }
 }
+
+// Development only, and off unless KES_DEV_LOGIN is set: sign in as an admin
+// without a password, from loopback. See devLogin.ts for why it mints the
+// ordinary session cookie rather than teaching any guard a new way to say yes.
+mountDevLogin(router, setSessionCookie, createUserCtx)
 
 // login
 router.post('/login', async (ctx) => {
@@ -288,20 +286,9 @@ async function buildUpdateFields (fail: Fail, ctx, req: RequestWithBody, user, t
     fields.set('securityAnswer', security.securityAnswer)
   }
 
-  // changing user image?
-  if (req.files && req.files.image) {
-    const imageFile = Array.isArray(req.files.image) ? req.files.image[0] : req.files.image
-
-    // the upload is removed either way: refused, it is not wanted; accepted, it
-    // has been read into the row
-    if (imageFile.size > IMG_MAX_LENGTH) await deleteFile(imageFile.filepath)
-    assertImageSize(fail, imageFile.size)
-
-    fields.set('image', await readFile(imageFile.filepath))
-    await deleteFile(imageFile.filepath)
-  } else if (req.body.image === 'null') {
-    fields.set('image', null)
-  }
+  // changing which fighter they are?
+  const avatarId = nextAvatarId(fail, req.body.avatarId)
+  if (avatarId !== undefined) fields.set('avatarId', avatarId)
 
   // changing role?
   const role = nextRole(fail, req.body.role, user, targetId)
@@ -416,13 +403,12 @@ function assertHasSecurity (fail: Fail, body: { securityQuestion?: string, secur
 // create account
 router.post('/user', async (ctx) => {
   const req = ctx.request as unknown as RequestWithBody
-  let image
 
   const fail = (status: number, message?: string) => ctx.throw(status, message)
 
   // Parsed once, here, and never read off the body again below. This arrives as
-  // multipart form data — the account form sends an image alongside it — so
-  // every field is a string, and Rooms.validate deliberately refuses anything
+  // multipart form data, so every field is a string, and Rooms.validate
+  // deliberately refuses anything
   // that is not a real number so that an admin with no room gets told that
   // rather than being silently matched against every playing room. Handing it
   // "11" therefore failed every signup with "You're not in a room", which names
@@ -432,21 +418,9 @@ router.post('/user', async (ctx) => {
 
   if (!ctx.user.isAdmin) await assertMaySignUp(fail, ctx.user, req.body, roomId)
 
-  if (req.files && req.files.image) {
-    const imageFile = Array.isArray(req.files.image) ? req.files.image[0] : req.files.image
-
-    // the upload is removed either way: refused, it is not wanted; accepted, it
-    // has been read into the row
-    if (imageFile.size > IMG_MAX_LENGTH) await deleteFile(imageFile.filepath)
-    assertImageSize(fail, imageFile.size)
-
-    image = await readFile(imageFile.filepath)
-    await deleteFile(imageFile.filepath)
-  }
-
   // create user
   try {
-    const userId = await User.create({ ...req.body, image } as any, req.body.role)
+    const userId = await User.create({ ...req.body } as any, req.body.role)
 
     // if admin creating another user, we're done
     if (ctx.user.isAdmin) {
@@ -476,7 +450,6 @@ router.post('/user', async (ctx) => {
 // first-time setup
 router.post('/setup', async (ctx) => {
   const prefs: any = Prefs.get()
-  let image
 
   // must be first run
   if (prefs.isFirstRun !== true) {
@@ -488,7 +461,7 @@ router.post('/setup', async (ctx) => {
 
   try {
     // create admin user
-    const userId = await User.create({ ...req.body, image } as any, 'admin')
+    const userId = await User.create({ ...req.body } as any, 'admin')
     const user = User.getById(userId, true)
 
     if (!user) {
@@ -576,33 +549,6 @@ router.post('/user/reset', async (ctx) => {
   db.run(String(query), query.parameters)
 
   ctx.body = {}
-})
-
-// get a user's image
-router.get('/user/:userId/image', (ctx) => {
-  const targetId = parseInt(ctx.params.userId, 10)
-
-  if (ctx.user.userId !== targetId && !ctx.user.isAdmin) {
-    // ensure target user has been in the same room
-    if (!Rooms.hasUserBeenInRoom(ctx.user.roomId, targetId)) {
-      ctx.throw(403)
-    }
-  }
-
-  const user = User.getById(targetId)
-
-  if (!user || !user.image) {
-    ctx.throw(404)
-    return
-  }
-
-  if (typeof ctx.query.v !== 'undefined') {
-    // client can cache a versioned image forever
-    ctx.set('Cache-Control', 'max-age=31536000') // 1 year
-  }
-
-  ctx.type = 'image/jpeg'
-  ctx.body = Buffer.from(user.image)
 })
 
 export default router

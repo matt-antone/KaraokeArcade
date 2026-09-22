@@ -104,6 +104,7 @@ const base = {
   title: 'Surrender',
   userDateUpdated: 0,
   userDisplayName: 'Robin',
+  userAvatarId: 'p3',
   userId: USER_ID,
   onMoveClick: () => {},
 }

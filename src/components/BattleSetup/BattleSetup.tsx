@@ -2,15 +2,13 @@ import React, { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import { useNavigate } from 'react-router'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
-import UserImage from 'components/UserImage/UserImage'
+import UserAvatar from 'components/UserAvatar/UserAvatar'
 import BattleFrame from 'components/BattleStage/BattleFrame'
 import BattleKey from 'components/BattleStage/BattleKey'
-import BattleSingerSelect from 'components/BattleStage/BattleSingerSelect'
 import BattleSprite from 'components/BattleStage/BattleSprite'
 import BattleVersus, { BattleSummary } from 'components/BattleStage/BattleVersus'
 import useBattleIris, { BATTLE_TONE } from 'components/BattleStage/useBattleIris'
 import type { BattleRect } from 'components/BattleStage/useBattleIris'
-import { readLastBattleSinger, writeLastBattleSinger } from 'components/BattleStage/lastBattleSinger'
 import {
   BATTLE_LOCKUP,
   battleSingerOrDefault,
@@ -58,7 +56,7 @@ interface BattleSetupProps {
   onClose: () => void
 }
 
-type Step = 'singer' | 'selected' | 'opponent' | 'confirm' | 'set' | 'cancelled'
+type Step = 'selected' | 'opponent' | 'confirm' | 'set' | 'cancelled'
 
 /** How long MATCH SET and CANCELLED hold before the screen gets out of the
  *  way. Long enough to read four words, short enough that nobody waits. */
@@ -72,10 +70,9 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
   const handle = useAppSelector(state => state.user.name) ?? ''
   const room = useAppSelector(state => state.battle.singers)
   const invite = useAppSelector(state => state.battle.invite)
+  const avatarId = useAppSelector(state => state.user.avatarId)
 
-  const [lastSingerId] = useState(readLastBattleSinger)
-  const [step, setStep] = useState<Step>('singer')
-  const [singerId, setSingerId] = useState(() => battleSingerOrDefault(lastSingerId).id)
+  const [step, setStep] = useState<Step>('selected')
   const [query, setQuery] = useState('')
   const [oppUserId, setOppUserId] = useState<number | null>(null)
   const [isOutcomeSeen, setIsOutcomeSeen] = useState(false)
@@ -112,14 +109,14 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
     if (seen.outcome !== outcome) setIsOutcomeSeen(false)
 
     if (seen.isOpen !== isOpen && isOpen) {
-      setStep('singer')
+      setStep('selected')
       setQuery('')
       setOppUserId(null)
       setIsRetrying(false)
     }
   }
 
-  const singer = battleSingerOrDefault(singerId)
+  const singer = battleSingerOrDefault(avatarId)
   const opponent = room.find(s => s.userId === oppUserId) ?? null
   const needle = query.trim().toLowerCase()
   const results = needle ? room.filter(s => s.name.toLowerCase().includes(needle)) : room
@@ -161,13 +158,8 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
     }))
   }
 
-  const handlePickSinger = (id: string, e: React.MouseEvent<HTMLButtonElement>) => {
-    setSingerId(id)
-    homeRect.current = rectIn(e.currentTarget)
-  }
-
   const handleBack = (e: React.MouseEvent<HTMLElement>) => carry(e, BATTLE_TONE.quiet, () => (
-    setStep(was => (was === 'confirm' ? 'opponent' : was === 'opponent' ? 'selected' : 'singer'))
+    setStep(was => (was === 'confirm' ? 'opponent' : 'selected'))
   ))
 
   /** Out, from anywhere: the flow is over and the Battle key owns whether
@@ -190,11 +182,12 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
   const handleConfirm = (e: React.MouseEvent<HTMLElement>) => {
     if (!opponent) return
 
-    writeLastBattleSinger(singerId)
-    // ASSUMED SIGNATURE: startBattlePick(singer, singerId) — the challenger's
-    // singer has to reach the BATTLE_CHALLENGE the library sends after the song
-    // is picked, and this is the only screen that knows it.
-    dispatch(startBattlePick(opponent, singerId))
+    // The challenger's fighter still has to reach the BATTLE_CHALLENGE the
+    // library sends after the song is picked, and the queue row still
+    // snapshots it (017). What has changed is where it comes from: the
+    // account, rather than a pick made three screens ago and remembered in
+    // this phone's localStorage.
+    dispatch(startBattlePick(opponent, singer.id))
     burst(e, BATTLE_TONE.gold, () => setStep('set'))
     timers.current.push(window.setTimeout(() => {
       // the library is the next step of the same tap, not a place to be sent
@@ -209,16 +202,17 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
   if (!isOpen && !ending && !isRetrying) return null
 
   const isPast = step === 'opponent' || step === 'confirm'
-  const canGoBack = !ending && (step === 'selected' || step === 'opponent' || step === 'confirm')
+  const canGoBack = !ending && (step === 'opponent' || step === 'confirm')
   const isLive = !ending && step !== 'set' && step !== 'cancelled'
 
-  /** SELECTED · a beat on the pick, the one screen in the flow that is only
-   *  about who you are. */
+  /** SELECTED · the opening beat, and the one screen in the flow that is only
+   *  about who you are. It used to follow a pick made here; the pick moved to
+   *  sign-in, so this states the fighter rather than confirming a choice. */
   const selected = (
     <div className={clsx(styles.body, styles.slam)}>
       <div className={styles.glowGold} />
 
-      <div className={styles.selectedHead}>YOU SELECTED</div>
+      <div className={styles.selectedHead}>YOU SING AS</div>
 
       <div className={styles.hero}>
         <BattleSprite singer={singer} className={styles.heroArt} />
@@ -234,12 +228,6 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
       <div className={clsx(styles.footer, styles.footerStack)}>
         <BattleKey onClick={e => carry(e, BATTLE_TONE.gold, () => setStep('opponent'))}>
           PICK OPPONENT
-        </BattleKey>
-        <BattleKey
-          variant='ghost'
-          onClick={e => carry(e, BATTLE_TONE.quiet, () => setStep('singer'))}
-        >
-          CHOOSE AGAIN
         </BattleKey>
       </div>
     </div>
@@ -264,13 +252,6 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
           {!flyer && <BattleSprite singer={singer} />}
         </div>
         <div className={styles.carriedName} translate='no'>{singer.name}</div>
-        <BattleKey
-          variant='link'
-          className={styles.change}
-          onClick={e => carry(e, BATTLE_TONE.quiet, () => setStep('singer'))}
-        >
-          CHANGE
-        </BattleKey>
       </div>
 
       <div className={styles.search}>
@@ -314,10 +295,9 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
             className={clsx(styles.row, person.userId === oppUserId && styles.rowOn)}
             onClick={() => setOppUserId(person.userId)}
           >
-            <UserImage
+            <UserAvatar
               className={styles.avatar}
-              userId={person.userId}
-              dateUpdated={person.dateUpdated}
+              avatarId={person.avatarId}
             />
             <span className={styles.rowName} translate='no'>{person.name}</span>
             {person.userId === oppUserId && <span className={styles.rowMark}>&#9654; PICKED</span>}
@@ -385,10 +365,10 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
             handle: opponent.name,
             tint: 'two',
             plate: (
-              <UserImage
+              <UserAvatar
                 className={styles.plateImage}
-                userId={opponent.userId}
-                dateUpdated={opponent.dateUpdated}
+                avatarId={opponent.avatarId}
+                size={80}
               />
             ),
           }}
@@ -396,12 +376,9 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
 
         <BattleSummary
           rows={[
-            {
-              label: 'YOUR SINGER',
-              value: singer.name,
-              tint: 'gold',
-              onEdit: e => carry(e, BATTLE_TONE.quiet, () => setStep('singer')),
-            },
+            // no onEdit: who you sing as is your account now, and changing it
+            // is an Account-page decision rather than a step of one challenge
+            { label: 'YOUR SINGER', value: singer.name, tint: 'gold' },
             {
               label: 'OPPONENT',
               value: opponent.name,
@@ -587,16 +564,6 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
       {ending === 'accepted' && accepted}
       {(ending === 'declined' || ending === 'timeout') && refused}
 
-      {!ending && step === 'singer' && (
-        <BattleSingerSelect
-          selectedId={singerId}
-          lastId={lastSingerId ?? undefined}
-          slotRef={slotRef}
-          isSlotHidden={!!flyer}
-          onPick={handlePickSinger}
-          onNext={e => burst(e, BATTLE_TONE.gold, () => setStep('selected'))}
-        />
-      )}
       {!ending && step === 'selected' && selected}
       {!ending && step === 'opponent' && opponents}
       {!ending && step === 'confirm' && confirm}

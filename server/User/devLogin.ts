@@ -33,7 +33,8 @@ export const isLoopback = (ip: string | undefined): boolean =>
 
 const getAdmin = () => {
   const query = sql`
-    SELECT users.userId, users.username, users.name, users.dateCreated, users.dateUpdated
+    SELECT users.userId, users.username, users.name, users.dateCreated, users.dateUpdated,
+      users.avatarId, roles.name AS role
     FROM users
       INNER JOIN roles USING (roleId)
     WHERE roles.name = 'admin'
@@ -47,6 +48,8 @@ const getAdmin = () => {
     name: string
     dateCreated: number
     dateUpdated: number
+    avatarId: string | null
+    role: string
   }>(String(query), query.parameters)
 }
 
@@ -55,7 +58,7 @@ const getAdmin = () => {
  * whether it did, so startup can say so out loud — a door you cannot see is
  * worse than one you can.
  */
-export default function mountDevLogin (router, setSessionCookie): boolean {
+export default function mountDevLogin (router, setSessionCookie, createUserCtx): boolean {
   if (!isDevLoginEnabled()) return false
 
   const signIn = (ctx) => {
@@ -66,16 +69,11 @@ export default function mountDevLogin (router, setSessionCookie): boolean {
 
     const roomId = parseInt(ctx.request.body?.roomId ?? ctx.query.roomId, 10) || null
 
-    const userCtx = {
-      dateCreated: admin.dateCreated,
-      dateUpdated: admin.dateUpdated,
-      isAdmin: true,
-      isGuest: false,
-      name: admin.name,
-      roomId,
-      userId: admin.userId,
-      username: admin.username,
-    }
+    // Through createUserCtx rather than hand-built. A second literal of the
+    // same payload is a second place to forget a field, and the field it
+    // forgot last time was avatarId -- which would have left the dev admin
+    // being asked to pick a character on every single sign-in.
+    const userCtx = createUserCtx(admin, roomId)
 
     setSessionCookie(ctx, userCtx)
     log.warn('dev-login: signed in as %s (userId: %s)', admin.username, admin.userId)

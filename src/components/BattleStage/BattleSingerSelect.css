@@ -122,10 +122,6 @@
 
 /* Spoken for by the other side. Still legible as a face, plainly not
    available. */
-.tileTaken .portrait {
-  opacity: 0.3;
-}
-
 /* The third reading of the selection, and the one that survives a phone held
    at arm's length in a dark room: a cursor sitting on the tile, blinking on a
    step so it never looks like a fade. */

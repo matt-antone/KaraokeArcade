@@ -15,6 +15,7 @@ import {
   battleSingerLoop,
   battleSingerOrDefault,
   battleSingerPortrait,
+  battleSingerStage,
   isBattleGroupOn,
   spriteCellBackground,
   type BattleSingerLoop,
@@ -63,6 +64,7 @@ const manifestOf = (group: string, slug: string) =>
   JSON.parse(readFileSync(join(FIGHTERS, group, slug, 'manifest.json'), 'utf8')) as {
     cell: [number, number]
     sets: Record<string, { frames: number, fps: number, columns: number }>
+    location?: { file: string, size: [number, number] }
   }
 
 const setsOf = (group: string, slug: string) => manifestOf(group, slug).sets
@@ -189,6 +191,64 @@ describe('battle roster', () => {
         expect(pngSize(url)).toEqual({ width: FRAME_WIDTH, height: FRAME_HEIGHT })
       }
     }
+  })
+
+  /**
+   * A fighter may ship its own stage, declared in its manifest as
+   * `"location": { "file": "location.png", "size": [2048, 1152] }`.
+   *
+   * Nothing reads that key at runtime — the client resolves the path by
+   * convention and falls back to the dive bar on a 404 — so these three cases
+   * are what holds the art to the declaration. Every way of getting it wrong
+   * draws *something* rather than throwing, which is exactly why none of them
+   * would otherwise be noticed until a room saw the wrong room.
+   */
+  describe('a fighter\'s own stage', () => {
+    const declared = ALL
+      .map(s => ({ singer: s, location: manifestOf(s.group, s.slug).location }))
+      .filter((d): d is { singer: typeof d.singer, location: NonNullable<typeof d.location> } => !!d.location)
+
+    it('names the one file name the client resolves by convention', () => {
+      // any other name is a fighter that silently shows the dive bar
+      const wrong = declared
+        .filter(d => d.location.file !== 'location.png')
+        .map(d => `${d.singer.id} declares ${d.location.file}`)
+
+      expect(wrong).toEqual([])
+    })
+
+    it('ships the PNG it declares, at the size it declares', () => {
+      const wrong: string[] = []
+
+      for (const { singer, location } of declared) {
+        const url = battleSingerStage(singer)
+
+        if (!onDisk(url)) {
+          wrong.push(`${url} is declared and missing`)
+          continue
+        }
+
+        const { width, height } = pngSize(url)
+        const [w, h] = location.size
+
+        if (width !== w || height !== h) {
+          wrong.push(`${url} is ${width}×${height}, declared ${w}×${h}`)
+        }
+      }
+
+      expect(wrong).toEqual([])
+    })
+
+    it('is never narrower than the stage it has to fill', () => {
+      // The plate is drawn `height: 100%; width: auto` inside an overflow box,
+      // so anything wider than 12:7 is cropped evenly and anything narrower
+      // leaves bare gutters down both sides of the room.
+      const narrow = declared
+        .filter(({ location: { size: [w, h] } }) => w / h < 12 / 7)
+        .map(d => `${d.singer.id} is ${d.location.size.join('×')}, narrower than 12:7`)
+
+      expect(narrow).toEqual([])
+    })
   })
 
   it('serves the stage plate and the lockup', () => {

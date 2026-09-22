@@ -3,6 +3,7 @@ import React from 'react'
 import { Provider } from 'react-redux'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { cleanup, fireEvent, render } from '@testing-library/react'
 import { battleTurn } from 'lib/battleFixtures'
 import {
   BATTLE_INTRO_MS,
@@ -50,6 +51,11 @@ const SKEW = -60_000
 /** Wind both clocks to a moment on the server's timeline. */
 const at = (serverMs: number) => vi.setSystemTime(SERVER_T0 + serverMs + SKEW)
 
+/** Where the two singing beats start, summed from the beat lengths the way
+ *  Battle.test.ts does rather than written as the numbers they add up to. */
+const TO_SING1 = BATTLE_LOGO_MS + BATTLE_VERSUS_MS + BATTLE_INTRO_MS
+const TO_SING2 = TO_SING1 + BATTLE_SING_MS + BATTLE_INTRO_MS
+
 const beat = (phase: BattlePhase, from: number, ms: number, over: Partial<BattleTurn> = {}): BattleTurn =>
   battleTurn({ phase, sentAt: SERVER_T0 + from, endsAt: SERVER_T0 + from + ms, ...over })
 
@@ -80,6 +86,23 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
+/** The same tree as `screen`, actually mounted. Only the plate's onError needs
+ *  this; everything else is asserted off the markup, which runs no effects. */
+const mount = (turn: BattleTurn) => {
+  const state = { battle: { turn } }
+  const store = {
+    getState: () => state,
+    subscribe: () => () => {},
+    dispatch: () => {},
+  } as never
+
+  return render(
+    <Provider store={store}>
+      <PlayerBattle queueId={7} getAudioCtx={() => null} upNext={null} width={1280} height={720} />
+    </Provider>,
+  )
+}
+
 describe('a battle, beat by beat', () => {
   it('draws each beat and only that beat', () => {
     vi.useFakeTimers()
@@ -96,7 +119,10 @@ describe('a battle, beat by beat', () => {
     expect(logo).not.toContain('Barf')
     expect(logo).not.toContain('Barracuda')
     expect(logo).not.toContain('Africa')
-    expect(logo).not.toContain('fighters/')
+    // no fighter art: the plate behind it is the room, not somebody standing
+    // in it, so this looks for the sprite and portrait paths rather than for
+    // the fighters/ prefix both of those share with the room
+    expect(logo).not.toContain('/views/')
     // and it is a beat, not the holding card the player draws while a payload
     // is in flight — that one covers the plate with a flat black and says a
     // word; this one is the lockup over the room the fight is in
@@ -455,6 +481,61 @@ describe('a beat that is not ours', () => {
     const gap = screen(judge)
     expect(gap).toContain('Hold on')
     expect(gap).not.toContain('Who wins?')
+  })
+
+  /**
+   * The room a fight is held in is the challenger's, for the whole fight.
+   *
+   * Drawn from the challenger's id on the beat itself rather than from the
+   * fighter listing, which is `{}` until its fetch lands — a listing-driven
+   * background would show the dive bar and then pop to the fighter's own room
+   * part-way through, which is the one thing about this that was asked for by
+   * name. The 404 fallback is not asserted here because it is the browser's:
+   * what is asserted is that the src is the challenger's, and that it is the
+   * same src on both singing beats.
+   */
+  it('holds one stage for the whole fight, and it is the challenger\'s', () => {
+    vi.useFakeTimers()
+
+    const location = (markup: string) => markup.match(/[\w/-]+\/location\.png/)?.[0]
+
+    at(TO_SING1)
+    const sing1 = screen(beat('sing1', TO_SING1, BATTLE_SING_MS, {
+      challengerSingerId: 'halloween/hex',
+      opponentSingerId: 'p2',
+    }))
+
+    at(TO_SING2)
+    const sing2 = screen(beat('sing2', TO_SING2, BATTLE_SING_MS, {
+      challengerSingerId: 'halloween/hex',
+      opponentSingerId: 'p2',
+    }))
+
+    expect(location(sing1)).toBe('assets/battle/fighters/halloween/hex/location.png')
+    // the opponent's beat, and still the challenger's room
+    expect(location(sing2)).toBe(location(sing1))
+  })
+
+  it('falls back to the dive bar for a challenger who ships no room of their own', () => {
+    vi.useFakeTimers()
+    at(TO_SING1)
+
+    // Most fighters have no location.png, so the 404 is the ordinary path
+    // rather than the error one. Mounted rather than rendered to a string,
+    // because what is being tested is the browser's onError firing — the one
+    // thing a static render cannot do.
+    const { container } = mount(beat('sing1', TO_SING1, BATTLE_SING_MS, {
+      challengerSingerId: 'halloween/hex',
+    }))
+    const plate = container.querySelector('.plate') as HTMLImageElement
+
+    expect(plate.getAttribute('src')).toBe('assets/battle/fighters/halloween/hex/location.png')
+
+    fireEvent.error(plate)
+
+    expect(container.querySelector('.plate')?.getAttribute('src'))
+      .toBe('assets/battle/stage-dive-bar.png')
+    cleanup()
   })
 
   it('holds the stage when there is no battle at all yet', () => {

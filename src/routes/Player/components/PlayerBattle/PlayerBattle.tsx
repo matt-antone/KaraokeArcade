@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import clsx from 'clsx'
 import useBattleStage, { sideOfPhase } from 'lib/useBattleStage'
 import { useAppSelector } from 'store/hooks'
-import { BATTLE_LOCKUP, BATTLE_STAGE_PLATE } from 'lib/battleSingers'
+import { BATTLE_LOCKUP, BATTLE_STAGE_PLATE, battleSingerOrDefault, battleSingerStage } from 'lib/battleSingers'
 import { CHEER, GROAN, playCue, soundCue } from 'lib/soundCue'
 import { Intro, Judge, Logo, Meter, Sing, Versus, Winner, type BattleUpNext } from './battleBeats'
 import useCrowdMic from './useCrowdMic'
@@ -64,11 +64,13 @@ interface PlayerBattleProps {
  * keeps the fighters' feet on the floor. The strips are left unpainted so the
  * two singing beats can let the karaoke video through them as well.
  */
-const Stage = ({ width, height, beat, children }: {
+const Stage = ({ width, height, beat, plate, children }: {
   width: number
   height: number
   /** null while the row is waiting for its first payload — no plate, no tone. */
   beat: BattlePhase | null
+  /** The challenger's own stage, or the dive bar when there is no fight yet. */
+  plate: string
   children: React.ReactNode
 }) => (
   <div style={{ width, height }} className={styles.well}>
@@ -78,13 +80,41 @@ const Stage = ({ width, height, beat, children }: {
     >
       {beat && (
         <div className={clsx(styles.plateBox, PLATE_TONE[beat], PLATE_HOLE[beat])}>
-          <img className={styles.plate} src={BATTLE_STAGE_PLATE} alt='' />
+          <StagePlate src={plate} />
         </div>
       )}
       {children}
     </div>
   </div>
 )
+
+/**
+ * The plate itself, with the dive bar behind it.
+ *
+ * A fighter may ship a `location.png` and most will not, so the 404 is the
+ * ordinary path rather than the error one — the same bargain every portrait
+ * makes. Keyed on the src so a battle between two different fighters re-tries
+ * rather than inheriting the last one's failure.
+ *
+ * No loading state and no async step on purpose. The src is derived from the
+ * challenger's id, which is on the first beat and does not change for the rest
+ * of the fight, so the stage the room sees at 'logo' is the stage it sees at
+ * 'winner'. A background resolved through the fighter listing would draw the
+ * dive bar until that fetch landed and then pop to the art mid-battle.
+ */
+const StagePlate = ({ src }: { src: string }) => {
+  const [isMissing, setIsMissing] = useState(false)
+
+  return (
+    <img
+      key={src}
+      className={styles.plate}
+      src={isMissing ? BATTLE_STAGE_PLATE : src}
+      alt=''
+      onError={() => setIsMissing(true)}
+    />
+  )
+}
 
 /** No beat yet, or one that has run out with its successor still in flight.
  *
@@ -194,8 +224,17 @@ const PlayerBattle = ({ queueId, getAudioCtx, upNext, width, height }: PlayerBat
     for (const src of [CHEER, GROAN]) soundCue(src).load()
   }, [beat])
 
+  // The challenger's stage, for the whole fight — the value singerOf reads for
+  // side 1, so the fighter on the left and the room they are standing in are
+  // the same decision. Computed here rather than per beat so sing1 and sing2
+  // cannot disagree, and off the snapshot rather than the account so a battle
+  // is drawn as it was fought.
+  const plate = live
+    ? battleSingerStage(battleSingerOrDefault(live.challengerSingerId))
+    : BATTLE_STAGE_PLATE
+
   return (
-    <Stage width={width} height={height} beat={beat}>
+    <Stage width={width} height={height} beat={beat} plate={plate}>
       {live && beat
         ? beatContent(beat, live, at, crowd, msLeft, upNext)
         : <Holding isStarted={stored?.queueId === queueId} />}

@@ -95,7 +95,6 @@ export interface QueueItem {
   mediaId: number
   rgTrackGain: number
   rgTrackPeak: number
-  userDateUpdated: number
   userDisplayName: string
   /** Which fighter this singer is right now, off their account. Every ordinary
    *  row draws this one. Null on an account that has not picked. */
@@ -110,7 +109,6 @@ export interface QueueItem {
   opponentUserId: number
   opponentSongId: number
   opponentDisplayName: string
-  opponentDateUpdated: number
   opponentAvatarId: string | null
   /** Battle rows only: who the two of them fought *as*, snapshotted onto the
    *  row at match time (017). A battle row draws these and falls back to the
@@ -523,10 +521,8 @@ export interface BattleTurn {
   sentAt: number
   challengerUserId: number
   challengerName: string
-  challengerDateUpdated: number
   opponentUserId: number
   opponentName: string
-  opponentDateUpdated: number
   /** Who each of them is singing *as* — a roster id from BATTLE_SINGERS, which
    *  is client-side art rather than anything the server holds a copy of. The
    *  server carries the string and nothing else; the stage looks up the
@@ -582,7 +578,6 @@ export interface BattleSong {
 export interface BattleSinger {
   userId: number
   name: string
-  dateUpdated: number
   /** The face on the row, so a challenger picks a person by sight rather than
    *  by reading a list of names in a dark room. */
   avatarId: string | null
@@ -594,23 +589,24 @@ export interface BattleSinger {
 export interface BattleInvite {
   challengerUserId: number
   challengerName: string
-  challengerDateUpdated: number
   opponentUserId: number
   opponentName: string
-  opponentDateUpdated: number
   /** The song the challenger picked for the opponent to sing. Shown on the
    *  invite because "do you want to battle" and "singing this" are one
    *  decision, not two. */
   songId: number
   artist: string
   title: string
-  /** Who the challenger is singing as, chosen before the invite went out. The
-   *  opponent's invite draws this fighter full-bleed behind the ask, and their
-   *  own select grid marks the tile TAKEN — two people cannot sing as the same
-   *  fighter in one battle. */
+  /** Who the challenger is singing as. The opponent's invite draws this
+   *  fighter full-bleed behind the ask.
+   *
+   *  Two people may now sing as the same fighter. The old rule against it was
+   *  enforced at pick time, on a grid that no longer exists: the fighter is
+   *  the account's, and there is no moment in a challenge at which to refuse
+   *  one. The stage has always drawn two identical defaults for a battle
+   *  fought before the roster shipped, so it is a case it already handles. */
   challengerSingerId: string
-  /** Who the opponent picked. Empty until they accept, because picking is part
-   *  of accepting. */
+  /** Who the opponent is singing as, filled in when they accept. */
   opponentSingerId: string
   /** Who each of them is on their account right now, read from the users table
    *  when the invite is built. The snapshot above is what the fight is drawn

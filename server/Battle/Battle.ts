@@ -194,7 +194,7 @@ async function emitToUsers (io, roomId: number, userIds: number[], action): Prom
  *  token, and the invite is the thing the other fighter is looking at. */
 function getSinger (userId: number): BattleSinger | null {
   const query = sql`
-    SELECT userId, name, dateUpdated, avatarId
+    SELECT userId, name, avatarId
     FROM users
     WHERE userId = ${userId}
   `
@@ -257,11 +257,9 @@ function getFighters (roomId: number, queueId: number): BattleFighters | null {
     SELECT queue.queueId,
       challenger.userId AS challengerUserId,
       challenger.name AS challengerName,
-      challenger.dateUpdated AS challengerDateUpdated,
       challenger.avatarId AS challengerAvatarId,
       opponent.userId AS opponentUserId,
       opponent.name AS opponentName,
-      opponent.dateUpdated AS opponentDateUpdated,
       opponent.avatarId AS opponentAvatarId,
       COALESCE(queue.singerId, '') AS challengerSingerId,
       COALESCE(queue.opponentSingerId, '') AS opponentSingerId,
@@ -286,11 +284,9 @@ function getFighters (roomId: number, queueId: number): BattleFighters | null {
     queueId: number
     challengerUserId: number
     challengerName: string
-    challengerDateUpdated: number
     challengerAvatarId: string | null
     opponentUserId: number
     opponentName: string
-    opponentDateUpdated: number
     opponentAvatarId: string | null
     challengerSingerId: string
     opponentSingerId: string
@@ -308,11 +304,9 @@ function getFighters (roomId: number, queueId: number): BattleFighters | null {
     queueId: row.queueId,
     challengerUserId: row.challengerUserId,
     challengerName: row.challengerName,
-    challengerDateUpdated: row.challengerDateUpdated,
     challengerAvatarId: row.challengerAvatarId,
     opponentUserId: row.opponentUserId,
     opponentName: row.opponentName,
-    opponentDateUpdated: row.opponentDateUpdated,
     opponentAvatarId: row.opponentAvatarId,
     challengerSingerId: row.challengerSingerId,
     opponentSingerId: row.opponentSingerId,
@@ -376,12 +370,7 @@ class Battle {
       // avatarId rides the JWT (createUserCtx), which is the only thing a
       // socket carries about its owner. A session signed before the column
       // shipped has no copy of it and draws the default until it refreshes.
-      singers.set(userId, {
-        userId,
-        name: s.user.name,
-        dateUpdated: s.user.dateUpdated,
-        avatarId: s.user.avatarId ?? null,
-      })
+      singers.set(userId, { userId, name: s.user.name, avatarId: s.user.avatarId ?? null })
     }
 
     return [...singers.values()].sort((a, b) => a.name.localeCompare(b.name))
@@ -436,11 +425,9 @@ class Battle {
     const invite: BattleInvite = {
       challengerUserId: challenger.userId,
       challengerName: challenger.name,
-      challengerDateUpdated: challenger.dateUpdated,
       challengerAvatarId: challenger.avatarId,
       opponentUserId: opponent.userId,
       opponentName: opponent.name,
-      opponentDateUpdated: opponent.dateUpdated,
       opponentAvatarId: opponent.avatarId,
       songId: song.songId,
       artist: song.artist,

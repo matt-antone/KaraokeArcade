@@ -3,7 +3,7 @@ import React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Provider } from 'react-redux'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
-import AvatarPicker from './AvatarPicker'
+import AvatarPicker, { AvatarGate } from './AvatarPicker'
 
 /**
  * Picking who you are, as an account.
@@ -73,7 +73,7 @@ const groupLegend = () => screen.queryByText('halloween')
 describe('AvatarPicker', () => {
   it('shows the shipped group first and grows when the room lands', () => {
     const { store, setState } = makeStore(signedOutOfAnyRoom)
-    render(<Provider store={store}><AvatarPicker /></Provider>)
+    render(<Provider store={store}><AvatarGate /></Provider>)
 
     // no room in the store yet, so no prefs: `default` is on unless a host
     // turns it off, and every other group is off until one turns it on
@@ -88,7 +88,7 @@ describe('AvatarPicker', () => {
 
   it('arrives with a live NEXT rather than an empty selection', () => {
     const { store, dispatched } = makeStore(signedOutOfAnyRoom)
-    render(<Provider store={store}><AvatarPicker /></Provider>)
+    render(<Provider store={store}><AvatarGate /></Provider>)
 
     fireEvent.click(screen.getByText('NEXT'))
 
@@ -97,10 +97,22 @@ describe('AvatarPicker', () => {
     expect(dispatched).toHaveLength(1)
   })
 
+  it('reports the tile that was chosen, for a caller that owns the writing', () => {
+    // the Account page puts the id into the form it is already submitting
+    // rather than writing it out from under the form
+    const { store } = makeStore(inRoomWithHalloweenOn)
+    const onChoose = vi.fn()
+    render(<Provider store={store}><AvatarPicker avatarId='p1' onChoose={onChoose} /></Provider>)
+
+    fireEvent.click(screen.getByLabelText('HEX'))
+    fireEvent.click(screen.getByText('NEXT'))
+
+    expect(onChoose).toHaveBeenCalledWith('halloween/hex')
+  })
+
   it('writes the chosen fighter to the account, without a success dialog', () => {
     const { store, dispatched } = makeStore(inRoomWithHalloweenOn)
-    const onDone = vi.fn()
-    render(<Provider store={store}><AvatarPicker onDone={onDone} /></Provider>)
+    render(<Provider store={store}><AvatarGate /></Provider>)
 
     fireEvent.click(screen.getByLabelText('HEX'))
     fireEvent.click(screen.getByText('NEXT'))
@@ -111,6 +123,5 @@ describe('AvatarPicker', () => {
 
     expect(thunkArg.arg?.isSilent).toBe(true)
     expect(thunkArg.arg?.data.get('avatarId')).toBe('halloween/hex')
-    expect(onDone).toHaveBeenCalled()
   })
 })

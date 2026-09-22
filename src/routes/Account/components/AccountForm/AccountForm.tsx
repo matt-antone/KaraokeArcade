@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import InputImage from 'components/InputImage/InputImage'
+import InputAvatar from 'components/InputAvatar/InputAvatar'
 import { UserWithRole } from 'shared/types'
 import { SECURITY_QUESTIONS } from 'shared/securityQuestions'
 import styles from './AccountForm.css'
@@ -24,7 +24,7 @@ const buildFormData = (fields: {
   username?: string
   newPassword?: string
   newPasswordConfirm?: string
-  image?: Blob
+  avatarId?: string
   role?: string
   securityQuestion?: string
   securityAnswer?: string
@@ -45,7 +45,7 @@ const buildFormData = (fields: {
     data.append('securityAnswer', fields.securityAnswer ?? '')
   }
 
-  if (fields.image !== undefined) data.append('image', fields.image)
+  if (fields.avatarId !== undefined) data.append('avatarId', fields.avatarId)
   if (fields.role !== undefined) data.append('role', fields.role)
 
   return data
@@ -179,7 +179,7 @@ const AccountForm = ({
   const [state, setState] = useState({
     isDirty: false,
     isChangingPassword: !user || user.userId === null,
-    userImage: undefined as Blob | undefined,
+    avatarId: undefined as string | undefined,
   })
 
   const prevIsDirty = useRef(state.isDirty)
@@ -222,10 +222,10 @@ const AccountForm = ({
     }))
   }
 
-  const handleUserImageChange = (blob: Blob) => {
+  const handleAvatarChange = (avatarId: string) => {
     setState(prev => ({
       ...prev,
-      userImage: blob,
+      avatarId,
       isDirty: true,
     }))
   }
@@ -249,7 +249,7 @@ const AccountForm = ({
       [showUsername ? 'username' : 'name']: changedName,
       newPassword: state.isChangingPassword ? newPassword.current?.value ?? '' : undefined,
       newPasswordConfirm: state.isChangingPassword ? newPasswordConfirm.current?.value ?? '' : undefined,
-      image: state.userImage,
+      avatarId: state.avatarId,
       role: role.current?.value,
       securityQuestion: securityQuestion.current?.value,
       securityAnswer: securityAnswer.current?.value,
@@ -263,9 +263,9 @@ const AccountForm = ({
       noValidate
       onSubmit={handleSubmit}
     >
-      <InputImage
-        user={user}
-        onSelect={handleUserImageChange}
+      <InputAvatar
+        avatarId={state.avatarId ?? user?.avatarId}
+        onSelect={handleAvatarChange}
       />
 
       <input

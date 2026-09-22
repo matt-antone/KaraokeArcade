@@ -1,0 +1,48 @@
+/* The slot the photo upload used to sit in, at the same size — a square well
+   in the form's first row. What is in it is a character now, so it is a key
+   you press rather than a file field you point at your camera roll. */
+.button {
+  display: block;
+  position: relative;
+  width: var(--avatar-form);
+  height: var(--avatar-form);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-key);
+  background: none;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: 2px;
+  }
+}
+
+.avatar {
+  width: 100%;
+}
+
+/* Sits on the portrait rather than beside it: the form's rows are tight, and
+   a label under a 96px square would push the name field off the first screen
+   on a phone. */
+.hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 2px 0;
+  font-size: 10px;
+  text-align: center;
+  letter-spacing: .06em;
+  color: var(--ink-1);
+  background: rgba(0, 0, 0, .55);
+  border-bottom-left-radius: var(--radius-key);
+  border-bottom-right-radius: var(--radius-key);
+}
+
+/* The grid is the same one the sign-in gate shows, so it is given the same
+   room: full height, and its own scroller rather than the dialog's. */
+.modal {
+  width: min(560px, 96vw);
+  height: min(760px, 90vh);
+}

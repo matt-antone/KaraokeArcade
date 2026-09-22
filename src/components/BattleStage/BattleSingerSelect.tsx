@@ -7,12 +7,10 @@ import useBattleGroups from './useBattleGroups'
 import styles from './BattleSingerSelect.css'
 
 /**
- * Choosing who you sing as. The same screen on both phones.
+ * Choosing who you sing as: at sign-in, and again from the Account page.
  *
- * The two sides differ by one tile and one colour, neither of which is worth a
- * second copy of a nine-tile grid: the tint comes from `--arc-mine` on the
- * frame, and the tag on a tile is a prop. Building it twice is how the
- * opponent's grid ends up a step behind the challenger's the first time the
+ * One grid for both, because they are one decision made at two moments.
+ * Building it twice is how the two end up a step apart the first time the
  * roster grows.
  *
  * Fighters come in groups — one boxed grid of head portraits per group the
@@ -31,16 +29,6 @@ interface BattleSingerSelectProps {
    *  without reading nine names. Not drawn on the tile that is already
    *  selected, where it would be saying the same thing twice. */
   lastId?: string
-  /** Spoken for by the other side. The tile stays visible and drops to a third
-   *  of its ink rather than disappearing: a roster that changes length
-   *  between the two phones is a roster nobody can talk about out loud. */
-  takenId?: string
-  /** The footer chip, which is where the flying singer lands on the way in and
-   *  takes off from on the way out. */
-  slotRef?: React.RefObject<HTMLDivElement | null>
-  /** True while the flyer is in the air and the chip must be empty, or the
-   *  same sprite is drawn twice in two places. */
-  isSlotHidden?: boolean
   onPick: (id: string, e: React.MouseEvent<HTMLButtonElement>) => void
   onNext: (e: React.MouseEvent<HTMLButtonElement>) => void
 }
@@ -48,7 +36,7 @@ interface BattleSingerSelectProps {
 const CORNERS = ['cornerTL', 'cornerTR', 'cornerBL', 'cornerBR'] as const
 
 const BattleSingerSelect = ({
-  selectedId, lastId, takenId, slotRef, isSlotHidden, onPick, onNext,
+  selectedId, lastId, onPick, onNext,
 }: BattleSingerSelectProps) => {
   const picked = battleSingerOrDefault(selectedId)
   const prefs = useAppSelector(state => (state.user.roomId === null
@@ -87,17 +75,15 @@ const BattleSingerSelect = ({
             <div className={styles.grid}>
               {group.singers.map((singer) => {
                 const isSelected = singer.id === selectedId
-                const isTaken = singer.id === takenId
 
                 return (
                   <button
                     key={singer.id}
                     type='button'
-                    disabled={isTaken}
                     aria-label={singer.name}
                     aria-pressed={isSelected}
                     title={singer.name}
-                    className={clsx(styles.tile, isSelected && styles.tileOn, isTaken && styles.tileTaken)}
+                    className={clsx(styles.tile, isSelected && styles.tileOn)}
                     onClick={e => onPick(singer.id, e)}
                   >
                     <img className={styles.portrait} src={battleSingerPortrait(singer)} alt='' loading='lazy' />
@@ -108,8 +94,7 @@ const BattleSingerSelect = ({
                       </span>
                     )}
 
-                    {isTaken && <span className={styles.tag}>TAKEN</span>}
-                    {!isSelected && !isTaken && singer.id === lastId && <span className={styles.tag}>LAST</span>}
+                    {!isSelected && singer.id === lastId && <span className={styles.tag}>LAST</span>}
                   </button>
                 )
               })}
@@ -120,8 +105,8 @@ const BattleSingerSelect = ({
 
       <div className={styles.footer}>
         <div className={styles.chipRow}>
-          <div className={styles.chip} ref={slotRef}>
-            {!isSlotHidden && <img className={styles.chipPortrait} src={battleSingerPortrait(picked)} alt='' />}
+          <div className={styles.chip}>
+            <img className={styles.chipPortrait} src={battleSingerPortrait(picked)} alt='' />
           </div>
           <div className={styles.chipText}>
             <div className={styles.chipLegend}>SINGS FOR YOU</div>
@@ -129,9 +114,8 @@ const BattleSingerSelect = ({
           </div>
         </div>
 
-        {/* Never dead: the selection arrives as the last singer used and cannot
-            be cleared, so there is no state where this key is the thing
-            stopping somebody. */}
+        {/* Never dead: the selection arrives seeded and cannot be cleared, so
+            there is no state where this key is the thing stopping somebody. */}
         <BattleKey className={styles.next} onClick={onNext}>NEXT</BattleKey>
       </div>
     </div>

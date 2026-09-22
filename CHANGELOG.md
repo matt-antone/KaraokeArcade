@@ -1,3 +1,26 @@
+## Unreleased
+
+### Characters replace profile photos
+
+Singers now pick a character from the Singer Battle roster when they sign in,
+and that character is who they are everywhere: on the queue, on the player's
+up-next overlay, on the trivia scoreboard and in a battle. It can be changed at
+any time from the Account page, where the photo upload used to be. Because the
+character is now part of the account, Singer Battle no longer asks either
+person to pick one while a challenge is being arranged.
+
+> **Upgrading permanently deletes every stored user photo.** Profile photo
+> uploads have been removed, and this release drops the database column the
+> photos were stored in. They are not archived anywhere and they cannot be
+> recovered afterwards — this server held the only copy. **If you want them,
+> back up your database before upgrading.** Nothing else is affected: accounts,
+> queues, star counts and history are untouched, and nobody has to sign in
+> again.
+
+Existing accounts are not assigned a character. The first time somebody signs
+in after upgrading, they are asked to pick one, once. The player display is
+never asked.
+
 ## v2.0.2 (2026-02-14)
 
 - **(App)** Star counts are now shown in the Queue view

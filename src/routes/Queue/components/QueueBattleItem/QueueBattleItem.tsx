@@ -8,7 +8,6 @@ import styles from './QueueBattleItem.css'
 interface BattleFighter {
   userId: number
   name: string
-  dateUpdated: number
   /** Who they fought *as*, snapshotted onto the row at match time (017). This
    *  is what the row draws: a battle looks the same on every screen and keeps
    *  looking that way after somebody changes their character mid-night. */

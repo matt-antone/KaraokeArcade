@@ -1,7 +1,7 @@
 import React from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router'
 import { useAppSelector } from 'store/hooks'
-import AvatarPicker from 'components/BattleStage/AvatarPicker'
+import { AvatarGate } from 'components/BattleStage/AvatarPicker'
 
 import AccountView from 'routes/Account/views/AccountView'
 import LibraryView from 'routes/Library/views/LibraryView'
@@ -123,7 +123,7 @@ export const RequireAuth = ({
   // added to this list is a screen that has to work for somebody who has not
   // picked yet.
   if (!avatarId && path !== '/player') {
-    return <AvatarPicker />
+    return <AvatarGate />
   }
 
   return children

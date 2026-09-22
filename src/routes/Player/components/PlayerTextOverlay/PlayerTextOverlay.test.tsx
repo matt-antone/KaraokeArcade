@@ -18,13 +18,12 @@ const nextQueueItem = {
   queueId: 2,
   userId: 42,
   userDisplayName: 'Dot Matrix',
-  userDateUpdated: 1234,
   userAvatarId: 'halloween/hex',
 } as QueueItem
 
 const comingUpQueueItems = [
-  { queueId: 3, userId: 43, userDisplayName: 'Barf', userDateUpdated: 1 },
-  { queueId: 4, userId: 44, userDisplayName: 'Lone Starr', userDateUpdated: 1 },
+  { queueId: 3, userId: 43, userDisplayName: 'Barf' },
+  { queueId: 4, userId: 44, userDisplayName: 'Lone Starr' },
 ] as QueueItem[]
 
 const render = (props = {}) => renderToStaticMarkup(

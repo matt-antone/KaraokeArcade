@@ -20,10 +20,8 @@ export const battleTurn = (over: Partial<BattleTurn> = {}): BattleTurn => ({
   sentAt: Date.now(),
   challengerUserId: 1,
   challengerName: 'Dot Matrix',
-  challengerDateUpdated: 1700000000,
   opponentUserId: 2,
   opponentName: 'Barf',
-  opponentDateUpdated: 1700000001,
   // the two fighters with finished art, so a test that renders a stage renders
   // the case the room will actually see rather than two locked question marks
   challengerSingerId: 'p1',
@@ -52,10 +50,8 @@ export const battleTurn = (over: Partial<BattleTurn> = {}): BattleTurn => ({
 export const battleInvite = (over: Partial<BattleInvite> = {}): BattleInvite => ({
   challengerUserId: 1,
   challengerName: 'Dot Matrix',
-  challengerDateUpdated: 1700000000,
   opponentUserId: 2,
   opponentName: 'Barf',
-  opponentDateUpdated: 1700000001,
   // the song the challenger picked for the opponent to sing
   songId: 11,
   artist: 'Toto',
@@ -74,7 +70,6 @@ export const battleInvite = (over: Partial<BattleInvite> = {}): BattleInvite => 
 export const battleSinger = (over: Partial<BattleSinger> = {}): BattleSinger => ({
   userId: 2,
   name: 'Barf',
-  dateUpdated: 1700000001,
   avatarId: 'p2',
   ...over,
 })

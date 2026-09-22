@@ -3,7 +3,6 @@ import { open, close } from '../lib/Database.js'
 import crypto from '../lib/crypto.js'
 import User from './User.js'
 import {
-  assertImageSize,
   assertMayUpdate,
   assertSecurityAnswer,
   assertSelfSignupRole,
@@ -188,21 +187,7 @@ describe('the field rules', () => {
   })
 })
 
-describe('the upload and signup guards', () => {
-  it('refuses an oversized avatar', () => {
-    const { calls, fail } = recorder()
-    assertImageSize(fail, 999_999_999)
-
-    expect(calls[0][0]).toBe(413)
-  })
-
-  it('accepts a small one', () => {
-    const { calls, fail } = recorder()
-    assertImageSize(fail, 1024)
-
-    expect(calls).toEqual([])
-  })
-
+describe('the signup guards', () => {
   it.each(['guest', 'standard'])('lets somebody sign themselves up as %s', (role) => {
     const { calls, fail } = recorder()
     assertSelfSignupRole(fail, role)

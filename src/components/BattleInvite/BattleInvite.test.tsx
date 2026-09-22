@@ -34,13 +34,17 @@ const settle = () => act(() => {
   vi.advanceTimersByTime(500)
 })
 
-const open = ({ userId = ME, invite = battleInvite() }: { userId?: number, invite?: BattleInvite | null }) => {
+const open = ({ userId = ME, invite = battleInvite(), avatarId = 'p2' }: {
+  userId?: number
+  invite?: BattleInvite | null
+  avatarId?: string | null
+}) => {
   const dispatched: UnknownAction[] = []
 
   const store = {
     getState: () => ({
       battle: { singers: [] as BattleSinger[], pending: null as BattleSinger | null, invite },
-      user: { userId, name: 'D_TEES', roomId: null as number | null },
+      user: { userId, name: 'D_TEES', roomId: null as number | null, avatarId },
       rooms: { entities: {} },
     }),
     subscribe: () => () => {},
@@ -64,7 +68,6 @@ const open = ({ userId = ME, invite = battleInvite() }: { userId?: number, invit
 describe('BattleInvite', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    localStorage.clear()
   })
 
   afterEach(() => vi.useRealTimers())
@@ -84,40 +87,39 @@ describe('BattleInvite', () => {
     expect(screen.queryByRole('button', { name: 'ACCEPT' })).toBeNull()
   })
 
-  it('will not let both fighters be the same singer', () => {
-    // the challenger is p1 in the fixture, and this phone's last singer was
-    // too — the grid has to open on somebody else rather than on a tile it is
-    // not allowed to keep
-    localStorage.setItem('battleSingerId', 'p1')
-    open({})
+  it('lets both fighters be the same character, now that nobody picks one here', () => {
+    // The old rule was enforced on a grid shown between the ask and the
+    // answer, and that grid is gone: the fighter is the account's, so there is
+    // no moment in a challenge at which to refuse one. The stage has always
+    // drawn two identical defaults for a battle fought before the roster
+    // shipped, so this is a case it already handles.
+    const { dispatched } = open({ avatarId: 'p1' })
 
     fireEvent.click(screen.getByRole('button', { name: 'ACCEPT' }))
     settle()
+    fireEvent.click(screen.getByRole('button', { name: 'CONFIRM' }))
 
-    expect(screen.getByText('TAKEN')).toBeTruthy()
-    const taken = screen.getByRole('button', { name: /BELTER/ }) as HTMLButtonElement
-    expect(taken.disabled).toBe(true)
-    // and it fell back to the next one, lit on the grid and named on the chip
-    expect(screen.getByRole('button', { name: 'CROONER' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByText('CROONER')).toBeTruthy()
+    expect(screen.queryByText('TAKEN')).toBeNull()
+    expect(dispatched.map(a => a.type)).toEqual([BATTLE_ACCEPT])
+    expect(dispatched[0].payload).toEqual({ singerId: 'p1' })
   })
 
-  it('accepts with the singer that was picked', () => {
+  it('accepts as the character on the account, one step sooner', () => {
     const { dispatched } = open({})
 
     fireEvent.click(screen.getByRole('button', { name: 'ACCEPT' }))
     settle()
-    fireEvent.click(screen.getByRole('button', { name: 'NEXT' }))
-    settle()
 
+    // straight to the confirm: no grid in between
     expect(screen.getByText('CONFIRM AND THE ROOM SEES IT')).toBeTruthy()
+    expect(screen.queryByText(/PICK A\s*SINGER/)).toBeNull()
     // accepting has sent nothing so far: the confirm screen is the decision
     expect(dispatched).toEqual([])
 
     fireEvent.click(screen.getByRole('button', { name: 'CONFIRM' }))
 
     expect(dispatched.map(a => a.type)).toEqual([BATTLE_ACCEPT])
-    expect(localStorage.getItem('battleSingerId')).toBe('p2')
+    expect(dispatched[0].payload).toEqual({ singerId: 'p2' })
 
     settle()
     expect(screen.getByRole('button', { name: 'PICK THEIR SONG' })).toBeTruthy()

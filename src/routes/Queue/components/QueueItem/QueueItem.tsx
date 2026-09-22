@@ -43,7 +43,6 @@ interface QueueItemProps {
   songId: number
   starCount: number
   title: string
-  userDateUpdated: number
   userDisplayName: string
   /** Which fighter this singer is, off their account. An ordinary row follows
    *  the account; only a battle row follows its own snapshot. */

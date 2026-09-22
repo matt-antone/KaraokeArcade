@@ -2,7 +2,6 @@ import sql from 'sqlate'
 import crypto from '../lib/crypto.js'
 import { isAvatarId } from '../../shared/types.js'
 import User, {
-  IMG_MAX_LENGTH,
   NAME_MAX_LENGTH,
   NAME_MIN_LENGTH,
   PASSWORD_MIN_LENGTH,
@@ -123,13 +122,6 @@ export function nextAvatarId (fail: Fail, avatarId: unknown): string | undefined
   }
 
   return avatarId
-}
-
-/** An uploaded avatar, refused if it is too big to sit in the users table. */
-export function assertImageSize (fail: Fail, size: number): void {
-  if (size > IMG_MAX_LENGTH) {
-    fail(413, `Image must not exceed ${Math.floor(IMG_MAX_LENGTH / 1024)}KB`)
-  }
 }
 
 /** The two roles somebody may sign themselves up as. Anything else is either a

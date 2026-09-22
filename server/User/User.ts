@@ -11,11 +11,9 @@ type ServerUser = UserType & {
   password?: string // only populated if requesting creds
   securityQuestion?: string | null
   securityAnswer?: string | null // hash; only populated if requesting creds
-  image?: string
   rooms?: number[] // populated in router
 }
 
-export const IMG_MAX_LENGTH = 51200 // 50KB
 export const USERNAME_MIN_LENGTH = 3
 export const USERNAME_MAX_LENGTH = 50 // shown on the queue and player, so no longer than a name
 export const PASSWORD_MIN_LENGTH = 6
@@ -175,7 +173,6 @@ class User {
     newPassword,
     newPasswordConfirm,
     name,
-    image,
     avatarId,
     securityQuestion,
     securityAnswer,
@@ -184,7 +181,6 @@ class User {
     newPassword?: string
     newPasswordConfirm?: string
     name?: string
-    image?: Buffer
     avatarId?: string
     securityQuestion?: string
     securityAnswer?: string
@@ -233,15 +229,6 @@ class User {
       }
 
       fields.set('avatarId', avatarId)
-    }
-
-    // user image?
-    if (image) {
-      if (image.length > IMG_MAX_LENGTH) {
-        throw new Error('Invalid image')
-      }
-
-      fields.set('image', image)
     }
 
     const query = sql`

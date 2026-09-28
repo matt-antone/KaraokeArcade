@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { db, open, close } from '../lib/Database.js'
 import Trivia from './Trivia.js'
-import fetchQuestions, { type TriviaQuestion } from './Questions.js'
+import fetchRound, { type TriviaQuestion } from './Questions.js'
 import Queue from '../Queue/Queue.js'
-import { QUEUE_PUSH, TRIVIA_RESULT, TRIVIA_ROUND } from '../../shared/actionTypes.js'
-import { TRIVIA_QUESTIONS_PER_ROUND, type TriviaResult, type TriviaRound } from '../../shared/types.js'
+import Points from '../Points/Points.js'
+import { POINTS_PUSH, QUEUE_PUSH, TRIVIA_RESULT, TRIVIA_ROUND } from '../../shared/actionTypes.js'
+import { TRIVIA_QUESTIONS_PER_ROUND, triviaPoints, type TriviaResult, type TriviaRound } from '../../shared/types.js'
 
 // A round's questions come off the network now, so the network is the seam:
 // the pool below stands in for whatever OpenTDB would have answered.
@@ -75,8 +76,8 @@ function setupRoom () {
   addQuestion('Who?')
   // fewer than asked for is a short round, which is a round: the room gets
   // whatever the network had
-  vi.mocked(fetchQuestions).mockImplementation(async count => pool.slice(0, count))
-  vi.mocked(fetchQuestions).mockClear()
+  vi.mocked(fetchRound).mockImplementation(async () => pool.slice(0, TRIVIA_QUESTIONS_PER_ROUND))
+  vi.mocked(fetchRound).mockClear()
 
   Trivia.stopRoom(ROOM_ID)
 }
@@ -115,13 +116,13 @@ describe('trivia rounds', () => {
     queueSong(ALICE)
     Trivia.syncQueueAndPush(playerIo, ROOM_ID)
 
-    expect(fetchQuestions).toHaveBeenCalledTimes(1)
+    expect(fetchRound).toHaveBeenCalledTimes(1)
 
     const queueId = Queue.getPendingTriviaId(ROOM_ID)
     const round = await Trivia.startRound(playerIo, ROOM_ID, queueId as number)
 
     expect(round?.question).toBe('Who?')
-    expect(fetchQuestions).toHaveBeenCalledTimes(1)
+    expect(fetchRound).toHaveBeenCalledTimes(1)
   })
 
   it('waits for the player to be playing before adding a round', async () => {
@@ -397,7 +398,7 @@ describe('trivia rounds', () => {
 
   it('asks for a whole round of questions, once, each time round', async () => {
     for (let i = 0; i < TRIVIA_QUESTIONS_PER_ROUND * 2; i++) addQuestion(`q${i}`)
-    vi.mocked(fetchQuestions).mockClear()
+    vi.mocked(fetchRound).mockClear()
 
     const first = await collectRound()
     const second = await collectRound()
@@ -409,8 +410,7 @@ describe('trivia rounds', () => {
     // the row nobody reached, which is the point of priming. Not asking the
     // same question twice in a night is the session token's job on the other
     // side of this seam, not something the room has to keep a ledger for.
-    expect(fetchQuestions).toHaveBeenCalledTimes(3)
-    expect(fetchQuestions).toHaveBeenCalledWith(TRIVIA_QUESTIONS_PER_ROUND)
+    expect(fetchRound).toHaveBeenCalledTimes(3)
   })
 
   it('repeats a question rather than letting trivia quietly stop', async () => {
@@ -449,9 +449,22 @@ describe('trivia answers and scores', () => {
     answer(BOB, (correctIdx + 1) % 4)
 
     expect(Trivia.getScores(ROOM_ID)).toEqual([
-      { userId: ALICE, name: 'Alice', score: 1, numAnswered: 1, avatarId: null },
+      { userId: ALICE, name: 'Alice', score: 100, numAnswered: 1, avatarId: null },
       { userId: BOB, name: 'Bob', score: 0, numAnswered: 1, avatarId: null },
     ])
+
+    // and onto the night's board, where a wrong answer is not a row at all
+    expect(Points.get(ROOM_ID)).toEqual([
+      { userId: ALICE, name: 'Alice', points: 100, avatarId: null },
+    ])
+  })
+
+  it('pays each level what the round says it is worth', () => {
+    // the question on stage here is an easy one, scored above; the other two
+    // levels are the same lookup
+    expect(triviaPoints('easy')).toBe(100)
+    expect(triviaPoints('medium')).toBe(200)
+    expect(triviaPoints('hard')).toBe(500)
   })
 
   it('puts each player\'s character on the scoreboard', async () => {
@@ -513,8 +526,8 @@ describe('trivia answers and scores', () => {
     answer(ALICE, correctIdx)
     Trivia.closeRound(io, ROOM_ID)
 
-    // the result, and then the queue carrying the next round
-    expect(io.emitted.map(e => e.type)).toEqual([TRIVIA_RESULT, QUEUE_PUSH])
+    // the result, the board it changed, and then the queue carrying the next round
+    expect(io.emitted.map(e => e.type)).toEqual([TRIVIA_RESULT, POINTS_PUSH, QUEUE_PUSH])
     const result = io.emitted[0].payload as TriviaResult
     expect(result.correctIdx).toBe(correctIdx)
     expect(result.scores[0].name).toBe('Alice')

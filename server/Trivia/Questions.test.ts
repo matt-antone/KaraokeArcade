@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import fetchQuestions from './Questions.js'
+import fetchRound from './Questions.js'
 
 const b64 = (s: string) => Buffer.from(s, 'utf8').toString('base64')
 
@@ -34,8 +34,8 @@ const stubFetch = (...questionReplies: object[]) => {
 
 /** The module rate-limits itself to one request per six seconds. Timers are
  *  faked so the wait costs the suite nothing; this drives it to completion. */
-const fetchNow = async (count: number) => {
-  const pending = fetchQuestions(count)
+const fetchNow = async () => {
+  const pending = fetchRound()
   await vi.runAllTimersAsync()
   return await pending
 }
@@ -49,11 +49,11 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('fetchQuestions', () => {
+describe('fetchRound', () => {
   it('decodes what OpenTDB sends and asks for the round it was given', async () => {
     const calls = stubFetch({ response_code: 0, results: [question('Who?')] })
 
-    const [q] = await fetchNow(5)
+    const [q] = await fetchNow()
 
     expect(q).toEqual({
       question: 'Who?',
@@ -61,9 +61,18 @@ describe('fetchQuestions', () => {
       incorrectAnswers: ['w1', 'w2', 'w3'],
       difficulty: 'easy',
     })
-    // base64 rather than an entity decoder, and a whole round in one call
     expect(calls.at(-1)).toContain('encode=base64')
-    expect(calls.at(-1)).toContain('amount=5')
+  })
+
+  it('asks for two easy, two medium and one hard, in that order', async () => {
+    const calls = stubFetch({ response_code: 0, results: [question('Q')] })
+
+    await fetchNow()
+
+    expect(calls.filter(url => !url.includes('api_token')).map(url => [
+      new URL(url).searchParams.get('difficulty'),
+      new URL(url).searchParams.get('amount'),
+    ])).toEqual([['easy', '2'], ['medium', '2'], ['hard', '1']])
   })
 
   /**
@@ -75,9 +84,9 @@ describe('fetchQuestions', () => {
   it('gets a new token when the old one has seen every question', async () => {
     const calls = stubFetch({ response_code: 4 }, { response_code: 0, results: [question('Again?')] })
 
-    const questions = await fetchNow(5)
+    const questions = await fetchNow()
 
-    expect(questions.map(q => q.question)).toEqual(['Again?'])
+    expect(questions[0].question).toBe('Again?')
     expect(calls.filter(url => url.includes('api_token')).length).toBeGreaterThan(0)
   })
 
@@ -86,12 +95,12 @@ describe('fetchQuestions', () => {
       throw new Error('ENOTFOUND')
     })
 
-    await expect(fetchNow(5)).resolves.toEqual([])
+    await expect(fetchNow()).resolves.toEqual([])
   })
 
   it('gives the room nothing when OpenTDB refuses', async () => {
     stubFetch({ response_code: 5 })
 
-    await expect(fetchNow(5)).resolves.toEqual([])
+    await expect(fetchNow()).resolves.toEqual([])
   })
 })

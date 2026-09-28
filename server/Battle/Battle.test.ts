@@ -27,6 +27,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { db, open, close } from '../lib/Database.js'
 import Battle from './Battle.js'
 import Queue from '../Queue/Queue.js'
+import Points from '../Points/Points.js'
 import {
   BATTLE_INVITE,
   BATTLE_INVITE_CLEAR,
@@ -526,6 +527,56 @@ describe('the beats', () => {
     expect(phases(await runBattle(io, false))).toEqual([
       'logo', 'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'winner',
     ])
+  })
+
+  const pointsOf = (userId: number) => Points.get(ROOM_ID).find(e => e.userId === userId)?.points
+
+  it('pays the winner the win and the loser for taking part', async () => {
+    const io = fakeIo()
+    queueSong(ALICE)
+    await negotiate(io, { queueId: 1 })
+
+    Battle.startTurn(io, ROOM_ID, 1, false)
+    Battle.score(io, ROOM_ID, 1, 2, 7)
+    await vi.advanceTimersByTimeAsync(600000)
+
+    expect(pointsOf(BOB)).toBe(1000)
+    expect(pointsOf(ALICE)).toBe(250)
+  })
+
+  it('pays both for taking part on a draw, and nobody for a fight skipped before its verdict', async () => {
+    const io = fakeIo()
+
+    // no votes cast: nil-all
+    await runBattle(io, true)
+    expect(pointsOf(ALICE)).toBe(250)
+    expect(pointsOf(BOB)).toBe(250)
+
+    Points.reset(ROOM_ID)
+    Battle.startTurn(io, ROOM_ID, 1, false)
+    Battle.end(io, ROOM_ID)
+    expect(Points.get(ROOM_ID)).toEqual([])
+  })
+
+  it('ends a running fight when the KJ skips it, and nothing fires after', async () => {
+    const io = fakeIo()
+    queueSong(ALICE)
+    await negotiate(io, { queueId: 1 })
+
+    Battle.startTurn(io, ROOM_ID, 1, false)
+    io.emitted.length = 0
+
+    expect(Battle.end(io, ROOM_ID)).toBe(true)
+    expect(Battle.getTurn(ROOM_ID)).toBeNull()
+    expect(io.emitted.map(e => e.type)).toEqual([BATTLE_TURN_CLEAR])
+
+    // the beat timer it was holding must not come back and push a beat into a
+    // fight that is over
+    await vi.advanceTimersByTimeAsync(600000)
+    expect(io.emitted.map(e => e.type)).toEqual([BATTLE_TURN_CLEAR])
+
+    // and a room with nothing on stage has nothing to end
+    expect(Battle.end(io, ROOM_ID)).toBe(false)
   })
 
   it('carries both fighters onto every beat', async () => {

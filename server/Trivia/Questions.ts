@@ -1,4 +1,5 @@
 import getLogger from '../lib/Log.js'
+import { TRIVIA_ROUND_MIX } from '../../shared/types.js'
 
 const log = getLogger('Trivia')
 
@@ -69,23 +70,42 @@ async function requestToken (): Promise<string | null> {
   }
 }
 
-const questionUrl = (count: number) =>
-  `${API}?amount=${count}&category=${CATEGORY_MUSIC}&type=multiple&encode=base64`
+const questionUrl = (count: number, difficulty: string) =>
+  `${API}?amount=${count}&category=${CATEGORY_MUSIC}&type=multiple&difficulty=${difficulty}&encode=base64`
   + (token ? `&token=${token}` : '')
 
 /**
- * A round's questions, fetched when the round starts.
+ * A round's questions: each level of TRIVIA_ROUND_MIX in turn, easiest first,
+ * which is also the order they are asked in.
+ *
+ * One request per level, because OpenTDB filters on one difficulty per call.
+ * That is three calls six seconds apart under its rate limit, which is why a
+ * round is primed minutes ahead rather than fetched when it is reached.
+ *
+ * A level that comes back short is run short rather than refilled from
+ * another level — a round of four is still a round, and a medium question
+ * scored as hard is not.
  *
  * Never throws: a party on a LAN with no internet is an expected state, not a
  * fault. An empty array means "no round this time" and the player moves on to
  * the next singer, which is the right thing for the room — a gap that fills
  * itself beats an error nobody can act on mid-song.
  */
-export default async function fetchQuestions (count: number): Promise<TriviaQuestion[]> {
+export default async function fetchRound (): Promise<TriviaQuestion[]> {
+  const questions: TriviaQuestion[] = []
+
+  for (const { difficulty, count } of TRIVIA_ROUND_MIX) {
+    questions.push(...await fetchQuestions(count, difficulty))
+  }
+
+  return questions
+}
+
+async function fetchQuestions (count: number, difficulty: string): Promise<TriviaQuestion[]> {
   try {
     if (!token) token = await requestToken()
 
-    let json = await request(questionUrl(count))
+    let json = await request(questionUrl(count, difficulty))
 
     // 3: the token expired (six hours idle). 4: this token has now seen every
     // music question there is. Both are fixed the same way, and without the
@@ -95,7 +115,7 @@ export default async function fetchQuestions (count: number): Promise<TriviaQues
         json.response_code === 4 ? 'exhausted the music category' : 'expired')
 
       token = await requestToken()
-      json = await request(questionUrl(count))
+      json = await request(questionUrl(count, difficulty))
     }
 
     if (json.response_code !== 0) {

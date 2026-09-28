@@ -22,6 +22,11 @@ import styles from './CoreLayout.css'
 
 const CoreLayout = () => {
   const isPlayerRoute = useMatch('/player')
+  // Nothing pops over Settings. It is admin-only and it is where the KJ runs
+  // the room from — the skip, the transport — so a trivia pad, a challenge or
+  // a ballot landing on it is the room's controls going dark mid-song.
+  const isSettingsRoute = useMatch('/settings')
+  const hasPopovers = !isPlayerRoute && !isSettingsRoute
   const dispatch = useAppDispatch()
   const headerRef = useRef<HTMLDivElement>(null)
   const navRef = useRef<HTMLDivElement>(null)
@@ -116,7 +121,7 @@ const CoreLayout = () => {
 
       {/* the answer pad follows the guest across every tab, and never opens on
           the player itself — that screen is showing the question */}
-      {!isPlayerRoute && <TriviaDialog />}
+      {hasPopovers && <TriviaDialog />}
 
       {/* and the challenge follows them the same way — a fight is arranged
           between two phones, and the television has no part in it.
@@ -133,11 +138,11 @@ const CoreLayout = () => {
         />
       )}
 
-      {!isPlayerRoute && <BattleInvite />}
+      {hasPopovers && <BattleInvite />}
 
       {/* and the ballot the same way again — the vote is cast on the phone,
           and the television is showing the two people it is about */}
-      {!isPlayerRoute && <BattleVote />}
+      {hasPopovers && <BattleVote />}
 
       {ui.isErrored && (
         <Modal

@@ -4,6 +4,7 @@ import { optimistic } from 'redux-optimistic-ui'
 import artists from 'routes/Library/modules/artists'
 import battle from './modules/battle'
 import library from 'routes/Library/modules/library'
+import points from './modules/points'
 import prefs from './modules/prefs'
 import queue from 'routes/Queue/modules/queue'
 import rooms from './modules/rooms'
@@ -23,6 +24,7 @@ const combinedReducer = combineSlices({
   // and the player needs it to run one, so there is no route that can own it
   battle,
   library,
+  points,
   prefs,
   queue: optimistic(queue),
   rooms,

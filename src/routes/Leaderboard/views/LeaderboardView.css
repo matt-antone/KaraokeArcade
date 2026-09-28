@@ -1,0 +1,60 @@
+/* Placeholder layout until the new designs land: plain document flow, the same
+   column Account and Settings use. */
+.container {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding:
+    calc(var(--header-h, 0px) + var(--gap-4))
+    var(--gutter)
+    calc(var(--nav-h, 0px) + var(--gap-5));
+}
+
+.title {
+  margin: 0 0 var(--gap-4);
+  font-size: 20px;
+}
+
+.empty {
+  color: var(--ink-2);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  & li {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-3);
+    padding: var(--gap-2) 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+}
+
+.me {
+  font-weight: 700;
+}
+
+.place {
+  width: 2ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.avatar {
+  width: 34px;
+  flex: none;
+}
+
+.name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.points {
+  font-variant-numeric: tabular-nums;
+}

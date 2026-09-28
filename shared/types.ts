@@ -297,10 +297,26 @@ export interface Prefs {
  *  property of the source, not a layout choice, so it is not configurable. */
 export const TRIVIA_ANSWER_COUNT = 4
 
+/** What one round asks, in the order it asks it, and what a right answer at
+ *  each level is worth. Climbing rather than mixed: the room warms up on two
+ *  it can get, and the round ends on the one question that can change the
+ *  standings. The levels are OpenTDB's own, which has exactly these three. */
+export const TRIVIA_ROUND_MIX = [
+  { difficulty: 'easy', count: 2, points: 100 },
+  { difficulty: 'medium', count: 2, points: 200 },
+  { difficulty: 'hard', count: 1, points: 500 },
+] as const
+
+/** A right answer's worth, by the difficulty the question came back with.
+ *  Anything unrecognised scores as easy rather than nothing. */
+export const triviaPoints = (difficulty: string): number => (
+  TRIVIA_ROUND_MIX.find(level => level.difficulty === difficulty)?.points ?? TRIVIA_ROUND_MIX[0].points
+)
+
 /** Questions in one round. A round is a turn in the rotation, and one question
  *  is a thin turn — five is enough for the room to get into it and still hand
- *  the microphone back. Also the amount OpenTDB's own example fetches. */
-export const TRIVIA_QUESTIONS_PER_ROUND = 5
+ *  the microphone back. */
+export const TRIVIA_QUESTIONS_PER_ROUND = TRIVIA_ROUND_MIX.reduce((n, level) => n + level.count, 0)
 
 /** Bounds on how long an answer stays open. Below the floor a guest cannot
  *  read four answers and reach for a key; above the ceiling the room is
@@ -353,6 +369,21 @@ export interface TriviaRound {
  *  The first two are the same instruction and the third is its opposite, which
  *  is exactly why this is three named values rather than a boolean. */
 export type TriviaRoundRequestStatus = 'started' | 'inProgress' | 'unavailable'
+
+/** What each way of earning points pays. Trivia's own values live in
+ *  TRIVIA_ROUND_MIX, by question difficulty. */
+export const POINTS_SONG = 150
+export const POINTS_BATTLE_WIN = 1000
+/** The loser's, and both fighters' on a draw. The winner gets the win alone. */
+export const POINTS_BATTLE_TAKE_PART = 250
+
+/** One row of a room's leaderboard for the night. */
+export interface LeaderboardEntry {
+  userId: number
+  name: string
+  avatarId: string | null
+  points: number
+}
 
 export interface TriviaScore {
   userId: number

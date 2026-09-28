@@ -3,6 +3,7 @@ import { battleSingerOrDefault } from 'lib/battleSingers'
 import { updateAccount } from 'store/modules/user'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
 import BattleSingerSelect from './BattleSingerSelect'
+import frameStyles from './BattleFrame.css'
 
 /**
  * Choosing which fighter you are, as an account rather than as a battle.
@@ -59,5 +60,12 @@ export const AvatarGate = () => {
     void dispatch(updateAccount({ data, isSilent: true }))
   }
 
-  return <AvatarPicker avatarId={avatarId} onChoose={handleChoose} />
+  // The cabinet's own full-screen shell, lifted over everything else fixed on
+  // the page (the bottom chrome at 99, battle screens at 100): nothing in the
+  // app may sit on top of the one question it is waiting on.
+  return (
+    <div className={frameStyles.screen} style={{ zIndex: 1000 }}>
+      <AvatarPicker avatarId={avatarId} onChoose={handleChoose} />
+    </div>
+  )
 }

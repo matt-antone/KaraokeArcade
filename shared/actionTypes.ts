@@ -112,6 +112,9 @@ export const STARS_PUSH = 'user/STARS_PUSH'
 // Song history
 export const SONG_PLAYED = 'server/SONG_PLAYED'
 
+// Leaderboard
+export const POINTS_PUSH = 'points/PUSH'
+
 // Preferences
 export const PREFS_RECEIVE = 'prefs/RECEIVE'
 export const PREFS_REQUEST = 'prefs/REQUEST'

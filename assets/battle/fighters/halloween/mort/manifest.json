@@ -13,6 +13,13 @@
     "portrait-34": "views/portrait-34.png",
     "portrait-80": "views/portrait-80.png"
   },
+  "location": {
+    "file": "location.png",
+    "size": [
+      2048,
+      1152
+    ]
+  },
   "sets": {
     "dance": {
       "frames": 16,

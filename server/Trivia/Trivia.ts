@@ -3,12 +3,13 @@ import { db } from '../lib/Database.js'
 import getLogger from '../lib/Log.js'
 import Rooms, { STATUSES } from '../Rooms/Rooms.js'
 import Queue from '../Queue/Queue.js'
-import fetchQuestions, { type TriviaQuestion } from './Questions.js'
+import Points from '../Points/Points.js'
+import fetchRound, { type TriviaQuestion } from './Questions.js'
 import {
   clampTriviaCountdown,
   TRIVIA_ANSWER_COUNT,
   TRIVIA_COUNTDOWN_DEFAULT,
-  TRIVIA_QUESTIONS_PER_ROUND,
+  triviaPoints,
   type TriviaResult,
   type TriviaRound,
   type TriviaScore,
@@ -169,7 +170,7 @@ class Trivia {
     if (primed.has(roomId) || rounds.has(roomId) || starting.has(roomId)) return
     if (Queue.getPendingTriviaId(roomId) === null) return
 
-    primed.set(roomId, fetchQuestions(TRIVIA_QUESTIONS_PER_ROUND))
+    primed.set(roomId, fetchRound())
   }
 
   /** Sync the queue and tell the room, when there is anything to tell. */
@@ -228,7 +229,7 @@ class Trivia {
     let questions: TriviaQuestion[]
 
     try {
-      questions = await (ahead ?? fetchQuestions(TRIVIA_QUESTIONS_PER_ROUND))
+      questions = await (ahead ?? fetchRound())
     } finally {
       starting.delete(roomId)
     }
@@ -349,6 +350,8 @@ class Trivia {
       payload,
     })
 
+    Points.push(io, roomId)
+
     if (isFinal) {
       active.timer = null
       rounds.delete(roomId)
@@ -408,15 +411,21 @@ class Trivia {
 
     current.answered.set(userId, answerIdx)
 
-    const isCorrect = answerIdx === current.correctIdx
+    // worth what its level is worth: a hard question is the one that moves
+    // the standings, so it pays five times an easy one
+    const points = answerIdx === current.correctIdx ? triviaPoints(current.round.difficulty) : 0
     const query = sql`
       INSERT INTO triviaScores (roomId, userId, score, numAnswered)
-      VALUES (${roomId}, ${userId}, ${isCorrect ? 1 : 0}, 1)
+      VALUES (${roomId}, ${userId}, ${points}, 1)
       ON CONFLICT (roomId, userId) DO UPDATE SET
-        score = score + ${isCorrect ? 1 : 0},
+        score = score + ${points},
         numAnswered = numAnswered + 1
     `
     db.run(String(query), query.parameters)
+
+    // and onto the night's board, which the room is shown when this question
+    // closes rather than now — see Points
+    Points.add(roomId, userId, points)
   }
 
   /** Everyone who has answered at least once in this room, best first.

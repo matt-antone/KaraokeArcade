@@ -3,6 +3,7 @@ import setRoomTransport from './transport.js'
 import Rooms from './Rooms.js'
 import Queue from '../Queue/Queue.js'
 import Trivia from '../Trivia/Trivia.js'
+import Points from '../Points/Points.js'
 import {
   BATTLE_INVITE_CLEAR,
   BATTLE_TURN_CLEAR,
@@ -23,6 +24,13 @@ vi.mock('../Queue/Queue.js', () => ({
   default: {
     clear: vi.fn(),
     get: vi.fn(() => ({ result: [], entities: {}, pausedUserIds: [] })),
+  },
+}))
+
+vi.mock('../Points/Points.js', () => ({
+  default: {
+    reset: vi.fn(),
+    push: vi.fn(),
   },
 }))
 
@@ -77,6 +85,9 @@ describe('setRoomTransport', () => {
 
     expect(Queue.clear).toHaveBeenCalledWith(ROOM_ID)
     expect(Trivia.resetScores).toHaveBeenCalledWith(ROOM_ID)
+    // the night's leaderboard goes with it, and every board is told
+    expect(Points.reset).toHaveBeenCalledWith(ROOM_ID)
+    expect(Points.push).toHaveBeenCalledWith(io, ROOM_ID)
     // a round mid-flight would otherwise re-queue into the room just emptied
     expect(Trivia.stopRoom).toHaveBeenCalledWith(ROOM_ID)
     expect(typesEmitted(emit)).toEqual([

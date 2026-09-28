@@ -13,10 +13,17 @@
     "portrait-34": "views/portrait-34.png",
     "portrait-80": "views/portrait-80.png"
   },
+  "location": {
+    "file": "location.png",
+    "size": [
+      2048,
+      1152
+    ]
+  },
   "sets": {
     "dance": {
       "frames": 24,
-      "fps": 12,
+      "fps": 8,
       "columns": 8,
       "sheet": "dance-sheet.png",
       "proof": "dance-proof.gif"

@@ -340,25 +340,25 @@
    place there, because Judge borrows the component. */
 .pairSprite {
   bottom: calc(28 * var(--px));
-  width: calc(148 * var(--px));
-  height: calc(148 * var(--px));
+  width: calc(168 * var(--px));
+  height: calc(168 * var(--px));
 }
 
-.pairOne { left: calc(2 * var(--px)); }
-.pairTwo { right: calc(2 * var(--px)); }
+.pairOne { left: calc(-8 * var(--px)); }
+.pairTwo { right: calc(-8 * var(--px)); }
 
 /* Versus only. Pair is shared with the judging beat, so the card's own box
    goes on a class Versus adds rather than on .pairSprite, which Judge would
    inherit.
 
-   167 at bottom 31 is .singSprite's box, to the unit. The fighters on this
+   187 at bottom 31 is .singSprite's box, to the unit. The fighters on this
    card stand exactly where the same fighters stand when they sing, so the
    scene hands off to the intro and the song without anybody appearing to
    change size or step off the floor between beats. */
 .pairVersus {
   bottom: calc(41 * var(--px));
-  width: calc(167 * var(--px));
-  height: calc(167 * var(--px));
+  width: calc(187 * var(--px));
+  height: calc(187 * var(--px));
 }
 
 /* The largest type on the screen, and the only word on it. */
@@ -462,7 +462,7 @@
   text-wrap: pretty;
 }
 
-/* The design's 182, at three quarters. The announcement is the one beat with a
+/* The design's 182, at three quarters plus 20. The announcement is the one beat with a
    fighter and nothing else on the stage, and drawn at full size they filled it
    corner to corner — larger here than on the beat that follows, which made the
    handoff into the song look like the fighter had stepped back. Anchored on the
@@ -470,9 +470,9 @@
 .introSprite {
   left: 50%;
   bottom: calc(26 * var(--px));
-  width: calc(136.5 * var(--px));
-  height: calc(136.5 * var(--px));
-  margin-left: calc(-68.25 * var(--px));
+  width: calc(156.5 * var(--px));
+  height: calc(156.5 * var(--px));
+  margin-left: calc(-78.25 * var(--px));
 }
 
 .introSong {
@@ -673,12 +673,12 @@
 .singSprite {
   z-index: 3;
   bottom: calc(31 * var(--px));
-  width: calc(167 * var(--px));
-  height: calc(167 * var(--px));
+  width: calc(187 * var(--px));
+  height: calc(187 * var(--px));
 }
 
-.singSpriteOne { left: calc(-18 * var(--px)); }
-.singSpriteTwo { left: calc(241 * var(--px)); }
+.singSpriteOne { left: calc(-28 * var(--px)); }
+.singSpriteTwo { left: calc(231 * var(--px)); }
 
 /* --- judging ---------------------------------------------------------- */
 
@@ -956,12 +956,12 @@
 
 .meterSprite {
   bottom: calc(26 * var(--px));
-  width: calc(136 * var(--px));
-  height: calc(136 * var(--px));
+  width: calc(156 * var(--px));
+  height: calc(156 * var(--px));
 }
 
-.meterSpriteOne { left: calc(2 * var(--px)); }
-.meterSpriteTwo { left: calc(253 * var(--px)); }
+.meterSpriteOne { left: calc(-8 * var(--px)); }
+.meterSpriteTwo { left: calc(243 * var(--px)); }
 
 /* --- the verdict ------------------------------------------------------ */
 
@@ -999,12 +999,12 @@
    middle of the stage for the name and the verb above them. */
 .winSprite {
   bottom: calc(52 * var(--px));
-  width: calc(195 * var(--px));
-  height: calc(195 * var(--px));
+  width: calc(215 * var(--px));
+  height: calc(215 * var(--px));
 }
 
-.winSpriteOne { left: calc(2 * var(--px)); }
-.winSpriteTwo { right: calc(2 * var(--px)); }
+.winSpriteOne { left: calc(-8 * var(--px)); }
+.winSpriteTwo { right: calc(-8 * var(--px)); }
 
 .winBand {
   position: absolute;

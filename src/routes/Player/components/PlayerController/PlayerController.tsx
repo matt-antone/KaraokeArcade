@@ -33,9 +33,11 @@ interface PlayerControllerProps {
 const UP_NEXT_SECS = 15
 
 /** How long the player holds a trivia row that has produced nothing before
- *  moving on. A question arrives in well under a second, so this only ever
- *  expires on a round that is genuinely lost. */
-const TRIVIA_STRANDED_MS = 20000
+ *  moving on. A primed round arrives in well under a second, but one fetched
+ *  on arrival is a request per difficulty six seconds apart (server/Trivia/
+ *  Questions.ts) — near twenty with a token to get first — so this sits
+ *  clear of that and only ever expires on a round that is genuinely lost. */
+const TRIVIA_STRANDED_MS = 30000
 
 /** How long the player waits for a battle beat that has not arrived before
  *  giving the room back.
@@ -295,6 +297,12 @@ const PlayerController = (props: PlayerControllerProps) => {
     })
   }, [handleStatus, player.historyJSON, player.queueId, queue.entities])
 
+  // Which run of which row last ran out on its own. A song leaving the stage
+  // any other way was skipped, and a skipped song earns no points. Stamped
+  // with the replay time for the reason battleRun is: a replayed song is sung
+  // again and has to end again.
+  const endedRunRef = useRef('')
+
   const handleLoadNext = useCallback(() => {
     const history = JSON.parse(player.historyJSON)
 
@@ -313,7 +321,13 @@ const PlayerController = (props: PlayerControllerProps) => {
       // nothing on a null songId, which works by accident and would stop
       // working the day that join changed.
       if (!isTriviaItem(queueItem)) {
-        dispatch({ type: SONG_PLAYED, payload: { queueId: queueItem.queueId } })
+        dispatch({
+          type: SONG_PLAYED,
+          payload: {
+            queueId: queueItem.queueId,
+            isSkipped: endedRunRef.current !== `${queueItem.queueId}:${player._lastReplayTime}`,
+          },
+        })
       }
     }
 
@@ -341,7 +355,7 @@ const PlayerController = (props: PlayerControllerProps) => {
       nextUserId: null,
       _isPlayingNext: false,
     })
-  }, [dispatch, handleStatus, nextQueueItem, player.historyJSON, queueItem])
+  }, [dispatch, handleStatus, nextQueueItem, player._lastReplayTime, player.historyJSON, queueItem])
 
   // the queue can change while we're waiting, so the timer calls the latest handleLoadNext
   const loadNextRef = useRef(handleLoadNext)
@@ -360,6 +374,8 @@ const PlayerController = (props: PlayerControllerProps) => {
       dispatch(battleSongEnded(player.queueId, battleSide))
       return
     }
+
+    endedRunRef.current = `${player.queueId}:${player._lastReplayTime}`
 
     // Neither the history dispatch nor a timer to clear lives here any more:
     // a song is recorded as sung on the way out through handleLoadNext, and

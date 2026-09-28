@@ -7,6 +7,7 @@ import Rooms, { STATUSES } from '../Rooms/Rooms.js'
 import setRoomTransport from './transport.js'
 import Battle from '../Battle/Battle.js'
 import Trivia from '../Trivia/Trivia.js'
+import Points from '../Points/Points.js'
 import { ValidationError } from '../lib/Errors.js'
 
 interface RequestWithBody {
@@ -137,6 +138,9 @@ router.delete('/:roomId', requireAdmin, (ctx) => {
     WHERE roomId = ${roomId}
   `
   db.run(String(scoresQuery), scoresQuery.parameters)
+
+  // the night's leaderboard references the room the same way
+  Points.reset(roomId)
 
   Trivia.stopRoom(roomId)
 

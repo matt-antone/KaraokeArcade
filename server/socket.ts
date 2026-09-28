@@ -14,6 +14,7 @@ import Queue from './Queue/Queue.js'
 import QueueSocket from './Queue/socket.js'
 import Trivia from './Trivia/Trivia.js'
 import TriviaSocket from './Trivia/socket.js'
+import Points from './Points/Points.js'
 
 import {
   BATTLE_INVITE,
@@ -202,6 +203,9 @@ export default function (io, jwtKey) {
       type: QUEUE_PUSH,
       payload: Queue.get(sock.user.roomId),
     })
+
+    // where everyone stands tonight
+    Points.push(io, sock.user.roomId, sock.id)
 
     // A room whose queue predates trivia being switched on has no round waiting
     // in it; put one there rather than making someone queue a song first.

@@ -4,6 +4,7 @@ import { useAppSelector } from 'store/hooks'
 import { AvatarGate } from 'components/BattleStage/AvatarPicker'
 
 import AccountView from 'routes/Account/views/AccountView'
+import LeaderboardView from 'routes/Leaderboard/views/LeaderboardView'
 import LibraryView from 'routes/Library/views/LibraryView'
 import QueueView from 'routes/Queue/views/QueueView'
 import SettingsView from 'routes/Settings/views/SettingsView'
@@ -34,6 +35,14 @@ const AppRoutes = () => (
       element={(
         <RequireAuth path='/library' redirectTo='/'>
           <LibraryView />
+        </RequireAuth>
+      )}
+    />
+    <Route
+      path='/leaderboard'
+      element={(
+        <RequireAuth path='/leaderboard' redirectTo='/'>
+          <LeaderboardView />
         </RequireAuth>
       )}
     />

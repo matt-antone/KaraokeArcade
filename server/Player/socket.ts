@@ -1,3 +1,5 @@
+import Battle from '../Battle/Battle.js'
+import Points from '../Points/Points.js'
 import Rooms from '../Rooms/Rooms.js'
 import Trivia from '../Trivia/Trivia.js'
 import User from '../User/User.js'
@@ -34,6 +36,20 @@ const ACTION_HANDLERS = {
     })
   },
   [PLAYER_REQ_NEXT]: (sock) => {
+    // A fight on stage is the KJ's to call off and nobody else's: the two
+    // fighters agreed to it and the room is mid-ballot. Ending it is the skip —
+    // the player moves on when the turn clears (see Battle.end), so no next
+    // goes out as well.
+    if (Battle.getTurn(sock.user.roomId)) {
+      if (sock.user.isAdmin) Battle.end(sock.server, sock.user.roomId)
+      return
+    }
+
+    // A round has no row-level end the player waits on, so the player is told
+    // to move on as for a song — and the round is wound up here, or the phones
+    // keep being asked questions about a row that has left the stage.
+    Trivia.closeRound(sock.server, sock.user.roomId)
+
     // @todo: emit to players only
     sock.server.to(Rooms.prefix(sock.user.roomId)).emit('action', {
       type: PLAYER_CMD_NEXT,
@@ -87,6 +103,14 @@ const ACTION_HANDLERS = {
   // the song left the stage, whether it ended on its own or was skipped
   [SONG_PLAYED]: (sock, { payload }) => {
     User.addPlay({ queueId: payload.queueId, roomId: sock.user.roomId })
+
+    // Points only for a song sung to its end, and only on the player's word:
+    // it is the one screen that knows whether a song ran out or was cut, and
+    // it is admin-only, so a guest's phone cannot pay itself by sending this.
+    if (sock.user.isAdmin && !payload.isSkipped) {
+      Points.addSong(sock.user.roomId, payload.queueId)
+      Points.push(sock.server, sock.user.roomId)
+    }
   },
   [PLAYER_EMIT_LEAVE]: (sock) => {
     sock._lastPlayerStatus = null

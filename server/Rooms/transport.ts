@@ -2,6 +2,7 @@ import Rooms from './Rooms.js'
 import Battle from '../Battle/Battle.js'
 import Queue from '../Queue/Queue.js'
 import Trivia from '../Trivia/Trivia.js'
+import Points from '../Points/Points.js'
 import {
   BATTLE_INVITE_CLEAR,
   BATTLE_TURN_CLEAR,
@@ -51,6 +52,8 @@ export default function setRoomTransport (io, roomId: number, status: string): v
   // throws away.
   Queue.clear(roomId)
   Trivia.resetScores(roomId)
+  Points.reset(roomId)
+  Points.push(io, roomId)
 
   // a round still in flight is asking a question on a queue row that no longer
   // exists, and would re-queue its successor into the room just emptied.

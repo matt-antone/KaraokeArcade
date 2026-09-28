@@ -51,3 +51,9 @@ docs/assets/css/deck-tokens.css
 
 
 designs/*
+
+# local scratch: motion-source exports, saved pages, brand renders, motion work
+exports/
+html pages/
+output/
+work/

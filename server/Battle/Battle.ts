@@ -3,6 +3,7 @@ import { db } from '../lib/Database.js'
 import getLogger from '../lib/Log.js'
 import Rooms, { STATUSES } from '../Rooms/Rooms.js'
 import Queue from '../Queue/Queue.js'
+import Points from '../Points/Points.js'
 import {
   BATTLE_INTRO_MS,
   BATTLE_INVITE_MS,
@@ -11,6 +12,8 @@ import {
   BATTLE_LOGO_MS,
   BATTLE_JUDGING_DEFAULT,
   BATTLE_METER_MS,
+  POINTS_BATTLE_TAKE_PART,
+  POINTS_BATTLE_WIN,
   BATTLE_SING_MS,
   BATTLE_VERSUS_MS,
   BATTLE_WINNER_MS,
@@ -122,6 +125,19 @@ interface ActiveBattle {
    *  part-way through and for matching an early end to the right beat. */
   turn: BattleTurn | null
   timer: ReturnType<typeof setTimeout> | null
+}
+
+/** Pay both fighters for a fight that reached its verdict: the winner the
+ *  win, the loser for taking part, and both for taking part on a draw. Read
+ *  at the end rather than when the verdict goes up, because the last grade can
+ *  land after the verdict beat has started (see score). */
+function payFighters (io, roomId: number, active: ActiveBattle): void {
+  const { challengerUserId, opponentUserId } = active.fighters
+  const { challengerScore: one, opponentScore: two } = active
+
+  Points.add(roomId, challengerUserId, one > two ? POINTS_BATTLE_WIN : POINTS_BATTLE_TAKE_PART)
+  Points.add(roomId, opponentUserId, two > one ? POINTS_BATTLE_WIN : POINTS_BATTLE_TAKE_PART)
+  Points.push(io, roomId)
 }
 
 /** roomId to the battle it is running. The server owns every beat boundary:
@@ -712,6 +728,7 @@ class Battle {
     const phase = active.beats[active.index]
 
     if (!phase) {
+      payFighters(io, roomId, active)
       this.stopRoom(roomId)
 
       io.to(Rooms.prefix(roomId)).emit('action', { type: BATTLE_TURN_CLEAR })
@@ -843,6 +860,34 @@ class Battle {
       type: BATTLE_TURN,
       payload: active.turn,
     })
+  }
+
+  /**
+   * The KJ called the fight off: take it off the stage for everyone, now.
+   *
+   * Only the running battle. A challenge thrown for some later row is still a
+   * challenge, so this leaves invites alone where stopRoom would not.
+   *
+   * The clear is the whole instruction. The player reads a cleared turn on a
+   * row it has seen beats for as a battle that is over and moves on by itself,
+   * so the caller must not also send it a next — that would be two advances
+   * and a singer's turn skipped behind the fight.
+   *
+   * Returns whether there was a fight to end.
+   */
+  static end (io, roomId: number): boolean {
+    const active = battles.get(roomId)
+    if (!active) return false
+
+    if (active.timer) clearTimeout(active.timer)
+    battles.delete(roomId)
+
+    // skipped once the verdict is already on screen is a fight that finished:
+    // the room saw who won, so the fighters are paid for it
+    if (active.turn?.phase === 'winner') payFighters(io, roomId, active)
+
+    io.to(Rooms.prefix(roomId)).emit('action', { type: BATTLE_TURN_CLEAR })
+    return true
   }
 
   /**

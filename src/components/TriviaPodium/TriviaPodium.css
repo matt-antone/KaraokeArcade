@@ -1,3 +1,4 @@
+/* Three columns on a shared floor: second, first, third. */
 .podium {
   display: flex;
   align-items: flex-end;
@@ -10,99 +11,104 @@
   align-items: center;
 }
 
-/* Sized per variant below, like everything else on a column. */
-.avatar {
+/* The character stands on the strip; the place sits behind it, top left. */
+.figure {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
   width: 100%;
 }
 
-/* Wraps rather than truncating: a clip box would slice the glow off square. */
-.name {
-  max-width: 100%;
-  overflow-wrap: anywhere;
-  font-family: var(--font-trivia);
-  text-transform: uppercase;
-  color: var(--arc-text-2);
-}
-
-.score {
-  font-family: var(--font-mono);
+.place {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-family: var(--font-display);
   font-weight: 700;
   line-height: 1;
-  color: var(--arc-mint);
+  color: var(--arc-dead-letter);
+}
+
+.avatar {
+  position: relative;
+}
+
+.strip {
+  width: 100%;
+  background: var(--arc-line);
+}
+
+/* A hard-edged block, ringed rather than lit. */
+.block {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 86%;
+  background: var(--arc-surface-hover);
+  box-shadow: inset 0 0 0 3px var(--arc-line);
+  font-family: var(--font-display);
+  text-align: center;
+}
+
+/* Points run to four digits, so the score is tabular and never wraps. */
+.score {
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--arc-text);
   font-variant-numeric: tabular-nums;
 }
 
-/* Hard-edged blocks: a podium is solid, so no radius. */
-.block {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  font-family: var(--font-trivia);
+/* Wraps rather than truncating: a name is who they are. */
+.name {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  line-height: 1.1;
+  color: var(--arc-text-2);
 }
 
-.p0 {
-  .name {
-    color: #fff;
-    text-shadow: 0 0 18px rgba(255, 214, 0, .6);
-  }
-
-  .score {
-    color: var(--arc-yellow);
-    text-shadow: 0 0 16px rgba(255, 214, 0, .9);
-  }
-
-  .block {
-    background: var(--arc-yellow);
-    color: var(--arc-ink-yellow);
-    box-shadow: 0 0 40px rgba(255, 214, 0, .55), inset 0 -7px 0 rgba(0, 0, 0, .3);
-  }
-}
-
-.p1 .block {
-  background: var(--arc-violet);
-  color: var(--arc-ink-violet);
-  box-shadow: 0 0 24px rgba(179, 136, 255, .45), inset 0 -6px 0 rgba(0, 0, 0, .3);
-}
-
-.p2 .block {
-  background: var(--arc-magenta);
-  color: #fff;
-  box-shadow: 0 0 24px rgba(255, 46, 136, .45), inset 0 -6px 0 rgba(0, 0, 0, .3);
+/* first place: the score in yellow, the only lit thing on the floor */
+.p0 .score {
+  color: var(--arc-yellow);
 }
 
 /* ---- the room ---- */
 .player {
-  gap: 18px;
+  gap: 16px;
 
-  .column { gap: 8px; width: 200px; }
-  .avatar { width: 88px; }
-  .name { font-size: 18px; }
-  .score { font-size: 32px; }
-  .block { font-size: 38px; }
-  .p0 { width: 230px; }
-  .p0 .avatar { width: 112px; }
-  .p0 .name { font-size: 24px; }
-  .p0 .score { font-size: 44px; }
-  .p0 .block { height: 154px; font-size: 54px; }
-  .p1 .block { height: 102px; }
-  .p2 .block { height: 82px; }
+  .column { width: 168px; }
+  .figure { height: 150px; }
+  .place { font-size: 120px; }
+  .avatar { width: 104px; }
+  .strip { height: 10px; }
+  .block { padding: 8px 6px; }
+  .score { font-size: 22px; }
+  .name { font-size: 11px; }
+  .p0 { width: 196px; }
+  .p0 .avatar { width: 128px; }
+  .p0 .block { min-height: 112px; }
+  .p1 .block { min-height: 96px; }
+  .p2 .block { min-height: 82px; }
 }
 
 /* ---- the hand ---- */
 .pad {
   gap: 8px;
 
-  .column { gap: 4px; width: 78px; }
-  .avatar { width: 40px; }
-  .name { font-size: 10px; }
-  .score { font-size: 18px; }
-  .block { font-size: 22px; }
-  .p0 { width: 88px; }
-  .p0 .avatar { width: 48px; }
-  .p0 .name { font-size: 12px; }
-  .p0 .score { font-size: 22px; }
-  .p0 .block { height: 84px; font-size: 30px; }
-  .p1 .block { height: 54px; }
-  .p2 .block { height: 44px; }
+  .column { width: 84px; }
+  .figure { height: 64px; }
+  .place { font-size: 48px; }
+  .avatar { width: 44px; }
+  .strip { height: 4px; }
+  .block { padding: 6px 4px; }
+  .score { font-size: 14px; }
+  .name { font-size: 11px; }
+  .p0 { width: 96px; }
+  .p0 .avatar { width: 52px; }
+  .p0 .block { min-height: 64px; }
+  .p1 .block { min-height: 52px; }
+  .p2 .block { min-height: 44px; }
 }

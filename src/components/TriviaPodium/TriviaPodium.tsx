@@ -15,19 +15,26 @@ interface TriviaPodiumProps {
 }
 
 /**
- * The top three, on blocks. Same bargain as TriviaTally: one component, both
- * surfaces, and the variant only changes scale.
+ * The top three, stood on blocks: the character, the place in big dead-letter
+ * type behind it, and the block carrying the score and the name. Same bargain
+ * as TriviaTally: one component, both surfaces, and the variant only changes
+ * scale.
  */
 const TriviaPodium = ({ scores, variant }: TriviaPodiumProps) => (
   <div className={clsx(styles.podium, styles[variant])}>
     {PLACES.filter(place => scores[place]).map(place => (
       <div key={scores[place].userId} className={clsx(styles.column, styles[`p${place}`])}>
-        {/* the face, not the photo: a room reads three characters across a bar
-            faster than it reads three names */}
-        <UserAvatar className={styles.avatar} avatarId={scores[place].avatarId} size={80} />
-        <div className={styles.name} translate='no'>{scores[place].name}</div>
-        <div className={styles.score}>{scores[place].score}</div>
-        <div className={styles.block}>{place + 1}</div>
+        <div className={styles.figure}>
+          <span className={styles.place} aria-hidden='true'>{place + 1}</span>
+          {/* the face, not the photo: a room reads three characters across a
+              bar faster than it reads three names */}
+          <UserAvatar className={styles.avatar} avatarId={scores[place].avatarId} size={80} />
+        </div>
+        <div className={styles.strip} />
+        <div className={styles.block}>
+          <span className={styles.score}>{scores[place].score}</span>
+          <span className={styles.name} translate='no'>{scores[place].name}</span>
+        </div>
       </div>
     ))}
   </div>

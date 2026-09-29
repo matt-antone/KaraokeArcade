@@ -1,5 +1,5 @@
-/* Placeholder layout until the new designs land: plain document flow, the same
-   column Account and Settings use. */
+/* 08b Tonight's scores: HUD title, a "You" strip, then one row per singer.
+   Plain document flow; the fixed chrome is cleared with CoreLayout's heights. */
 .container {
   max-width: var(--content-max);
   margin: 0 auto;
@@ -9,41 +9,100 @@
     calc(var(--nav-h, 0px) + var(--gap-5));
 }
 
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
 .title {
-  margin: 0 0 var(--gap-4);
-  font-size: 20px;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 28px;
+  color: var(--arc-yellow);
+  --text-shadow-color: var(--arc-magenta);
+  text-shadow: var(--text-shadow-hard);
+}
+
+.count {
+  font-family: var(--font-display);
+  font-size: 12px;
+  color: var(--arc-muted);
+}
+
+.you {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-3);
+  margin-top: var(--gap-4);
+  padding: var(--gap-3) 12px;
+  background: var(--arc-surface);
+  box-shadow: inset 0 0 0 2px var(--arc-surface-hover);
+  font-family: var(--font-display);
+}
+
+.youLabel {
+  flex: 1;
+  font-size: 11px;
+  color: var(--arc-muted);
+}
+
+.youRank {
+  font-size: 14px;
+  color: var(--arc-mint);
+}
+
+.youPoints {
+  font-size: 18px;
+  color: var(--arc-yellow);
 }
 
 .empty {
-  color: var(--ink-2);
+  margin: var(--gap-4) 0 0;
+  color: var(--arc-text-2);
 }
 
 .list {
-  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: var(--gap-4) 0 0;
   padding: 0;
   list-style: none;
 
   & li {
     display: flex;
     align-items: center;
-    gap: var(--gap-3);
-    padding: var(--gap-2) 0;
-    border-bottom: 1px solid var(--hairline);
+    gap: 12px;
+    /* a MINIMUM: the avatar sets the height, never a fixed box */
+    min-height: var(--target);
+    padding: 6px 8px;
+    font-family: var(--font-display);
   }
 }
 
-.me {
-  font-weight: 700;
+/* the current user: lit ground and a mint pixel ring */
+.list .me {
+  background: var(--arc-surface);
+  box-shadow: inset 0 0 0 2px var(--arc-mint);
+  color: var(--arc-mint);
 }
 
 .place {
-  width: 2ch;
-  text-align: right;
+  width: 28px;
+  flex: none;
+  font-size: 14px;
+  color: var(--arc-muted);
   font-variant-numeric: tabular-nums;
 }
 
+.list li:nth-child(-n+3) .place {
+  color: var(--arc-gold);
+}
+
 .avatar {
-  width: 34px;
+  width: 40px;
   flex: none;
 }
 
@@ -53,8 +112,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 13px;
 }
 
 .points {
+  flex: none;
+  font-size: 16px;
+  color: var(--arc-yellow);
   font-variant-numeric: tabular-nums;
 }

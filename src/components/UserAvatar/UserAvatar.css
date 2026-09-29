@@ -1,4 +1,4 @@
-/* Always square with a 3px radius, always sitting in a recessed well. The
+/* Always square, always sitting in a recessed well. The
    fallback glyph is unlit, like every other empty indicator. Size it from
    the outside via the container the caller supplies. */
 .container {

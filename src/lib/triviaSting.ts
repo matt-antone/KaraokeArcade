@@ -94,10 +94,11 @@ function palette (cv: HTMLCanvasElement): Palette {
   }
 }
 
-/** Michroma tracked .13em, the wordmark's own setting. Drawn a glyph at a time
- *  so the tracking is ours and the reveal can be per-letter. */
+/** Silkscreen, the arcade's display face, tracked .13em. Drawn a glyph at a
+ *  time so the tracking is ours and the reveal can be per-letter. A canvas
+ *  cannot wait for a face, so the caller loads it first (TriviaMark does). */
 const setFace = (ctx: CanvasRenderingContext2D, size: number) => {
-  ctx.font = `400 ${size}px Michroma, 'Arial Narrow', sans-serif`
+  ctx.font = `400 ${size}px Silkscreen, ui-monospace, monospace`
   ctx.textBaseline = 'middle'
   ctx.textAlign = 'left'
 }
@@ -199,7 +200,7 @@ interface TriviaStingOptions {
    *  small placement wants. */
   mode?: 'sting' | 'still'
   /** Drops the nameplate and the word: the registers alone, for sizes where
-   *  Michroma at .13em would be a smudge. */
+   *  a tracked word would be a smudge. */
   glyph?: boolean
   /** Stretches the same choreography. Defaults to 2500. */
   durationMs?: number

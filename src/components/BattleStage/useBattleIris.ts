@@ -15,19 +15,20 @@ import { useEffect, useRef, useState } from 'react'
  * and a percentage of the frame is the only form the CSS can use.
  */
 
-/** The palette's four burst tones. Named rather than passed as hex at every
- *  call site, because the colour of a burst says which side is acting and
- *  three call sites with three slightly different reds is how that stops
- *  meaning anything. */
+/** The four burst tones, as variables.css tokens. Named rather than passed at
+ *  every call site, because the colour of a burst says which side is acting
+ *  and three call sites with three slightly different reds is how that stops
+ *  meaning anything. They land in an inline background/border colour, so a
+ *  var() resolves against the frame like any stylesheet value would. */
 export const BATTLE_TONE = {
   /** the local player, and every primary action */
-  gold: '#ffd166',
+  gold: 'var(--arc-gold)',
   /** side one: the challenger */
-  one: '#ff8a8a',
+  one: 'var(--arc-red)',
   /** side two: the opponent */
-  two: '#7fe3a5',
+  two: 'var(--arc-green)',
   /** going backwards, which is nobody's colour */
-  quiet: '#4a4e54',
+  quiet: 'var(--arc-line)',
 }
 
 export interface Iris {

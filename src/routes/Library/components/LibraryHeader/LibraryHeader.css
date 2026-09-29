@@ -5,34 +5,50 @@
   flex-direction: column;
 }
 
-/* Search is a bare field with no well: the header itself is the surface. */
+/* The field and the starred key are two 44px wells side by side. The field
+   rings amber while it holds a query; the star lights solid yellow when on. */
 .searchRow {
   display: flex;
   align-items: center;
+  gap: var(--gap-3);
+  margin-top: var(--gap-5);
+  padding: 0 var(--gutter);
+}
+
+.field {
+  display: flex;
+  flex: 1;
+  align-items: center;
   gap: var(--gap-2);
-  padding: var(--gap-2) var(--gutter);
+  min-width: 0;
+  min-height: var(--target);
+  padding: 0 var(--gap-4);
+  background: var(--arc-deep);
+  box-shadow: var(--well-deep);
 }
 
-.magnifier {
-  flex-shrink: 0;
-  color: var(--ink-3);
+.fieldActive {
+  box-shadow: inset 0 0 0 2px var(--vu);
 }
 
-.magnifierActive {
-  color: var(--vu);
-}
-
-.searchInput {
+/* Scoped under .field so it outranks global.css's input[type="search"] well
+   (0,1,1): the field is the well here, and a second one inside it shows as
+   slivers at both ends. */
+.field .searchInput {
   flex: 1;
   min-width: 0;
   min-height: var(--target);
   padding: 0;
-  font-size: var(--text-xl);
+  font-size: var(--text-l);
   color: var(--ink);
   background: transparent;
   box-shadow: none;
   border: none;
   border-radius: 0;
+
+  &::placeholder {
+    color: var(--ink-3);
+  }
 
   &:focus {
     background: transparent;
@@ -40,35 +56,42 @@
   }
 }
 
-.btnClear {
-  flex-shrink: 0;
-  color: var(--vu);
+.field .searchInput:focus {
+  box-shadow: none;
 }
 
-/* the favourite control is a text star that lights amber — never an emoji */
+.btnClear {
+  flex-shrink: 0;
+  color: var(--ink-3);
+}
+
+/* the favourite control is a text star — never an emoji */
 .btnStar {
   flex-shrink: 0;
-  min-width: var(--target);
+  width: var(--target);
   min-height: var(--target);
-  font-size: 17px;
+  font-size: var(--text-2xl);
   line-height: 1;
-  color: var(--ink-5);
-  background: transparent;
+  color: var(--arc-yellow);
+  background: var(--arc-deep);
   border: none;
+  box-shadow: var(--well-deep);
   cursor: pointer;
 }
 
 .starActive {
-  color: var(--vu);
+  color: var(--on-vu);
+  background: var(--arc-yellow);
+  box-shadow: inset 0 0 0 2px var(--arc-yellow);
 }
 
 .tabRow {
-  padding: 0 var(--gutter) var(--gap-3);
+  padding: var(--gap-4) var(--gutter) var(--gap-2);
 }
 
 /* Battle mode. Above the search rather than below it, because it changes what
    every tap in the list means and a modifier has to be read before the thing it
-   modifies. The crimson edge is the challenger's channel, the same one the TV
+   modifies. The magenta ring is the alert channel, the same one the TV
    and the queue row use, so the three surfaces agree about who is who.
 
    Sized off the same tokens as the rows below it: entering and leaving battle
@@ -79,9 +102,8 @@
   align-items: center;
   gap: var(--gap-3);
   padding: var(--gap-2) var(--gutter);
-  border-left: 2px solid var(--ans-1-hi);
-  background-color: var(--key-well);
-  box-shadow: var(--well);
+  background-color: var(--arc-surface);
+  box-shadow: inset 0 0 0 2px var(--arc-magenta);
 }
 
 .battleFor {
@@ -121,9 +143,8 @@
   align-items: center;
   gap: var(--gap-2);
   padding: var(--gap-2) var(--gap-3);
-  margin-top: var(--gap-2);
-  border-radius: var(--radius-panel);
-  background-color: var(--key-well);
+  margin: var(--gap-3) var(--gutter) 0;
+  background-color: var(--arc-surface);
   box-shadow: var(--well);
   color: var(--ink-2);
   font-size: var(--text-s);

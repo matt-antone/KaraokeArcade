@@ -9,3 +9,46 @@
   margin: var(--gap-3) 0 0;
   color: var(--ink-2);
 }
+
+.current {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-3);
+}
+
+.roomName {
+  font-size: var(--text-m);
+  overflow-wrap: anywhere;
+}
+
+/* Leave keys: dark ink on magenta. White on magenta is only 3.5:1; --arc-deep
+   on --arc-magenta clears AA at any size, so both keys stay Silkscreen. */
+.leave,
+.confirmLeave {
+  min-height: var(--target);
+  padding: var(--gap-2) var(--gap-4);
+  font-family: var(--font-display);
+  font-size: var(--text-m);
+  letter-spacing: var(--silkscreen-tracking);
+  text-transform: uppercase;
+  color: var(--arc-magenta);
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--arc-magenta);
+  border: 0;
+  border-radius: var(--radius-key);
+  cursor: pointer;
+}
+
+.confirmLeave.confirmLeave {
+  width: 100%;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--arc-deep);
+  background: var(--arc-magenta);
+  box-shadow: var(--bevel-alert);
+}
+
+.leaveModal {
+  --pixel-border-color: var(--arc-magenta);
+}

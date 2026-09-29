@@ -1,7 +1,21 @@
+/* A new or existing account. The fields are the tall dark wells of Arcade
+   Flow v2, 02. */
 .container {
   display: flex;
   flex-direction: column;
-  gap: var(--gap-2);
+  gap: 12px;
+
+  input,
+  select {
+    min-height: 52px;
+    padding: 0 16px;
+    font-size: var(--text-xl);
+    box-shadow: var(--well-deep);
+  }
+
+  button[type='submit'] {
+    margin-top: var(--gap-2);
+  }
 }
 
 /* the avatar is a square well, not a full-width row */

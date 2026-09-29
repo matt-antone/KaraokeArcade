@@ -1,5 +1,5 @@
-/* The signature readout. Unlit segments are recessed wells; lit ones sit flush
-   and light. Colour comes from a segment's POSITION on the scale, not from the
+/* The signature readout. Unlit segments are dark cells; lit ones are flat
+   colour. Colour comes from a segment's POSITION on the scale, not from the
    value — so the meter reads as a calibrated strip that fills, the way a real
    VU register does, rather than a bar that changes colour as it grows. */
 
@@ -19,14 +19,11 @@
 
 .seg {
   flex: 1;
-  border-radius: 1px;
-  background: var(--key-well);
-  box-shadow: var(--well);
+  background: var(--key);
 }
 
-/* lit: the segment sits flush in the panel and carries signal */
+/* lit: the segment carries signal */
 .lit {
-  box-shadow: none;
   background: var(--vu-dim);
 }
 

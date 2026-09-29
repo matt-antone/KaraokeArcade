@@ -1,0 +1,23 @@
+/* Empty and no-match states: a Silkscreen amber headline over plain body copy.
+   The class is doubled so it outranks TextOverlay's own heading rules. */
+.empty.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gap-4);
+  padding: 0 var(--gap-6);
+
+  h1 {
+    margin: 0;
+    font-size: var(--text-3xl);
+    color: var(--vu);
+    text-shadow: none;
+  }
+
+  p {
+    font-size: var(--text-xl);
+    line-height: 1.4;
+    color: var(--ink-2);
+    text-wrap: pretty;
+  }
+}

@@ -1,5 +1,6 @@
 /* Everything the player draws over (or instead of) the video. Overlays that sit
-   over playing video are solid corner panels, never washes over the whole frame. */
+   over playing video are solid bars, never washes over the whole frame. Sized
+   in vh from the design's 540px-tall TV canvas: 1px there is 0.185vh here. */
 .container {
   font-family: var(--font-body);
   position: absolute;
@@ -9,55 +10,66 @@
   justify-content: center;
   flex-direction: column;
   color: var(--ink);
-
-  /* Every silkscreen label on the stage steps up one ink level from the
-     utility's --ink-3. On a phone --ink-3 is correct for meta; on a room TV
-     these are the words read from the back of the room, and the darker step
-     costs legibility. Nested so it outranks the global utility without
-     changing it — the utility is right everywhere else. */
-  .stateLabel,
-  .stateFooter,
-  .comingUpHeading,
-  .queueDepthLabel {
-    color: var(--ink-2);
-  }
 }
-
-/* the intermission gets no wash: the thread field behind it *is* the background,
-   and an opaque --stage-wash over it would hide the one state it exists for. */
 
 /* --- empty / errored ---------------------------------------------------- */
 
 .stateLabel {
+  font-family: var(--font-display);
   font-size: 1.6vh;
   margin-bottom: 1.5vh;
+  color: var(--ink-2);
 }
 
 .stateFooter {
+  font-family: var(--font-display);
   font-size: 1.4vh;
   margin-top: 1.5vh;
+  color: var(--ink-2);
 }
 
-/* the one label that is not ink: a fault reads red. Matches the specificity of
-   the --ink-2 block above, and wins by coming after it. */
+/* the one label that is not ink: a fault reads magenta */
 .container .fault {
   color: var(--alert);
 }
 
+/* the empty queue, said in the join screen's panel under the join code */
+.emptyNote {
+  position: absolute;
+  left: 8.9vh;
+  bottom: 8vh;
+}
+
+.emptyNote .stateLabel {
+  font-size: 2.4vh;
+  margin-bottom: 1vh;
+  color: var(--arc-muted);
+}
+
+.emptyPrompt {
+  font-family: var(--font-display);
+  font-size: 3.3vh;
+  color: var(--arc-text);
+}
+
 /* --- idle --------------------------------------------------------------- */
 
-/* a knob: the only circle in the system besides the real ones */
+/* The play key, over the crowd on the join screen: the amber action key,
+   square like every key. Browsers won't autoplay without a tap. */
 .playKey {
+  position: absolute;
+  left: calc(72% - 13vh);
+  top: calc(50% - 13vh);
   display: grid;
   place-items: center;
   width: 26vh;
   height: 26vh;
   padding: 0;
   border: 0;
-  border-radius: var(--radius-round);
-  background: var(--key-face);
-  box-shadow: var(--bevel);
-  color: var(--vu);
+  border-radius: var(--radius-key);
+  background: var(--key-face-vu);
+  box-shadow: var(--bevel-vu);
+  color: var(--arc-on-amber);
   cursor: pointer;
 
   svg {
@@ -71,8 +83,7 @@
   }
 }
 
-/* upper-right, clear of the lyric band. Always up on the paused stage; over
-   playing video it is revealed by pointer activity and clears itself again. */
+/* upper-right, clear of the lyric band. Always up on the paused stage. */
 .fullscreenKey {
   position: absolute;
   top: 2vh;
@@ -99,59 +110,96 @@
   }
 }
 
-/* --- intermission ------------------------------------------------------- */
+/* --- intermission: 11a · on stage next ------------------------------------ */
 
-.nextSong {
-  text-align: center;
-  max-width: 80vw;
-  margin-bottom: 2vh;
+/* The next singer's own stage, full bleed. The shared plate is layered under
+   it, so a fighter with no location art still stands somewhere. */
+.stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background-color: var(--arc-ground);
+  background-position: center;
+  background-size: cover;
+  image-rendering: pixelated;
 }
 
+/* the right-hand half darkens so the billing reads */
+.stageScrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 0 38%, var(--scrim) 52%);
+}
+
+/* singing size: 460 of the design's 540 */
+.fighter {
+  position: absolute;
+  left: -7.4vh;
+  bottom: -2.6vh;
+  height: 85vh;
+  aspect-ratio: 1;
+  image-rendering: pixelated;
+}
+
+.billing {
+  position: absolute;
+  left: 50%;
+  right: 7.4vh;
+  top: 17vh;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2.2vh;
+}
+
+.billingLabel {
+  font-family: var(--font-display);
+  font-size: 3vh;
+  color: var(--arc-mint);
+}
+
+.billingName {
+  max-width: 100%;
+  font-family: var(--font-display);
+  font-size: 7.4vh;
+  line-height: 1;
+  color: var(--arc-amber);
+  overflow-wrap: anywhere;
+}
+
+/* a song title always shows in full: it wraps, it never ellipsises */
 .nextSongTitle {
-  font-size: 3.4vh;
-  font-weight: var(--weight-semibold);
-  line-height: 1.2;
+  font-size: 6.3vh;
+  font-weight: var(--weight-bold);
+  line-height: 1.1;
   text-wrap: pretty;
+  color: var(--arc-text);
 }
 
 .nextSongArtist {
-  font-size: 2.4vh;
-  line-height: 1.2;
-  color: var(--ink-2);
+  font-size: 3.3vh;
+  color: var(--arc-text-2);
 }
 
-.nextAvatar {
-  width: 22vh;
-  height: 22vh;
-  margin-bottom: 2vh;
-}
-
-/* the fallback avatar glyph reads as "off" against the stage wash */
-.container .nextAvatar svg {
-  color: var(--ink-5);
-}
-
-/* the countdown's 200ms tick — one of the system's two ambient motions.
-   Declared here rather than reused from variables.css: css-loader scopes
-   animation names per module, so a global keyframe name would never resolve. */
+/* the countdown's 200ms tick. Declared here rather than reused from
+   variables.css: css-loader scopes animation names per module. */
 @keyframes tick {
   from { opacity: 0.55; transform: translateY(-2px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 .countdown {
-  margin-top: 1vh;
+  --text-shadow-color: var(--arc-magenta);
+  font-family: var(--font-display);
+  font-size: 7.4vh;
+  line-height: 1;
+  color: var(--arc-yellow);
+  text-shadow: 0.56vh 0.56vh 0 var(--text-shadow-color);
   animation: tick 200ms var(--ease-key);
 }
 
-/* The trivia lead-in. The mark's card owns the middle of the stage — it is
-   60vw wide and reaches within a tenth of the frame's height — so the clock
-   takes a corner rather than the centre, and keeps the headline's own size
-   rather than the countdown numeral's. Centred and full size it landed across the bottom row
-   of segments. Same tick either way: one clock, two placements.
-
-   Upper right, sharing the QR panel's right inset: the lower right is where
-   the QR lives, and one corner cannot hold both. */
+/* The trivia or battle lead-in: the mark owns the middle of the stage, so the
+   clock takes the upper-right corner. The lower right is the QR's. */
 .leadInCountdown {
   position: absolute;
   top: 3vh;
@@ -159,22 +207,65 @@
   animation: tick 200ms var(--ease-key);
 }
 
-/* one line under the countdown */
+/* the two singers after the next one, as cards along the bottom */
 .comingUp {
-  max-width: 90vw;
-  margin-top: 2.5vh;
-  font-size: 2.2vh;
-  line-height: 1.2;
-  text-align: center;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
-  color: var(--ink-2);
+  position: absolute;
+  left: 50%;
+  right: 7.4vh;
+  bottom: 5.2vh;
+  display: flex;
+  flex-direction: column;
+  gap: 1.85vh;
 }
 
 .comingUpHeading {
-  font-size: 1.4vh;
-  margin-bottom: 0.6vh;
+  font-family: var(--font-display);
+  font-size: 2.4vh;
+  color: var(--arc-muted);
+}
+
+.comingUpCards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.85vh;
+}
+
+.comingUpCard {
+  display: flex;
+  align-items: center;
+  gap: 1.85vh;
+  min-width: 0;
+  padding: 1.5vh;
+  background: var(--arc-surface);
+  box-shadow: inset 0 0 0 0.37vh var(--arc-line);
+}
+
+.comingUpAvatar {
+  flex: none;
+  width: 7.4vh;
+  height: 7.4vh;
+  background: var(--arc-surface-hover);
+}
+
+.comingUpText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.37vh;
+  min-width: 0;
+}
+
+.comingUpSinger {
+  font-family: var(--font-display);
+  font-size: 2vh;
+  color: var(--arc-mint);
+}
+
+.comingUpTitle {
+  font-size: 2.6vh;
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* --- queue depth -------------------------------------------------------- */
@@ -191,6 +282,8 @@
 }
 
 .queueDepthLabel {
+  font-family: var(--font-display);
   font-size: 1.1vh;
   flex-shrink: 0;
+  color: var(--ink-2);
 }

@@ -2,17 +2,20 @@ import React, { useState } from 'react'
 import { battleSingerOrDefault } from 'lib/battleSingers'
 import { updateAccount } from 'store/modules/user'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
+import Hud from 'components/Header/Hud/Hud'
+import ScoringTutorial from 'components/ScoringTutorial/ScoringTutorial'
+import { hasSeenScoring, markScoringSeen } from 'components/ScoringTutorial/scoringSeen'
 import BattleSingerSelect from './BattleSingerSelect'
-import frameStyles from './BattleFrame.css'
+import styles from './AvatarPicker.css'
 
 /**
  * Choosing which fighter you are, as an account rather than as a battle.
  *
  * The grid itself is BattleSingerSelect, unchanged — it already knows about
- * groups, room prefs and the three-way selection affordance, and a second
+ * groups, room prefs and the selected preview, and a second
  * nine-tile grid is how the two end up a step apart the first time the roster
  * grows. All this adds is a selection that starts somewhere sensible and a
- * NEXT that reports what it landed on.
+ * key that reports what it landed on.
  */
 interface AvatarPickerProps {
   /** Today's choice, if there is one. Absent at the sign-in gate, which is the
@@ -22,7 +25,7 @@ interface AvatarPickerProps {
 }
 
 const AvatarPicker = ({ avatarId, onChoose }: AvatarPickerProps) => {
-  // Seeded rather than empty, so NEXT is live on arrival: an unpicked grid
+  // Seeded rather than empty, so the key is live on arrival: an unpicked grid
   // would make the key the thing standing between somebody and the app.
   const [selectedId, setSelectedId] = useState(() => battleSingerOrDefault(avatarId).id)
 
@@ -43,15 +46,21 @@ export default AvatarPicker
  * to the account.
  *
  * Its own component rather than a branch inside the route table, because what
- * happens when somebody presses NEXT is a store concern and RequireAuth is a
+ * happens when somebody presses Select is a store concern and RequireAuth is a
  * routing one. There is nothing to close afterwards — the gate stops rendering
  * the moment the store carries an avatarId.
  */
 export const AvatarGate = () => {
   const dispatch = useAppDispatch()
   const avatarId = useAppSelector(state => state.user.avatarId)
+  const userId = useAppSelector(state => state.user.userId)
+  const room = useAppSelector(state => (state.user.roomId === null
+    ? undefined
+    : state.rooms.entities[state.user.roomId]?.name))
+  // held while the scoring tutorial is up, then written on Continue
+  const [pending, setPending] = useState<string | null>(null)
 
-  const handleChoose = (chosen: string) => {
+  const save = (chosen: string) => {
     const data = new FormData()
     data.append('avatarId', chosen)
 
@@ -60,12 +69,28 @@ export const AvatarGate = () => {
     void dispatch(updateAccount({ data, isSilent: true }))
   }
 
+  // A first pick goes by way of how scoring works, once per account on this
+  // phone. The write waits for Continue because the gate stops rendering the
+  // moment the store carries an avatarId, and the tutorial with it.
+  const handleChoose = (chosen: string) => {
+    if (hasSeenScoring(userId)) save(chosen)
+    else setPending(chosen)
+  }
+
+  const handleContinue = () => {
+    markScoringSeen(userId)
+    if (pending) save(pending)
+  }
+
   // The cabinet's own full-screen shell, lifted over everything else fixed on
   // the page (the bottom chrome at 99, battle screens at 100): nothing in the
   // app may sit on top of the one question it is waiting on.
   return (
-    <div className={frameStyles.screen} style={{ zIndex: 1000 }}>
-      <AvatarPicker avatarId={avatarId} onChoose={handleChoose} />
+    <div className={styles.gate}>
+      <Hud room={room} />
+      {pending
+        ? <ScoringTutorial singer={battleSingerOrDefault(pending)} onContinue={handleContinue} />
+        : <AvatarPicker avatarId={avatarId} onChoose={handleChoose} />}
     </div>
   )
 }

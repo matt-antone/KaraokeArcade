@@ -8,7 +8,7 @@ import type { RowComponentProps } from 'react-window'
 
 // estimate only: rows are measured once rendered (see PaddedList), because a
 // song title always shows in full and a wrapped title makes the row taller
-const ROW_HEIGHT_SONG_WITH_ARTIST = 59 // --row-song + 3px margin
+const ROW_HEIGHT_SONG_WITH_ARTIST = 56 // --row-song, seam rule included
 
 // stable identity: PaddedList keys its measurement cache off this function
 const rowHeight = () => ROW_HEIGHT_SONG_WITH_ARTIST

@@ -1,5 +1,5 @@
-/* A hint seamed to the top of the nav, sharing its brushed faceplate so it
-   reads as one more panel on the deck rather than a notification. It sits in
+/* A hint seamed to the top of the nav, sharing its surface so it reads as
+   one more panel on the cabinet rather than a notification. It sits in
    the footer stack, so CoreLayout measures it into --nav-h and the views pad
    themselves clear of it. */
 
@@ -9,7 +9,7 @@
   gap: var(--gap-3);
   width: 100%;
   padding: var(--gap-3) var(--gutter);
-  background: var(--brush);
+  background: var(--faceplate);
   border-top: var(--hair-rule);
 }
 
@@ -22,9 +22,11 @@
 
 .title {
   display: block;
-  font-size: var(--text-l);
-  font-weight: var(--weight-semibold);
-  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: var(--display-s);
+  font-weight: var(--weight-regular);
+  text-transform: uppercase;
+  color: var(--arc-yellow);
 }
 
 .dismiss {

@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react'
-import clsx from 'clsx'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
 import type { RootState } from 'store/store'
 import { Routes, Route, useLocation } from 'react-router'
@@ -16,6 +15,8 @@ import getWaits from 'routes/Queue/selectors/getWaits'
 import LibraryHeader from 'routes/Library/components/LibraryHeader/LibraryHeader'
 import QueueHeader from 'routes/Queue/components/QueueHeader/QueueHeader'
 import Logo from 'components/Logo/Logo'
+import Hud from './Hud/Hud'
+import UpNextAlert from './UpNextAlert/UpNextAlert'
 import BattleStrip from './BattleStrip/BattleStrip'
 import ProgressBar from './ProgressBar/ProgressBar'
 import YourTurn from './YourTurn/YourTurn'
@@ -26,6 +27,9 @@ const getIsAtQueueEnd = (state: RootState) => state.status.isAtQueueEnd
 const getQueueId = (state: RootState) => state.status.queueId
 const getUserId = (state: RootState) => state.user.userId
 
+/** Seconds out at which the full-screen "you're up next" alert takes over. */
+const UP_NEXT_ALERT_SECONDS = 60
+
 /**
  * The singer's next song: its queue id, the wait until it in seconds, and its
  * title. One lookup — the headline, the meter and the label all describe the
@@ -33,8 +37,8 @@ const getUserId = (state: RootState) => state.user.userId
  * playhead, so the wait ticks down every second the player reports.
  */
 const getMyNext = createSelector(
-  [getMyUpcoming, getWaits, (state: RootState) => ensureState(state.queue).entities, (state: RootState) => state.songs],
-  (upcoming, waits, queueItems, songs): { queueId?: number, wait?: number, title?: string } => {
+  [getMyUpcoming, getWaits, (state: RootState) => ensureState(state.queue).entities, (state: RootState) => state.songs, (state: RootState) => state.artists],
+  (upcoming, waits, queueItems, songs, artists): { queueId?: number, wait?: number, title?: string, artist?: string } => {
     const queueId = upcoming[0]
     const item = queueItems[queueId]
 
@@ -42,6 +46,7 @@ const getMyNext = createSelector(
       queueId,
       wait: waits[queueId],
       title: item ? songs.entities[item.songId]?.title : undefined,
+      artist: item ? artists.entities[songs.entities[item.songId]?.artistId]?.name : undefined,
     }
   },
 )
@@ -80,7 +85,10 @@ const Header = React.forwardRef<HTMLDivElement, HeaderProps>(({ onBattle }, ref)
   const isUpNow = useAppSelector(getIsUpNow)
   const { position, rotationSize } = useAppSelector(getMyRotation)
   const songCount = useAppSelector(getMyUpcoming).length
-  const { queueId: nextQueueId, wait, title: nextSong } = useAppSelector(getMyNext)
+  const { queueId: nextQueueId, wait, title: nextSong, artist: nextArtist } = useAppSelector(getMyNext)
+  const avatarId = useAppSelector(state => state.user.avatarId)
+  // the song whose alert was acknowledged; the next song alerts afresh
+  const [ackedQueueId, setAckedQueueId] = useState<number>()
 
   // The meter's full scale is the singer's OWN wait when this song became their
   // next, remembered so it survives the wait ticking down. Measuring against the
@@ -116,6 +124,9 @@ const Header = React.forwardRef<HTMLDivElement, HeaderProps>(({ onBattle }, ref)
       ? false
       : state.rooms.entities[state.user.roomId]?.prefs?.battle?.isEnabled === true
   ))
+
+  const isUpNext = wait !== undefined && wait <= UP_NEXT_ALERT_SECONDS && !isUpNow && !isPaused
+    && nextQueueId !== ackedQueueId
 
   const location = useLocation()
   const isPlayer = location.pathname.replace(/\/$/, '').endsWith('/player')
@@ -168,12 +179,17 @@ const Header = React.forwardRef<HTMLDivElement, HeaderProps>(({ onBattle }, ref)
 
   return (
     <div className={styles.container} ref={ref}>
-      {/* the wordmark and the room you are in. Not on the player, which is a
-          room fixture rather than a screen someone navigates. */}
+      {/* the HUD and the wordmark. Not on the player, which is a room fixture
+          rather than a screen someone navigates. */}
       {!isPlayer && (
-        <div className={styles.wordmarkRow} ref={wordmarkRef}>
-          <Logo withMark />
-          {roomName && <span className={clsx('silkscreen', styles.room)} translate='no'>{roomName}</span>}
+        <div ref={wordmarkRef}>
+          <Hud
+            room={roomName}
+            right={position ? `${position}/${rotationSize}` : undefined}
+          />
+          <div className={styles.wordmarkRow}>
+            <Logo withMark />
+          </div>
         </div>
       )}
 
@@ -185,8 +201,9 @@ const Header = React.forwardRef<HTMLDivElement, HeaderProps>(({ onBattle }, ref)
           carries an idle state for that, so it is always there to be reached.
 
           Still not on the player: that screen is a fixture in the room, not a
-          phone somebody is holding. */}
-      {!isPlayer
+          phone somebody is holding. And not before sign-in, where there is no
+          turn to report and the design shows the HUD alone. */}
+      {!isPlayer && userId !== null
         && (
           <YourTurn
             inHeader
@@ -212,6 +229,17 @@ const Header = React.forwardRef<HTMLDivElement, HeaderProps>(({ onBattle }, ref)
 
           Not on the player: that screen is drawing the fight. */}
       {!isPlayer && <BattleStrip />}
+
+      {!isPlayer && isUpNext && (
+        <UpNextAlert
+          title={nextSong}
+          artist={nextArtist}
+          wait={wait}
+          avatarId={avatarId}
+          onReady={() => setAckedQueueId(nextQueueId)}
+          onPause={() => dispatch(setPaused({ isPaused: true }))}
+        />
+      )}
 
       {isAdmin && !isPlayer
         && (

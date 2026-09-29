@@ -111,6 +111,13 @@ const QueueList = () => {
     }
   }
 
+  // 1, 2, 3 down the turns still to come. History has no line to be in, and
+  // the row on stage is not waiting.
+  const positions = new Map<number, number>()
+  if (queueTab !== 'history') {
+    result.filter(qId => placeOf(qId).isUpcoming).forEach((qId, i) => positions.set(qId, i + 1))
+  }
+
   const renderSong = (qId: number, item: QueueItemData, dragHandleProps?: DraggableProvidedDragHandleProps | null) => {
     const { isCurrent, isUpcoming } = placeOf(qId)
     const flags = songRowFlags(item, isCurrent, isUpcoming)
@@ -129,6 +136,7 @@ const QueueList = () => {
         isStarred={starredSongs.includes(item.songId)}
         isUpcoming={isUpcoming}
         pctPlayed={isCurrent ? position / duration * 100 : 0}
+        position={positions.get(qId)}
         showStar={queueTab !== 'me'}
         starCount={starCounts.songs[item.songId] || 0}
         title={songs.entities[item.songId].title}

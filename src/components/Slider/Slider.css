@@ -20,7 +20,6 @@
     width: 100%;
     background-color: var(--key-well);
     box-shadow: var(--well);
-    border-radius: 4px;
     cursor: pointer;
   }
 
@@ -29,14 +28,13 @@
     height: var(--track-height);
     top: calc(50% - (var(--track-height) / 2));
     left: 0;
-    border-radius: 4px;
     background-color: var(--vu);
     cursor: pointer;
   }
 }
 
-/* the machined cap: a raised key, not a knob — knobs and radios are the only
-   circles in the system. rc-slider sets `left` + `transform: translateX(-50%)`
+/* the cap: a raised amber key, not a knob — the Knob is the only circle in
+   the system. rc-slider sets `left` + `transform: translateX(-50%)`
    inline, so vertical centering has to come from top/margin, not transform. */
 .handle {
   position: absolute;
@@ -44,9 +42,8 @@
   width: 14px;
   height: 28px;
   margin-top: -14px;
-  border-radius: 2px;
-  background: var(--key-face);
-  box-shadow: var(--bevel);
+  background: var(--vu);
+  box-shadow: var(--bevel-vu);
   cursor: pointer;
   touch-action: pan-x;
   outline: none;

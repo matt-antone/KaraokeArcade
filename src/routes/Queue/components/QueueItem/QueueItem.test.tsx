@@ -120,6 +120,18 @@ describe('QueueItem wait chip', () => {
   })
 })
 
+describe('QueueItem position', () => {
+  it('prints its place in line when given one', () => {
+    const { container } = renderItem({ isUpcoming: true, position: 3 })
+
+    expect(container.querySelector('.position')?.textContent).toBe('3')
+  })
+
+  it('prints nothing on a row with no place in line', () => {
+    expect(renderItem({ isCurrent: true }).container.querySelector('.position')).toBeNull()
+  })
+})
+
 describe('QueueItem star', () => {
   it('shows the star by default', () => {
     renderItem()

@@ -1,102 +1,102 @@
-/* The pairing and the summary under it. See BattleVersus.tsx. */
+/* The pairing and the summary under it. See BattleVersus.tsx. Lifted from
+   13a2: two 96px plates ringed in their side's colour, VS in yellow between. */
 
 /* Bottom-aligned rather than centred: the plates are figures standing on a
    floor, and VS sits a little above that floor between them. */
 .pairing {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 18px;
 }
 
 .plate {
   position: relative;
-  width: 116px;
-  height: 116px;
+  width: 104px;
+  height: 104px;
   overflow: hidden;
-  background-color: var(--arc-panel);
+  background-color: var(--arc-surface-hover);
 }
 
 /* The two sides of the fight, and the only two colours that ever ring a plate.
    Side one is the challenger wherever the phone is standing. */
 .ringOne {
-  box-shadow: inset 0 0 0 2px var(--arc-one);
+  box-shadow: inset 0 0 0 3px var(--arc-red);
 }
 
 .ringTwo {
-  box-shadow: inset 0 0 0 2px var(--arc-two);
+  box-shadow: inset 0 0 0 3px var(--arc-green);
 }
 
 .tintOne {
-  color: var(--arc-one);
+  color: var(--arc-red);
 }
 
 .tintTwo {
-  color: var(--arc-two);
+  color: var(--arc-green);
 }
 
 .tintGold {
   color: var(--arc-gold);
 }
 
-/* Type standing in for word art that is not drawn yet — match the size and the
-   position, expect to swap in a PNG. */
 .vs {
-  padding-bottom: 30px;
   font-family: var(--font-display);
-  font-size: 26px;
-  text-shadow: 3px 3px 0 #000;
+  font-size: var(--display-m);
+  color: var(--arc-yellow);
 }
 
 .handles {
   display: flex;
-  gap: 6px;
-  margin-top: 8px;
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .handlePlate {
   flex: 1;
   min-width: 0;
-  padding: 8px 6px;
-  background-color: var(--arc-panel);
-  box-shadow: inset 0 0 0 1px var(--arc-hair);
+  padding: 10px 8px;
+  background-color: var(--arc-surface);
+  box-shadow: var(--well);
   text-align: center;
 }
 
 .handleLabel {
-  font-family: var(--font-arcade);
-  font-size: 8px;
-  letter-spacing: 0.12em;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
 }
 
-/* A handle is somebody's name as they typed it, so it is set in the mono face
-   every handle in this feature uses and never wrapped: two people whose names
-   both wrap turn a fixed-height plate into two different heights. */
+/* A handle is somebody's name as they typed it, so it is never wrapped: two
+   people whose names both wrap turn a fixed-height plate into two different
+   heights. */
 .handle {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-top: 6px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
+  margin-top: 4px;
+  font-family: var(--font-body);
+  font-size: var(--text-l);
+  font-weight: var(--weight-semibold);
 }
 
+/* 13b's "You'll sing" card, one row per fact: a surface ringed in the line
+   colour, rows split by a hairline gap rather than a border on each. */
 .summary {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   margin-top: 18px;
-  background-color: var(--arc-hair);
-  box-shadow: inset 0 0 0 1px var(--arc-hair);
+  background-color: var(--arc-line);
+  box-shadow: var(--well-deep);
 }
 
 .row {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 13px 12px;
-  background-color: var(--arc-card);
+  min-height: 48px;
+  padding: 6px 14px;
+  background-color: var(--arc-surface);
 }
 
 /* Fixed, so every value in the list starts at the same place. The opponent's
@@ -105,14 +105,13 @@
 .rowLabel {
   flex: none;
   width: 96px;
-  font-family: var(--font-arcade);
-  font-size: 8px;
-  letter-spacing: 0.12em;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
   color: var(--arc-muted);
 }
 
 .rowLabelWide {
-  width: 104px;
+  width: 108px;
 }
 
 .rowValue {
@@ -122,7 +121,27 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   text-align: right;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--arc-ink);
+  font-family: var(--font-body);
+  font-size: var(--text-m);
+  font-weight: var(--weight-semibold);
+  color: var(--arc-text);
+}
+
+/* 13b's two chips: the win in gold, the part in mint, both on a key-violet
+   ground. */
+.stakes {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.stake {
+  padding: 6px 8px;
+  background-color: var(--arc-surface-hover);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+}
+
+.stakePlay {
+  color: var(--arc-mint);
 }

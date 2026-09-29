@@ -1,40 +1,39 @@
-/* A channel in the rotation. Taller than a library row because the singer's
-   photo is the primary identifier — people find their turn by looking for
-   their face, not by reading. */
+/* A turn in the rotation: a surface card in a pixel frame, the singer's
+   character in a ring at the left. People find their turn by looking for their
+   face, not by reading, so the avatar is the primary identifier. */
 
-/* The swipe shell. Edge rules live here rather than on the sliding row, so
-   they stay visible while the row is aside. */
+/* The swipe shell. Rows are separate cards with air between them. */
 .shell {
-  margin-bottom: 3px;
-  border-left: 2px solid transparent;
-  box-shadow: var(--bevel);
+  margin: 0 var(--gutter) var(--gap-3);
 }
 
-/* the viewer's own row: on a deck, the armed channel is marked at the edge */
-.isOwner {
-  border-left-color: var(--vu);
-}
-
-/* a singer sitting out is a dead channel */
-.ownerPaused {
-  border-left-color: var(--hairline);
-}
-
-/* The sliding row. Opaque, always — the keys are underneath it, and any
-   transparency here would let them ghost through. */
+/* The sliding row. Opaque, always — the action keys are underneath it, and any
+   transparency here would let them ghost through. The frame is inset so the
+   shell's overflow:hidden cannot clip it, and it travels with the row. */
 .container {
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--gap-3);
+  gap: var(--gap-4);
   /* a MINIMUM: a long title wraps and the row grows past it */
   min-height: var(--row-queue);
-  padding: var(--gap-2) var(--gap-2) var(--gap-2) var(--gap-3);
-  background: var(--brush);
+  padding: var(--gap-3);
+  background: var(--arc-surface);
+  box-shadow: var(--well);
   line-height: normal;
 }
 
-/* The playing row IS the progress bar — an amber wash grown to the played
+/* the viewer's own row is framed in dark amber */
+.isOwner .container {
+  box-shadow: inset 0 0 0 2px var(--arc-gold-shadow);
+}
+
+/* the row on stage is framed in yellow */
+.current {
+  box-shadow: inset 0 0 0 3px var(--arc-yellow);
+}
+
+/* The playing row IS the progress bar — a dark amber wash grown to the played
    percentage, never a separate progress element and never a tint over the
    whole row. The playhead is the fill's own right edge. */
 .fill {
@@ -43,7 +42,7 @@
   bottom: 0;
   left: 0;
   width: var(--progress, 0%);
-  background: linear-gradient(180deg, rgba(255, 138, 30, .26), rgba(255, 138, 30, .08));
+  background: var(--arc-on-amber);
   border-right: 2px solid var(--vu);
   pointer-events: none;
 }
@@ -65,7 +64,7 @@
   left: 0;
   width: var(--progress, 0%);
   pointer-events: none;
-  background: linear-gradient(90deg, transparent 35%, rgba(255, 196, 120, .16) 50%, transparent 65%);
+  background: linear-gradient(90deg, transparent 35%, var(--arc-gold-shadow) 50%, transparent 65%);
   background-size: 55% 100%;
   background-repeat: no-repeat;
   animation: vu-sweep 4s linear infinite;
@@ -80,53 +79,69 @@
 }
 
 .dragHandle {
+  position: relative;
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  color: var(--ink-5);
+  color: var(--ink-4);
   touch-action: none;
+}
+
+/* the place in line: Silkscreen, disabled-grey, centred in a fixed column */
+.position {
+  position: relative;
+  flex: none;
+  width: 18px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: var(--text-l);
+  color: var(--ink-4);
 }
 
 .imageContainer {
   position: relative;
   flex-shrink: 0;
-  width: var(--avatar-queue);
+  width: 52px;
 }
 
-.avatar {
+.imageContainer .avatar {
   width: 100%;
+  background: var(--arc-surface-hover);
+  box-shadow: inset 0 0 0 2px var(--arc-line);
 }
 
-/* the wait rides on the avatar, in mono, because it is data */
+/* the viewer's own face rings amber */
+.isOwner .imageContainer .avatar {
+  box-shadow: inset 0 0 0 2px var(--vu);
+}
+
+/* the wait is data: Silkscreen, amber, at the row's right edge */
 .wait {
-  position: absolute;
-  bottom: 0;
-  right: 0;
+  position: relative;
   display: flex;
   align-items: center;
-  padding: 2px 4px;
-  font-family: var(--font-mono);
-  font-size: 8.5px;
-  letter-spacing: .06em;
-  color: var(--ink-2);
-  background: var(--chassis-deep);
-  border-radius: 2px 0 3px 0;
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-size: var(--display-s);
+  color: var(--vu);
 }
 
 .waitIsCurrent {
-  color: var(--on-vu);
-  background: var(--vu);
+  color: var(--arc-yellow);
 }
 
 .primary {
   position: relative;
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-1);
 }
 
 /* Song titles are never truncated, site-wide: they wrap and the row grows. */
 .title {
-  font-size: var(--text-2xl);
+  font-size: var(--text-l);
   line-height: 1.2;
   font-weight: var(--weight-semibold);
   color: var(--ink);
@@ -142,16 +157,15 @@
 }
 
 .artist {
-  font-size: var(--text-m);
-  color: var(--ink-2);
+  font-size: 13px;
+  color: var(--ink-3);
 }
 
+/* the singer is a Silkscreen label, mint unless it is the viewer's own row */
 .user {
-  font-family: var(--font-mono);
-  font-size: var(--silkscreen-size);
-  letter-spacing: var(--silkscreen-tracking);
-  text-transform: uppercase;
-  color: var(--ink-3);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  color: var(--standby);
 }
 
 .userIsOwner {
@@ -164,7 +178,8 @@
 .spent {
   .title { color: var(--ink-4); }
   .artist,
-  .user { color: var(--ink-5); }
+  .user { color: var(--ink-4); }
+  .wait { color: var(--arc-yellow); }
   .imageContainer { filter: grayscale(1) brightness(.7); }
 }
 
@@ -179,13 +194,12 @@
 }
 
 /* Key offset chip. Amber because it is a lit state — this row will not sound
-   like the recording — and mono so +2 and −2 occupy the same width. */
+   like the recording — and Silkscreen so +2 and −2 read as data. */
 .keyChange {
   flex-shrink: 0;
   align-self: center;
   padding: 2px var(--gap-2);
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   color: var(--vu);
   background: var(--vu-well);
-  border-radius: var(--radius-key);
 }

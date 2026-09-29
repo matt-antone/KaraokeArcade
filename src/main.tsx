@@ -16,10 +16,11 @@ Persistor.init(store, () => {
   }
 })
 
-// @font-face only fetches a face once something on screen uses it, and nothing
-// uses trivia's until a round is already up. Ask for it now so the first
-// question draws in the right face. Best-effort: the fallback stack covers a miss.
-document.fonts?.load('1em "Rubik Mono One"').catch(() => {})
+// @font-face only fetches a face once something on screen uses it, and the
+// bold Silkscreen cut is trivia's alone — nothing uses it until a round is
+// already up. Ask for it now so the first title card draws in the right face.
+// Best-effort: the fallback stack covers a miss.
+document.fonts?.load('700 1em Silkscreen').catch(() => {})
 
 socket.on('reconnect_attempt', () => {
   store.dispatch(connectSocket())

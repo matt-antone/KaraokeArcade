@@ -2,7 +2,6 @@ import React from 'react'
 import clsx from 'clsx'
 import Highlighter from 'react-highlight-words'
 import SongList from '../SongList/SongList'
-import Icon from 'components/Icon/Icon'
 import styles from './ArtistItem.css'
 
 interface ArtistItemProps {
@@ -38,13 +37,12 @@ const ArtistItem = ({
         aria-expanded={isExpanded}
         className={styles.container}
       >
-        <div className={clsx(styles.folder, isChildStarred && styles.folderStarred)}>
-          <Icon icon='FOLDER' size={28} />
-          <span className={styles.count}>{isExpanded ? '' : artistSongIds.length}</span>
-          {isExpanded && <Icon icon='CHEVRON_DOWN' size={18} className={styles.chevron} />}
-        </div>
         <span className={clsx(styles.name, isChildUpcoming && styles.upcoming)}>
           {filterKeywords?.length ? <Highlighter autoEscape textToHighlight={name} searchWords={filterKeywords} /> : name}
+        </span>
+        <span className={styles.meta}>
+          <span className={clsx(styles.count, isChildStarred && styles.countStarred)}>{artistSongIds.length}</span>
+          <span className={clsx(styles.chevron, isExpanded && styles.chevronOpen)} aria-hidden='true'>▸</span>
         </span>
       </button>
 

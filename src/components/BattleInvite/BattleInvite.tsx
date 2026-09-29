@@ -7,11 +7,13 @@ import useNow from 'lib/useNow'
 import BattleFrame from 'components/BattleStage/BattleFrame'
 import BattleKey from 'components/BattleStage/BattleKey'
 import BattleSprite from 'components/BattleStage/BattleSprite'
-import BattleVersus, { BattleSummary } from 'components/BattleStage/BattleVersus'
+import BattleVersus, { BattleStakes, BattleSummary } from 'components/BattleStage/BattleVersus'
 import useBattleIris, { BATTLE_TONE } from 'components/BattleStage/useBattleIris'
 import {
   BATTLE_LOCKUP,
+  BATTLE_STAGE_PLATE,
   battleSingerOrDefault,
+  battleSingerStage,
 } from 'lib/battleSingers'
 import { acceptBattle, declineBattle } from 'store/modules/battle'
 import type { BattleInvite as Invite } from 'shared/types'
@@ -38,6 +40,23 @@ import styles from './BattleInvite.css'
  */
 
 type Step = 'invite' | 'confirm' | 'handoff' | 'declined' | 'timeout'
+
+/** The challenger's own room behind them. Most fighters ship no location.png,
+ *  so the 404 is the ordinary path and falls back to the dive bar, the same
+ *  bargain the TV's stage plate makes. */
+const StageArt = ({ src, className }: { src: string, className: string }) => {
+  const [isMissing, setIsMissing] = useState(false)
+
+  return (
+    <img
+      key={src}
+      className={className}
+      src={isMissing ? BATTLE_STAGE_PLATE : src}
+      alt=''
+      onError={() => setIsMissing(true)}
+    />
+  )
+}
 
 const BattleInvite = () => {
   const dispatch = useAppDispatch()
@@ -131,42 +150,56 @@ const BattleInvite = () => {
 
   const done = shown === 'handoff' ? 2 : shown === 'confirm' ? 1 : 0
 
-  /** INVITE · who it is from, what it would cost you, and how long you have. */
+  /** INVITE · who it is from, what it would cost you, and how long you have.
+   *  13b: the challenger standing in their own room, ringed in their red, the
+   *  song card under them and what the fight is worth under that. */
   const ask = (
     <div className={clsx(styles.body, styles.slam)}>
-      <div className={styles.glow} />
-      <div className={styles.hero}>
-        <BattleSprite singer={theirs} className={styles.heroArt} />
-      </div>
-
       <div className={styles.topRow}>
         <div className={styles.incomingDot} />
         <div className={styles.incoming}>INCOMING</div>
         <div className={clsx(styles.clock, seconds <= 10 && styles.clockUrgent)}>{clock}</div>
       </div>
 
-      <img className={styles.lockup} src={BATTLE_LOCKUP} alt='Singer Battle' />
-
-      <div className={styles.gap} />
-
-      <div className={styles.challenger} translate='no'>{challenger}</div>
+      <div className={styles.hero}>
+        <StageArt className={styles.heroRoom} src={battleSingerStage(theirs)} />
+        <BattleSprite singer={theirs} className={styles.heroArt} />
+        <div className={styles.heroFade} />
+        <div className={styles.heroText}>
+          <span className={styles.heroTag}>CHALLENGER</span>
+          <span className={styles.challenger} translate='no'>{challenger}</span>
+          <span className={styles.heroWants}>wants a battle</span>
+        </div>
+      </div>
 
       <div className={styles.card}>
         <div className={styles.cardLegend}>YOU SING</div>
         <div className={styles.cardTitle} translate='no'>{song}</div>
         <div className={styles.cardMeta}>
           <div className={styles.cardBy} translate='no'>
-            PICKED BY
-            {challenger}
+            {`PICKED BY ${challenger}`}
           </div>
           <div>2 MINUTE FORMAT</div>
         </div>
       </div>
 
+      <div className={styles.stakes}>
+        <BattleStakes />
+      </div>
+
+      <div className={styles.gap} />
+
       <div className={clsx(styles.footer, styles.footerStack)}>
+        <div className={styles.footerPair}>
+          <BattleKey
+            className={styles.accept}
+            onClick={e => burst(e, BATTLE_TONE.two, () => setStep('confirm'))}
+          >
+            ACCEPT
+          </BattleKey>
+          <BattleKey variant='ghost' className={styles.decline} onClick={handleDecline}>DECLINE</BattleKey>
+        </div>
         <div className={styles.terms}>ACCEPT AND YOU EACH PICK THE OTHER&rsquo;S SONG</div>
-        <BattleKey onClick={e => burst(e, BATTLE_TONE.two, () => setStep('confirm'))}>ACCEPT</BattleKey>
-        <BattleKey variant='ghost' onClick={handleDecline}>DECLINE</BattleKey>
       </div>
     </div>
   )
@@ -283,7 +316,7 @@ const BattleInvite = () => {
   return (
     <BattleFrame
       variant='invite'
-      title={shown === 'invite' ? 'CHALLENGE' : 'SINGER BATTLE'}
+      title={shown === 'invite' ? 'CHALLENGE' : 'BATTLE'}
       pips={[done > 0, done > 1]}
       iris={iris}
       frameRef={frameRef}

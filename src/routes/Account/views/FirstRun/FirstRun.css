@@ -1,20 +1,26 @@
-/* the gutter comes from AccountView's column. Width in CSS, not JS: two
+/* First run: the admin account. The same shell as Join as (Arcade Flow v2,
+   02). The gutter comes from AccountView's column. Width in CSS, not JS: two
    thirds of the reading column, never narrower than a form field's 340px. */
 .container {
   max-width: max(340px, min(66vw, calc(var(--content-max) * 0.66)));
   margin: 0 auto;
+  padding: 0 var(--gap-2) 4px;
   overflow: hidden;
 }
 
-/* a section heading printed on the panel — silkscreen, via the global class */
 .heading {
-  margin: var(--gap-5) 0 var(--gap-2);
+  margin: var(--gap-6) 0 var(--gap-4);
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: var(--weight-regular);
 }
 
-/* read as a sentence, so Figtree */
+/* read as a sentence, so Chakra Petch */
 .blurb {
-  margin: 0 0 var(--gap-4);
-  font-size: var(--text-m);
+  margin: 0 0 var(--gap-5);
+  text-align: center;
+  font-size: 15px;
   line-height: 1.5;
-  color: var(--ink-2);
+  color: var(--arc-text-2);
 }

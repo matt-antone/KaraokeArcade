@@ -14,7 +14,10 @@ import InstallHint from 'components/InstallHint/InstallHint'
 import Navigation from 'components/Navigation/Navigation'
 import Modal from 'components/Modal/Modal'
 import TriviaDialog from 'components/TriviaDialog/TriviaDialog'
+import ConnectionScreen from '../ConnectionScreen/ConnectionScreen'
+import useSocketStatus from '../ConnectionScreen/useSocketStatus'
 import Routes from '../Routes/Routes'
+import socket from 'lib/socket'
 import { requestBattleSingers } from 'store/modules/battle'
 import { fetchCurrentRoom } from 'store/modules/rooms'
 import { clearErrorMessage, setFooterHeight, setHeaderHeight } from 'store/modules/ui'
@@ -50,6 +53,15 @@ const CoreLayout = () => {
     },
     ref: navRef,
   })
+
+  // A phone with no session never opens the socket, so only a signed-in one can
+  // be waiting on it. Not on the player: it is a room fixture, not a phone.
+  const isSignedIn = useAppSelector(state => state.user.userId !== null)
+  const roomName = useAppSelector(state => (
+    state.user.roomId === null ? undefined : state.rooms.entities[state.user.roomId]?.name
+  ))
+  const socketStatus = useSocketStatus()
+  const isOffline = isSignedIn && !isPlayerRoute && socketStatus.state !== 'online'
 
   const ui = useAppSelector(state => state.ui)
   const closeError = () => dispatch(clearErrorMessage())
@@ -115,7 +127,8 @@ const CoreLayout = () => {
       {!isPlayerRoute && (
         <div className={styles.footer} ref={navRef}>
           <InstallHint />
-          <Navigation />
+          {/* the tabs lead into the app, and before sign-in there is none */}
+          {isSignedIn && <Navigation />}
         </div>
       )}
 
@@ -143,6 +156,15 @@ const CoreLayout = () => {
       {/* and the ballot the same way again — the vote is cast on the phone,
           and the television is showing the two people it is about */}
       {hasPopovers && <BattleVote />}
+
+      {isOffline && (
+        <ConnectionScreen
+          variant={socketStatus.state === 'connecting' ? 'loading' : 'lost'}
+          room={roomName}
+          attempt={socketStatus.attempt}
+          onRetry={() => socket.connect()}
+        />
+      )}
 
       {ui.isErrored && (
         <Modal

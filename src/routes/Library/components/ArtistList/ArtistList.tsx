@@ -12,8 +12,8 @@ import type { ListImperativeAPI, RowComponentProps } from 'react-window'
 
 // estimates only: rows are measured once rendered (see PaddedList), because a
 // song title always shows in full and a wrapped title makes the row taller
-const ROW_HEIGHT_ARTIST = 47 // --row-artist + seam rule
-const ROW_HEIGHT_SONG = 59 // --row-song + 3px margin
+const ROW_HEIGHT_ARTIST = 46 // --row-artist, seam rule included
+const ROW_HEIGHT_SONG = 56 // --row-song, seam rule included
 
 interface ArtistListProps {
   ui: RootState['ui']

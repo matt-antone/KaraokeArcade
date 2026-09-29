@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
+import { useNavigate } from 'react-router'
 import { fetchRooms } from 'store/modules/rooms'
-import { setRoom } from 'store/modules/user'
+import { requestLogout, setRoom } from 'store/modules/user'
+import { removeItem } from 'routes/Queue/modules/queue'
+import getUpcoming from 'routes/Queue/selectors/getUpcoming'
+import Modal from 'components/Modal/Modal'
 import Panel from 'components/Panel/Panel'
 import Button from 'components/Button/Button'
 import SelectRoom from '../SelectRoom/SelectRoom'
@@ -26,6 +30,13 @@ const MyRoom = () => {
   const rooms = useAppSelector(state => state.rooms)
   const currentRoomId = useAppSelector(state => state.user.roomId)
 
+  const navigate = useNavigate()
+  const user = useAppSelector(state => state.user)
+  const upcomingQueueIds = useAppSelector(state => getUpcoming(state, user.userId))
+  const leaderboard = useAppSelector(state => state.points.leaderboard)
+  const myPoints = leaderboard.find(entry => entry.userId === user.userId)?.points ?? 0
+  const [isLeaving, setLeaving] = useState(false)
+
   const [roomId, setRoomId] = useState<number | null>(currentRoomId)
   const [roomPassword, setRoomPassword] = useState('')
 
@@ -45,20 +56,52 @@ const MyRoom = () => {
     setRoomPassword('')
   }
 
+  // The only way to leave a room today is to sign out (the room rides in the
+  // JWT), so that is what Leave does — and it clears a non-admin's queued songs,
+  // exactly as the Sign Out key on this screen does.
+  const removesSongs = !user.isAdmin && upcomingQueueIds.length > 0
+
+  const handleLeave = () => {
+    if (removesSongs) dispatch(removeItem({ queueId: upcomingQueueIds }))
+    dispatch(requestLogout())
+    navigate('/', { replace: true })
+  }
+
   return (
-    <Panel title='My Room'>
+    <Panel title='My room'>
       <>
-        <p className='silkscreen'>
-          {currentRoom
-            ? 'you are in'
-            : 'you are not in a room'}
+        <div className={styles.current}>
+          <span className={styles.roomName} translate='no'>
+            {currentRoom ? currentRoom.name : 'No room'}
+          </span>
           {currentRoom && (
-            <>
-              {' '}
-              <strong translate='no'>{currentRoom.name}</strong>
-            </>
+            <button type='button' className={styles.leave} onClick={() => setLeaving(true)}>
+              Leave
+            </button>
           )}
-        </p>
+        </div>
+
+        {isLeaving && (
+          <Modal
+            className={styles.leaveModal}
+            title={`Leave ${currentRoom?.name ?? 'room'}?`}
+            onClose={() => setLeaving(false)}
+            buttons={(
+              <>
+                <Button variant='default' onClick={() => setLeaving(false)}>Stay</Button>
+                <button type='button' className={styles.confirmLeave} onClick={handleLeave}>Leave room</button>
+              </>
+            )}
+          >
+            <p>{`Your ${myPoints.toLocaleString()} points stay on tonight's board.`}</p>
+            {removesSongs && (
+              <p>
+                {`Your ${upcomingQueueIds.length} queued ${upcomingQueueIds.length === 1 ? 'song' : 'songs'} will be removed.`}
+              </p>
+            )}
+            {user.isGuest && <p>As a guest, you won&apos;t be able to sign back into this account.</p>}
+          </Modal>
+        )}
 
         {rooms.result.length === 0
           ? (

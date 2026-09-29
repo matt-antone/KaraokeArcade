@@ -1,6 +1,6 @@
-/* Rotary control for room volume. Concentric circles — knobs and radios are the
-   only circles in this system. The body is a key you can press and turn, so it
-   takes --bevel; the cap is recessed and holds the index line, so it takes
+/* Rotary control for room volume. The knob is the one circle in this system
+   (--radius-round). The body is a key you can press and turn, so it takes
+   --bevel; the cap is recessed and holds the index line, so it takes
    --well. The index sweeps 270deg, -135 to +135, and is the only readout on the
    knob itself: the meter beside it says how loud, never a number. */
 
@@ -44,7 +44,6 @@
   left: 50%;
   width: 2px;
   height: 28%;
-  border-radius: 1px;
   background: var(--vu);
 
   /* 0.10 (top) + 0.40 puts the pivot at the knob's centre */

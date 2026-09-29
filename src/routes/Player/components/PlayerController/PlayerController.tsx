@@ -3,7 +3,9 @@ import { useAppDispatch, useAppSelector } from 'store/hooks'
 import Player from '../Player/Player'
 import PlayerBackdrop from '../PlayerBackdrop/PlayerBackdrop'
 import PlayerTextOverlay from '../PlayerTextOverlay/PlayerTextOverlay'
+import overlayState from '../PlayerTextOverlay/overlayState'
 import PlayerQR from '../PlayerQR/PlayerQR'
+import PlayerJoin from '../PlayerJoin/PlayerJoin'
 import PlayerTrivia, { PlayerTriviaSplash } from '../PlayerTrivia/PlayerTrivia'
 import PlayerBattle from '../PlayerBattle/PlayerBattle'
 import type { BattleUpNext } from '../PlayerBattle/battleBeats'
@@ -70,12 +72,14 @@ const CAN_HEAR_ROOM = typeof window !== 'undefined'
 /** The room's join code, when the room is showing one. Its own component so
  *  the two levels of "has the room asked for this" do not sit in the middle of
  *  the stage's render. */
-const RoomQR = ({ roomPrefs, height, isBattleRow, queueItem }: {
+const RoomQR = ({ roomPrefs, height, isBattleRow, queueItem, isDocked }: {
   roomPrefs?: { qr?: React.ComponentProps<typeof PlayerQR>['prefs'] & { isEnabled?: boolean } }
   height: number
   /** A battle owns the whole screen for the length of the row. */
   isBattleRow: boolean
   queueItem?: QueueItem
+  /** Drawn inside the join screen's panel rather than parked in a corner. */
+  isDocked?: boolean
 }) => {
   // Never over a battle. The stage is a designed 12:7 composition with the
   // fighters at its outer edges, and the code parks itself in a corner on top
@@ -86,7 +90,7 @@ const RoomQR = ({ roomPrefs, height, isBattleRow, queueItem }: {
 
   if (!roomPrefs?.qr?.isEnabled) return null
 
-  return <PlayerQR height={height} prefs={roomPrefs.qr} queueItem={queueItem} />
+  return <PlayerQR height={height} prefs={roomPrefs.qr} queueItem={queueItem} isDocked={isDocked} />
 }
 
 /**
@@ -164,6 +168,8 @@ const PlayerController = (props: PlayerControllerProps) => {
   const playerVisualizer = useAppSelector(state => state.playerVisualizer)
   const prefs = useAppSelector(state => state.prefs)
   const roomPrefs = useAppSelector(getRoomPrefs)
+  const roomName = useAppSelector(state => state.rooms.entities[state.user.roomId]?.name)
+  const leaderboard = useAppSelector(state => state.points.leaderboard)
   // Two views of the same round, and they are not interchangeable. The live
   // one expires with the countdown and drives *when* the player moves on; the
   // stored one persists between questions and drives *what is on screen*, so
@@ -624,12 +630,32 @@ const PlayerController = (props: PlayerControllerProps) => {
     battleSide,
   })
 
+  // Which state the text overlay is in, when it is drawn at all — the same
+  // ladder it runs, so the join screen and the stage it draws never disagree.
+  const stage = isTriviaRow || isBattleRow
+    ? null
+    : overlayState({
+        isQueueEmpty: !queue.result.length,
+        isAtQueueEnd: player.isAtQueueEnd,
+        nextQueueItem,
+        queueItem,
+        isErrored: player.isErrored,
+        intermissionEndsAt,
+        isSongEnding: false,
+      })
+  // 10 · the idle / join screen, whenever nobody is singing
+  const isJoinShown = stage === 'empty' || stage === 'idle'
+  // 11a · the intermission draws the next singer's own stage, full bleed —
+  // except before a trivia round or a battle, where it is only a clock
+  const isOnStageNext = stage === 'intermission' && !isTriviaItem(nextQueueItem) && !isBattleItem(nextQueueItem)
+
   return (
     <>
       {/* A battle overlay is opaque on eight of its ten beats and the media
           covers the other two, so the thread field has to stop for the whole
-          row — otherwise it burns a core behind the fight for five minutes. */}
-      <PlayerBackdrop isCovered={isMediaVisible || isTriviaLeadIn || isBattleRow} />
+          row — otherwise it burns a core behind the fight for five minutes.
+          The join screen and the on-stage-next page are opaque too. */}
+      <PlayerBackdrop isCovered={isMediaVisible || isTriviaLeadIn || isBattleRow || isJoinShown || isOnStageNext} />
       {/* On a singing beat the stage above is a bezel with a hole cut in it and
           this is what shows through, so the media is sized and placed to the
           opening rather than to the screen. Everywhere else it is the whole
@@ -666,6 +692,13 @@ const PlayerController = (props: PlayerControllerProps) => {
           height={videoRect ? videoRect.height : props.height}
         />
       </PlayerFrame>
+      {isJoinShown && (
+        <PlayerJoin
+          roomName={roomName}
+          leaderboard={leaderboard}
+          qr={<RoomQR roomPrefs={roomPrefs} height={props.height} isBattleRow={false} queueItem={queueItem} isDocked />}
+        />
+      )}
       <StageOverlay
         trivia={trivia}
         isTriviaOnStage={isTriviaOnStage}
@@ -694,7 +727,9 @@ const PlayerController = (props: PlayerControllerProps) => {
           isErrored: player.isErrored,
         }}
       />
-      <RoomQR roomPrefs={roomPrefs} height={props.height} isBattleRow={isBattleRow} queueItem={queueItem} />
+      {!isJoinShown && (
+        <RoomQR roomPrefs={roomPrefs} height={props.height} isBattleRow={isBattleRow} queueItem={queueItem} />
+      )}
     </>
   )
 }

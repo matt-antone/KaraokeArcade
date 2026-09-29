@@ -1,24 +1,23 @@
-/* Sits in the same list as the singers, so it keeps their shell and their edge.
+/* Sits in the same list as the singers, so it keeps their card and their gap.
    Taller than one of them because it carries two of everything — --row-queue is
    a minimum, and this row legitimately exceeds it.
 
-   The outer edge is amber on stage and teal otherwise, the same as every other
-   queued thing; the two channel colours live on the fighters inside, where they
-   are telling you which singer is which rather than what the row's state is. */
+   The frame is mint queued and gold on stage; the two channel colours live on
+   the fighters inside, where they tell you which singer is which rather than
+   what the row's state is. */
 .shell {
-  margin-bottom: 3px;
-  border-left: 2px solid var(--standby);
-  box-shadow: var(--bevel);
+  margin: 0 var(--gutter) var(--gap-3);
 }
 
 .container {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--gap-2);
+  gap: var(--gap-3);
   min-height: var(--row-queue);
-  padding: var(--gap-2) var(--gap-2) var(--gap-2) var(--gap-3);
-  background: var(--brush);
+  padding: var(--gap-3);
+  background: var(--arc-surface);
+  box-shadow: inset 0 0 0 2px var(--standby);
   line-height: normal;
 }
 
@@ -34,31 +33,31 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--arc-gold);
 }
 
 /* One fighter: face, name, and the song the OTHER one picked for them. Recessed
-   so the two read as two channels on one panel rather than as two list rows. */
+   so the two read as two channels on one card rather than as two list rows. */
 .fighter {
   display: flex;
   align-items: center;
   gap: var(--gap-3);
   padding: var(--gap-2);
-  border-left: 2px solid var(--hairline);
-  border-radius: var(--radius-key);
-  background: var(--key-well);
-  box-shadow: var(--well);
+  background: var(--arc-deep);
+  box-shadow: inset 0 0 0 2px var(--arc-line);
 }
 
+/* the challenger rings red, the opponent green — the TV's two channels */
 .challenger {
-  border-left-color: var(--ans-1-hi);
+  box-shadow: inset 0 0 0 2px var(--arc-red);
 }
 
 .opponent {
-  border-left-color: var(--ans-2-hi);
+  box-shadow: inset 0 0 0 2px var(--arc-green);
 }
 
-/* Half the singer avatar: two of them at full size would make the row twice the
-   height of everything around it, and the queue is a list you scan. */
+/* Smaller than a singer avatar: two of them at full size would make the row
+   twice the height of everything around it, and the queue is a list you scan. */
 .avatar {
   flex: none;
   width: 34px;
@@ -74,44 +73,47 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--text-m);
-  font-weight: var(--weight-bold);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
   color: var(--ink);
 }
 
 /* titles always show in full: they wrap, and the row grows to fit */
 .title {
   font-size: var(--text-l);
+  font-weight: var(--weight-semibold);
   line-height: 1.25;
   overflow-wrap: break-word;
-  color: var(--ink-2);
+  color: var(--ink);
 }
 
 .artist {
   margin-top: 2px;
+  color: var(--ink-3);
 }
 
 /* dim by colour, never by opacity — a fought battle is still a record of what
    the room did tonight */
 .spent {
-  .legend { color: var(--ink-5); }
+  box-shadow: var(--well);
+
+  .legend { color: var(--ink-4); }
   .name { color: var(--ink-4); }
   .title { color: var(--ink-4); }
-  .artist { color: var(--ink-5); }
+  .artist { color: var(--ink-4); }
 
-  .fighter { border-left-color: var(--seam); }
+  .challenger,
+  .opponent { box-shadow: var(--well-deep); }
 }
 
-.current {
-  border-left-color: var(--vu);
+.current .container {
+  box-shadow: inset 0 0 0 3px var(--arc-yellow);
 }
 
 .now {
   flex: none;
   padding: 0 var(--gap-2);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-bold);
-  letter-spacing: var(--silkscreen-tracking);
-  color: var(--vu);
+  font-family: var(--font-display);
+  font-size: var(--display-s);
+  color: var(--arc-yellow);
 }

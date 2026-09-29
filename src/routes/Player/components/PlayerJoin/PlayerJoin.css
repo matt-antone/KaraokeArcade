@@ -1,0 +1,113 @@
+/* 10 · Idle / join. Sized in vh: the design is 540 tall, so 1px there is
+   0.185vh here, and the layout scales with whatever TV it lands on. */
+.container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  /* its own stacking context, so the crowd's depth order never reaches the
+     text overlay drawn over it */
+  isolation: isolate;
+  background: var(--arc-ground);
+  color: var(--arc-text);
+}
+
+/* the right-hand side, where the room stands */
+.crowd {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 44.8%;
+  right: 0;
+  overflow: hidden;
+}
+
+/* One figure. --row is its depth (0 front, 9 back) and --x its centre across
+   the crowd, both set per figure. Rows further back stand higher, smaller and
+   darker; the front row is taller than the screen, so its heads clip at the
+   top and its feet stay in. */
+.member {
+  position: absolute;
+  left: calc(var(--x) * 1%);
+  bottom: calc((var(--row) * 22 + 8) / 5.4 * 1%);
+  height: calc((1.2 - var(--row) * 0.08) * 85%);
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  z-index: calc(10 - var(--row));
+  filter: brightness(calc(1 - var(--row) * 0.06));
+  image-rendering: pixelated;
+}
+
+/* the dark wash the join instructions sit on, fading out over the crowd */
+.panel {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: linear-gradient(90deg, var(--scrim) 0 46%, transparent);
+}
+
+.join {
+  position: absolute;
+  left: 8.9vh;
+  top: 8.1vh;
+  z-index: 21;
+  display: flex;
+  flex-direction: column;
+  gap: 4vh;
+}
+
+.logo {
+  display: block;
+  width: 55vh;
+}
+
+.headline {
+  --text-shadow-color: var(--arc-magenta);
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: 7.4vh;
+  line-height: 1.1;
+  color: var(--arc-yellow);
+  text-shadow: 0.74vh 0.74vh 0 var(--text-shadow-color);
+}
+
+.codeRow {
+  display: flex;
+  align-items: center;
+  gap: 4.4vh;
+}
+
+.code {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5vh;
+  font-family: var(--font-display);
+}
+
+.codeLabel {
+  font-size: 2.4vh;
+  color: var(--arc-muted);
+}
+
+.codeValue {
+  font-size: 8.1vh;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  color: var(--arc-mint);
+}
+
+/* the arcade's attract-mode blink: on, off, no fade */
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+.blink {
+  font-size: 2.6vh;
+  color: var(--arc-amber);
+  animation: blink 1.1s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blink {
+    animation: none;
+  }
+}

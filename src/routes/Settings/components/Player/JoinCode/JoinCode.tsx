@@ -8,7 +8,7 @@ const QR_SIZE = 176
 
 // the value --ink resolves to. The code is painted to a canvas, so it needs a
 // real colour rather than the token; keep the two in step.
-const INK = '#e6e4de'
+const INK = '#e9e2ff'
 
 interface JoinCodeProps {
   roomId: number

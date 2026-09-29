@@ -15,6 +15,14 @@
   }
 }
 
+/* in the idle screen's join panel: laid out by the panel, not the corner */
+.docked {
+  position: relative;
+  bottom: auto;
+  right: auto;
+  flex: none;
+}
+
 .enterActive {
   opacity: 1;
 }

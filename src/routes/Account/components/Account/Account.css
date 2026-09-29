@@ -1,11 +1,75 @@
-/* the panel's status line: a label printed on the faceplate, so silkscreen */
-.signedInAs {
-  margin: 0 0 var(--gap-3);
+/* 08 My account: the signed-in card, then points tonight, then Profile. */
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: var(--gap-4);
+  background: var(--arc-surface);
+  --pixel-border-color: var(--arc-amber);
+  box-shadow: var(--pixel-border);
+}
 
-  strong {
-    font-weight: var(--weight-regular);
-    color: var(--ink-2);
-  }
+.portrait {
+  width: 56px;
+  flex: none;
+}
+
+.who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-display);
+}
+
+.label {
+  font-size: 11px;
+  color: var(--arc-muted);
+}
+
+.name {
+  font-size: 20px;
+  overflow-wrap: anywhere;
+}
+
+.singer {
+  font-size: 11px;
+  color: var(--arc-mint);
+}
+
+/* its own row under the card: beside the name it took the width a
+   username needs and broke it mid-word */
+.change {
+  flex: 1 0 100%;
+  font-size: 13px;
+}
+
+.points {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: var(--gap-3) 12px;
+  background: var(--arc-surface);
+  box-shadow: inset 0 0 0 2px var(--arc-surface-hover);
+  font-family: var(--font-display);
+}
+
+.pointsLabel {
+  flex: 1;
+  font-size: 14px;
+  color: var(--arc-magenta);
+}
+
+.pointsRank {
+  font-size: 14px;
+  color: var(--arc-mint);
+}
+
+.pointsTotal {
+  font-size: 18px;
+  color: var(--arc-yellow);
 }
 
 .btnContainer {
@@ -13,4 +77,10 @@
   flex-direction: column;
   gap: var(--gap-2);
   margin-top: var(--gap-3);
+}
+
+/* the same room the sign-in grid is given */
+.modal {
+  width: min(560px, 96vw);
+  height: min(760px, 90vh);
 }

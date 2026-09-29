@@ -36,7 +36,7 @@ interface SongItemProps {
 }
 
 /**
- * The library's unit of action: an un-queued song is a raised key, a queued
+ * The library's unit of action: an un-queued song is a plain row, a queued
  * song drops to a teal standby well and goes inert, a played song loses its
  * key face entirely and dims down the ink ramp. One tap queues it, and one
  * more takes your own queued song back out — the star is the row's only

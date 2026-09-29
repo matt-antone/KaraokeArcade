@@ -47,6 +47,7 @@ const ResetPassword = ({ initialUsername, onDone, onFirstFieldRef }: ResetPasswo
 
   return (
     <form noValidate onSubmit={handleSubmit} className={styles.container}>
+      <h2 className={styles.heading}>Reset password</h2>
       <input
         type='text'
         autoComplete='username'
@@ -59,7 +60,8 @@ const ResetPassword = ({ initialUsername, onDone, onFirstFieldRef }: ResetPasswo
 
       {question !== null && (
         <>
-          <p>{question}</p>
+          <span className={styles.label}>Security question</span>
+          <p className={styles.question}>{question}</p>
           <input
             type='text'
             autoComplete='off'
@@ -68,6 +70,7 @@ const ResetPassword = ({ initialUsername, onDone, onFirstFieldRef }: ResetPasswo
             onChange={e => setAnswer(e.target.value)}
             autoFocus
           />
+          <span className={styles.label}>New password</span>
           <input
             type='password'
             autoComplete='new-password'
@@ -86,10 +89,10 @@ const ResetPassword = ({ initialUsername, onDone, onFirstFieldRef }: ResetPasswo
       )}
 
       <Button type='submit' variant='primary'>
-        {question === null ? 'Next' : 'Change Password'}
+        {question === null ? 'Next' : 'Reset password'}
       </Button>
       <Button onClick={() => onDone(username.trim())} variant='default'>
-        Back to Sign In
+        Back
       </Button>
     </form>
   )

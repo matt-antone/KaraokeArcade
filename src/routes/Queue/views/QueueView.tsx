@@ -63,7 +63,7 @@ const QueueView = () => {
       }}
     >
       {!isInRoom && (
-        <TextOverlay>
+        <TextOverlay className={styles.empty}>
           <h1>Get a Room!</h1>
           <p>
             <Link to='/account'>Sign in to a room</Link>
@@ -76,27 +76,24 @@ const QueueView = () => {
       {isLoading && <Spinner />}
 
       {!isLoading && queueTab === 'history' && played.length === 0 && (
-        <TextOverlay>
+        <TextOverlay className={styles.empty}>
           <h1>Nothing Sung Yet</h1>
           <p>Songs land here once they&rsquo;ve been played.</p>
         </TextOverlay>
       )}
 
       {!isLoading && queueTab === 'queue' && upcoming.length === 0 && (
-        <TextOverlay>
+        <TextOverlay className={styles.empty}>
           <h1>Queue Empty</h1>
-          <p>
-            Tap a song in the
-            {' '}
-            <Link to='/library'>library</Link>
-            {' '}
-            to queue it.
-          </p>
+          <p>Nobody&rsquo;s queued yet. Pick a song and you&rsquo;re first up.</p>
+          <Button variant='primary' className={styles.browse} onClick={() => navigate('/library')}>
+            Browse songs
+          </Button>
         </TextOverlay>
       )}
 
       {!isLoading && queueTab === 'me' && mine.length === 0 && (
-        <TextOverlay>
+        <TextOverlay className={styles.empty}>
           <h1>Nothing Queued</h1>
           <p>
             Tap a song in the

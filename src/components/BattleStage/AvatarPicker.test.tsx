@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import React from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Provider } from 'react-redux'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import AvatarPicker, { AvatarGate } from './AvatarPicker'
@@ -32,6 +32,7 @@ vi.mock('lib/fighterSets', () => ({
   }),
 }))
 
+beforeEach(() => localStorage.clear())
 afterEach(cleanup)
 
 /** Enough store to subscribe to, so a prefs arrival re-renders the grid the
@@ -86,11 +87,12 @@ describe('AvatarPicker', () => {
     expect(screen.getByLabelText('HEX')).toBeTruthy()
   })
 
-  it('arrives with a live NEXT rather than an empty selection', () => {
+  it('arrives with a live Select rather than an empty selection', () => {
     const { store, dispatched } = makeStore(signedOutOfAnyRoom)
     render(<Provider store={store}><AvatarGate /></Provider>)
 
-    fireEvent.click(screen.getByText('NEXT'))
+    fireEvent.click(screen.getByText('Select'))
+    fireEvent.click(screen.getByText('Continue'))
 
     // without a seeded selection the key would be the thing standing between
     // somebody and the app on their first screen
@@ -105,7 +107,7 @@ describe('AvatarPicker', () => {
     render(<Provider store={store}><AvatarPicker avatarId='p1' onChoose={onChoose} /></Provider>)
 
     fireEvent.click(screen.getByLabelText('HEX'))
-    fireEvent.click(screen.getByText('NEXT'))
+    fireEvent.click(screen.getByText('Select'))
 
     expect(onChoose).toHaveBeenCalledWith('halloween/hex')
   })
@@ -115,7 +117,8 @@ describe('AvatarPicker', () => {
     render(<Provider store={store}><AvatarGate /></Provider>)
 
     fireEvent.click(screen.getByLabelText('HEX'))
-    fireEvent.click(screen.getByText('NEXT'))
+    fireEvent.click(screen.getByText('Select'))
+    fireEvent.click(screen.getByText('Continue'))
 
     // the thunk is dispatched with the silent flag: a stranger's first
     // interaction with this app is not a browser alert
@@ -123,5 +126,43 @@ describe('AvatarPicker', () => {
 
     expect(thunkArg.arg?.isSilent).toBe(true)
     expect(thunkArg.arg?.data.get('avatarId')).toBe('halloween/hex')
+  })
+
+  it('shows how scoring works after a first pick, once per account', () => {
+    const first = makeStore(signedOutOfAnyRoom)
+    render(<Provider store={first.store}><AvatarGate /></Provider>)
+
+    fireEvent.click(screen.getByText('Select'))
+
+    // the tutorial stands between the pick and the write, on the real values
+    expect(screen.getByText('How to score')).toBeTruthy()
+    expect(screen.getByText('+150')).toBeTruthy()
+    expect(screen.getByText('+1000')).toBeTruthy()
+    expect(screen.getByText('+250')).toBeTruthy()
+    expect(first.dispatched).toHaveLength(0)
+
+    fireEvent.click(screen.getByText('Continue'))
+    expect(first.dispatched).toHaveLength(1)
+    cleanup()
+
+    // the same account again (a new phone session, a cleared avatar): straight through
+    const again = makeStore(signedOutOfAnyRoom)
+    render(<Provider store={again.store}><AvatarGate /></Provider>)
+
+    fireEvent.click(screen.getByText('Select'))
+
+    expect(screen.queryByText('How to score')).toBeNull()
+    expect(again.dispatched).toHaveLength(1)
+  })
+
+  it('shows it to a different account on the same phone', () => {
+    localStorage.setItem('scoringSeen:1', '1')
+    const { store, dispatched } = makeStore({ ...signedOutOfAnyRoom, user: { userId: 2, roomId: null } })
+    render(<Provider store={store}><AvatarGate /></Provider>)
+
+    fireEvent.click(screen.getByText('Select'))
+
+    expect(screen.getByText('How to score')).toBeTruthy()
+    expect(dispatched).toHaveLength(0)
   })
 })

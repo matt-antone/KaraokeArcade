@@ -1,5 +1,5 @@
 /* Admin-only scanner status, in the header while a scan runs and until
-   dismissed. The panel is a brushed face with a seam under it; progress is a
+   dismissed. The panel is a surface panel with a seam under it; progress is a
    VU meter with peaking off, because a scan reaching 90% is good news. */
 
 .container {
@@ -23,7 +23,7 @@
 .text {
   flex: 1;
   min-width: 0;
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--silkscreen-size);
   letter-spacing: var(--silkscreen-tracking);
   text-transform: uppercase;

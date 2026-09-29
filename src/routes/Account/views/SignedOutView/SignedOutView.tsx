@@ -4,8 +4,9 @@ import { useAppDispatch, useAppSelector } from 'store/hooks'
 import { fetchRooms } from 'store/modules/rooms'
 import { createAccount, login } from 'store/modules/user'
 import SelectRoom from '../../components/SelectRoom/SelectRoom'
-import InputRadio from 'components/InputRadio/InputRadio'
 import Button from 'components/Button/Button'
+import TokenGate from 'components/TokenGate/TokenGate'
+import { isTokenInserted } from 'components/TokenGate/tokenInserted'
 import AccountForm from '../../components/AccountForm/AccountForm'
 import SignIn from './SignIn/SignIn'
 import ResetPassword from './ResetPassword/ResetPassword'
@@ -96,8 +97,15 @@ const allowedRoles = (
   return { allowNewGuest, allowNewStandard, allowNew: allowNewStandard || allowNewGuest }
 }
 
+const MODES = [
+  { mode: 'returning', label: 'Returning user' },
+  { mode: 'standard', label: 'New user' },
+  { mode: 'guest', label: 'Guest' },
+]
+
 /** The three ways in, or none of them: a room that admits no new accounts has
- *  nothing to choose between, so it gets a heading rather than a single radio. */
+ *  nothing to choose between, so it gets a heading rather than a single key.
+ *  The pick wears the yellow frame and the cursor, like a menu on a cabinet. */
 const JoinAs = ({ mode, onModeChange, allowNew, allowNewGuest, allowNewStandard }: {
   mode: string
   onModeChange: (mode: string) => void
@@ -105,15 +113,28 @@ const JoinAs = ({ mode, onModeChange, allowNew, allowNewGuest, allowNewStandard 
   allowNewGuest: boolean
   allowNewStandard: boolean
 }) => {
-  if (!allowNew) return <h2 className={clsx('silkscreen', styles.heading)}>sign in</h2>
+  if (!allowNew) return <h2 className={styles.heading}>Sign in</h2>
+
+  const offered = MODES.filter(m => m.mode === 'returning'
+    || (m.mode === 'standard' && allowNewStandard)
+    || (m.mode === 'guest' && allowNewGuest))
 
   return (
     <>
-      <h2 className={clsx('silkscreen', styles.heading)}>join as</h2>
-      <div className={styles.radioContainer}>
-        <InputRadio name='type' value='returning' checked={mode === 'returning'} onChange={onModeChange} label='Returning user' />
-        {allowNewStandard && <InputRadio name='type' value='standard' checked={mode === 'standard'} onChange={onModeChange} label='New user' />}
-        {allowNewGuest && <InputRadio name='type' value='guest' checked={mode === 'guest'} onChange={onModeChange} label='Guest' />}
+      <h2 className={styles.heading}>Join as</h2>
+      <div className={styles.modes}>
+        {offered.map(m => (
+          <button
+            key={m.mode}
+            type='button'
+            aria-pressed={mode === m.mode}
+            className={clsx(styles.mode, mode === m.mode && styles.modeOn)}
+            onClick={() => onModeChange(m.mode)}
+          >
+            <span className={styles.cursor} aria-hidden='true' />
+            {m.label}
+          </button>
+        ))}
       </div>
     </>
   )
@@ -137,6 +158,7 @@ const SignedOutView = () => {
   const [prevRooms, setPrevRooms] = useState<typeof rooms | null>(null)
   const [focusRequest, setFocusRequest] = useState(0)
   const [isResetting, setIsResetting] = useState(false)
+  const [isUnlocked, setIsUnlocked] = useState(isTokenInserted)
 
   // once per mount
   useEffect(() => {
@@ -192,13 +214,17 @@ const SignedOutView = () => {
 
   useEffect(() => {
     firstFieldRef.current?.focus()
-  }, [focusRequest, mode, isResetting])
+  }, [focusRequest, mode, isResetting, isUnlocked])
+
+  if (!isUnlocked) {
+    return <TokenGate room={roomId === null ? undefined : rooms.entities[roomId]?.name} onUnlock={() => setIsUnlocked(true)} />
+  }
 
   return (
     <div className={styles.container}>
       {showRoomSection && (
         <>
-          <h2 className={clsx('silkscreen', styles.heading)}>join room</h2>
+          <h2 className={styles.heading}>Join room</h2>
           <SelectRoom
             rooms={rooms}
             roomId={roomId}
@@ -211,13 +237,16 @@ const SignedOutView = () => {
       )}
 
       <div ref={userSectionRef} className={clsx(rooms.result.length > 1 && roomId === null && styles.hidden)}>
-        <JoinAs
-          mode={mode}
-          onModeChange={setMode}
-          allowNew={allowNew}
-          allowNewGuest={allowNewGuest}
-          allowNewStandard={allowNewStandard}
-        />
+        {/* the reset form is its own screen, with its own title */}
+        {!isResetting && (
+          <JoinAs
+            mode={mode}
+            onModeChange={setMode}
+            allowNew={allowNew}
+            allowNewGuest={allowNewGuest}
+            allowNewStandard={allowNewStandard}
+          />
+        )}
 
         {(mode === 'returning' || !allowNew) && isResetting && (
           <ResetPassword

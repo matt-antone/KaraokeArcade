@@ -12,9 +12,22 @@ const LeaderboardView = () => {
   const leaderboard = useAppSelector(state => state.points.leaderboard)
   const userId = useAppSelector(state => state.user.userId)
 
+  const myIndex = leaderboard.findIndex(entry => entry.userId === userId)
+
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>Leaderboard</h1>
+      <div className={styles.head}>
+        <h1 className={styles.title}>Tonight</h1>
+        <span className={styles.count}>{`${leaderboard.length} ${leaderboard.length === 1 ? 'singer' : 'singers'}`}</span>
+      </div>
+
+      {myIndex >= 0 && (
+        <div className={styles.you}>
+          <span className={styles.youLabel}>You</span>
+          <span className={styles.youRank}>{`#${myIndex + 1}`}</span>
+          <span className={styles.youPoints}>{leaderboard[myIndex].points.toLocaleString()}</span>
+        </div>
+      )}
 
       {leaderboard.length === 0
         ? <p className={styles.empty}>No points yet tonight. Sing, battle or play trivia to get on the board.</p>

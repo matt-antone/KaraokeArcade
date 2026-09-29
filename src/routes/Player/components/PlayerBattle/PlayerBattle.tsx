@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import clsx from 'clsx'
 import useBattleStage, { sideOfPhase } from 'lib/useBattleStage'
 import { useAppSelector } from 'store/hooks'
 import { BATTLE_LOCKUP, BATTLE_STAGE_PLATE, battleSingerOrDefault, battleSingerStage } from 'lib/battleSingers'
 import { CHEER, GROAN, playCue, soundCue } from 'lib/soundCue'
-import { Intro, Judge, Logo, Meter, Sing, Versus, Winner, type BattleUpNext } from './battleBeats'
+import { Intro, Judge, Logo, Meter, Sing, StagePlate, Versus, Winner, type BattleUpNext } from './battleBeats'
 import useCrowdMic from './useCrowdMic'
 import type { BattlePhase, BattleSide, BattleTurn } from 'shared/types'
 import styles from './PlayerBattle.css'
@@ -87,34 +87,6 @@ const Stage = ({ width, height, beat, plate, children }: {
     </div>
   </div>
 )
-
-/**
- * The plate itself, with the dive bar behind it.
- *
- * A fighter may ship a `location.png` and most will not, so the 404 is the
- * ordinary path rather than the error one — the same bargain every portrait
- * makes. Keyed on the src so a battle between two different fighters re-tries
- * rather than inheriting the last one's failure.
- *
- * No loading state and no async step on purpose. The src is derived from the
- * challenger's id, which is on the first beat and does not change for the rest
- * of the fight, so the stage the room sees at 'logo' is the stage it sees at
- * 'winner'. A background resolved through the fighter listing would draw the
- * dive bar until that fetch landed and then pop to the art mid-battle.
- */
-const StagePlate = ({ src }: { src: string }) => {
-  const [isMissing, setIsMissing] = useState(false)
-
-  return (
-    <img
-      key={src}
-      className={styles.plate}
-      src={isMissing ? BATTLE_STAGE_PLATE : src}
-      alt=''
-      onError={() => setIsMissing(true)}
-    />
-  )
-}
 
 /** No beat yet, or one that has run out with its successor still in flight.
  *

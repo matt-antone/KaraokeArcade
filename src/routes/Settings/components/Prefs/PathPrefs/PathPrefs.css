@@ -12,6 +12,13 @@
   }
 }
 
+.songCount {
+  margin-left: auto;
+  font-family: var(--font-display);
+  font-size: 11px;
+  color: var(--arc-muted);
+}
+
 .content {
   display: flex;
   flex-direction: column;

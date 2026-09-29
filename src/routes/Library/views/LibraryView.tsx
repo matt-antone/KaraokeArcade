@@ -56,8 +56,12 @@ const LibraryView = () => {
 
       {!isLoading && hasNoMatches && (
         <TextOverlay className={styles.empty}>
-          <h1>No matches</h1>
-          <p>Try a different search, or clear the filters.</p>
+          <h1>No match</h1>
+          <p>
+            {filterStr.trim()
+              ? `Nothing matches “${filterStr.trim()}”. Check the spelling, or try the artist’s name.`
+              : 'No starred songs yet. Tap a ★ to keep one here.'}
+          </p>
         </TextOverlay>
       )}
     </>

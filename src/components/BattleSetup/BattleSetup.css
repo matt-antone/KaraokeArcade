@@ -1,12 +1,11 @@
-/* The challenger's phone. See BattleSetup.tsx.
+/* The challenger's phone: Arcade Flow v2, 13a (pick opponent), 13a2
+   (challenge sent) and 13a3 (declined).
 
-   Arcade, not DECK, and exempted from the palette and shadow rules in
-   src/styles/deck-rules.test.ts on purpose — the reasoning is on the .screen
-   rule in BattleStage/BattleFrame.css, which is also where every --arc-*
-   colour read below is declared. Nothing here names a colour of its own. */
+   Every colour is a variables.css token, read through the roles the frame
+   declares on .screen in BattleStage/BattleFrame.css, and
+   src/styles/arcade-rules.test.ts holds this file to the same rules as the
+   rest of the app: square corners, hard drops, no blur outside a keyframe. */
 
-/* Every step is one of these: a column that owns the rest of the phone and
-   pins its own footer to the bottom. */
 .body {
   flex: 1;
   min-height: 0;
@@ -14,67 +13,61 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: var(--arc-ground);
 }
 
-/* Arriving out of the point the thumb just left, which is the origin the iris
-   is growing from at the same moment — one motion, not two. */
+/* Every arriving screen scales down out of the point the thumb left, which is
+   the iris's origin — see useBattleIris. */
 .slam {
   transform-origin: var(--fx-x) var(--fx-y);
-  animation: battle-setup-slam 260ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  animation: battle-setup-slam 260ms steps(6, end) both;
 }
 
 .masthead {
   flex: none;
-  padding: 16px 14px 0;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 28px 20px 0;
 }
 
+/* "Pick your opponent", 13a: Silkscreen 22px, set flush left. */
 .title {
   font-family: var(--font-display);
-  font-size: 21px;
+  font-size: var(--text-3xl);
   line-height: 1.15;
-  text-shadow: 3px 3px 0 #000;
 }
 
 .lede {
-  margin-top: 10px;
-  font-family: var(--font-arcade);
-  font-size: 8px;
-  letter-spacing: 0.16em;
-  color: var(--arc-muted);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--arc-text-2);
 }
 
-/* Pushes what follows to the bottom. Named for what it does rather than what
-   it holds, because it holds nothing. */
 .gap {
   flex: 1 1 auto;
-  min-height: 40px;
+  min-height: 24px;
 }
 
 .footer {
   flex: none;
   position: relative;
-  padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
-  background-color: var(--arc-panel);
-  border-top: 1px solid var(--arc-rule);
+  padding: 16px 20px calc(24px + env(safe-area-inset-bottom));
 }
 
 .footerStack {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
 .footerPair {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
-/* ---- SELECTED --------------------------------------------------------- */
-
-/* Light thrown up from the floor the fighter is standing on, not a glow on
-   anything: it is behind the art and stops at the horizon. */
+/* A pool of the screen's colour rising from behind the fighter. A gradient,
+   not a shadow, so there is no blur to speak of — just a wash. */
 .glowGold,
 .glowGreen,
 .glowRed {
@@ -82,98 +75,93 @@
   left: 0;
   right: 0;
   top: 0;
+  height: 54%;
   pointer-events: none;
 }
 
 .glowGold {
-  height: 46%;
-  background: radial-gradient(70% 100% at 50% 100%, rgba(255, 209, 102, 0.22) 0%, rgba(13, 14, 15, 0) 70%);
+  background: radial-gradient(70% 100% at 50% 100%, color-mix(in srgb, var(--arc-gold) 22%, transparent) 0%, transparent 70%);
 }
 
 .glowGreen {
-  height: 54%;
-  background: radial-gradient(70% 100% at 50% 100%, rgba(127, 227, 165, 0.26) 0%, rgba(13, 14, 15, 0) 72%);
+  background: radial-gradient(70% 100% at 50% 100%, color-mix(in srgb, var(--arc-green) 26%, transparent) 0%, transparent 72%);
 }
 
 .glowRed {
-  height: 54%;
-  background: radial-gradient(70% 100% at 50% 100%, rgba(192, 23, 35, 0.22) 0%, rgba(13, 14, 15, 0) 72%);
+  background: radial-gradient(70% 100% at 50% 100%, color-mix(in srgb, var(--arc-red) 22%, transparent) 0%, transparent 72%);
 }
+
+/* --- selected ------------------------------------------------------------ */
 
 .selectedHead {
   flex: none;
   position: relative;
-  padding: 26px 18px 0;
-  font-family: var(--font-arcade);
-  font-size: 9px;
-  letter-spacing: 0.3em;
-  color: var(--arc-gold);
+  padding: 28px 20px 0;
+  font-family: var(--font-display);
+  font-size: var(--text-m);
+  color: var(--arc-muted);
   text-align: center;
 }
 
-/* The portrait takes whatever is left between the label and the name. */
 .hero {
   flex: 1;
   min-height: 0;
   position: relative;
-  margin-top: 10px;
+  margin: 14px 20px 0;
 }
 
 .heroArt {
-  animation: battle-setup-slam 320ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  animation: battle-setup-slam 320ms steps(6, end) both;
 }
 
+/* The fighter's name, gold on its brown drop: the battle key's own type. */
 .selectedName {
+  --text-shadow-color: var(--arc-gold-shadow);
   flex: none;
   position: relative;
-  padding: 0 18px;
+  padding: 0 20px;
   font-family: var(--font-display);
-  font-size: 30px;
+  font-size: 32px;
+  font-weight: var(--weight-bold);
   line-height: 1;
   color: var(--arc-gold);
-  text-shadow: 4px 4px 0 #000;
+  text-shadow: var(--text-shadow-hard);
   text-align: center;
-  animation: battle-setup-slam 380ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  animation: battle-setup-slam 380ms steps(6, end) both;
 }
 
 .selectedTag {
   flex: none;
   position: relative;
   margin-top: 12px;
-  padding: 0 18px;
-  font-family: var(--font-arcade);
-  font-size: 9px;
-  letter-spacing: 0.14em;
+  padding: 0 20px;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
   color: var(--arc-muted);
   text-align: center;
 }
 
-.selectedTag + .footer {
-  margin-top: 18px;
-}
+/* --- opponent ------------------------------------------------------------ */
 
-/* ---- OPPONENT --------------------------------------------------------- */
-
-/* The pick, carried up here out of the last screen. This chip is the flyer's
-   destination on the way in and its source on the way out. */
+/* The fighter the challenger is carrying through the flow, as a chip. */
 .carried {
   flex: none;
   display: flex;
   align-items: center;
-  gap: 9px;
-  margin: 14px 12px 0;
-  padding: 7px 9px;
-  background-color: var(--arc-panel);
-  box-shadow: inset 0 0 0 1px var(--arc-rule);
+  gap: 12px;
+  margin: 18px 20px 0;
+  padding: 8px;
+  background-color: var(--arc-surface);
+  box-shadow: var(--well);
 }
 
 .carriedChip {
   position: relative;
   flex: none;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   overflow: hidden;
-  background-color: var(--arc-ground);
+  background-color: var(--arc-surface-hover);
   box-shadow: inset 0 0 0 2px var(--arc-gold);
 }
 
@@ -183,95 +171,86 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: var(--font-arcade);
-  font-size: 10px;
-  letter-spacing: 0.06em;
+  font-family: var(--font-display);
+  font-size: var(--text-m);
 }
 
-.change {
-  flex: none;
-  color: var(--arc-two);
-}
-
-/* Inset rather than raised — a field is a hole in the panel, and the only one
-   on this screen. */
 .search {
   flex: none;
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 10px 12px 0;
-  padding: 0 11px;
-  background-color: var(--arc-inset);
-  box-shadow: inset 0 0 0 1px var(--arc-rule);
+  margin: 12px 20px 0;
+  padding: 0 12px;
+  background-color: var(--arc-deep);
+  box-shadow: var(--well-deep);
 }
 
 .searchGlyph {
   flex: none;
-  font-family: var(--font-mono);
-  font-size: 14px;
-  color: var(--arc-quiet);
+  font-family: var(--font-display);
+  font-size: var(--text-m);
+  color: var(--arc-disabled);
 }
 
-.searchInput {
+/* Doubled to outrank global.css's field well: this input sits in the search
+   bar's own. */
+.searchInput.searchInput {
   flex: 1;
   min-width: 0;
   min-height: 48px;
+  padding: 0;
   border: none;
   background: none;
-  font-family: var(--font-mono);
-  font-size: 13px;
-  letter-spacing: 0.06em;
-  color: var(--arc-ink);
+  box-shadow: none;
+  font-family: var(--font-display);
+  font-size: var(--text-m);
+  color: var(--arc-text);
   outline: none;
 
   &::placeholder {
-    color: var(--arc-quiet);
+    color: var(--arc-disabled);
   }
 }
 
 .searchClear {
   flex: none;
-  width: 34px;
-  height: 44px;
+  width: var(--target);
+  height: var(--target);
   border: none;
   background: none;
-  font-family: var(--font-mono);
-  font-size: 16px;
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
   color: var(--arc-muted);
   cursor: pointer;
 }
 
+/* "Here now", 13a: a mint square, the label, the count. */
 .hereRow {
   flex: none;
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 13px 14px 7px;
+  gap: 8px;
+  padding: 24px 20px 10px;
 }
 
-/* Blinking on a step, not a fade: this is the one thing on the screen saying
-   the list is live rather than remembered. */
 .hereDot {
   flex: none;
-  width: 7px;
-  height: 7px;
-  background-color: var(--arc-two);
-  animation: battle-setup-blink 1.1s steps(1) infinite;
+  width: 8px;
+  height: 8px;
+  background-color: var(--arc-mint);
 }
 
 .here {
-  flex: 1;
-  font-family: var(--font-arcade);
-  font-size: 9px;
-  letter-spacing: 0.16em;
-  color: var(--arc-two);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  color: var(--arc-mint);
 }
 
 .hereCount {
   flex: none;
-  font-family: var(--font-mono);
-  font-size: 10px;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
   color: var(--arc-muted);
 }
 
@@ -280,26 +259,27 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 10px;
   overflow: hidden auto;
-  padding: 0 12px 12px;
+  padding: 4px 20px 12px;
   scrollbar-width: thin;
-  scrollbar-color: var(--arc-rule) var(--arc-card);
+  scrollbar-color: var(--arc-line) var(--arc-surface);
 }
 
-/* A person, at a size a thumb can hit in a dark bar. Handle and face and
-   nothing else — a row that carried song counts or a last-seen time would be
-   inviting a decision this screen is not asking for. */
+/* One person per row, and nothing but their face and their name: a row that
+   carried song counts or a last-seen time would be a leaderboard, and this is
+   a question about who to fight. */
 .row {
   flex: none;
   display: flex;
   align-items: center;
-  gap: 11px;
-  min-height: 62px;
-  padding: 0 0 0 10px;
+  gap: 12px;
+  min-height: 64px;
+  padding: 8px;
   border: none;
-  background-color: var(--arc-panel);
-  box-shadow: inset 0 0 0 1px var(--arc-hair);
+  background-color: var(--arc-surface);
+  box-shadow: var(--well);
+  color: var(--arc-text);
   text-align: left;
   cursor: pointer;
 
@@ -309,23 +289,20 @@
   }
 }
 
+/* Picked, 13a: a 3px ring outside the row in the challenger's red. */
 .rowOn {
-  background-color: var(--arc-row-on);
-  box-shadow: inset 0 0 0 2px var(--arc-two);
+  box-shadow: 0 0 0 3px var(--arc-red);
 }
 
-/* The app's own UserAvatar, squared off and re-grounded for the cabinet. The
-   class is doubled to outrank UserAvatar.css's own .container without relying
-   on which of the two sheets webpack happens to emit second — a rounded,
-   deck-coloured well in the middle of a square arcade row is what that
-   coin-flip looks like when it lands the other way. */
+/* The class is doubled to outrank UserAvatar.css's own .container without
+   relying on which of the two sheets webpack happens to emit second. */
 .avatar.avatar {
   flex: none;
-  width: 42px;
+  width: 48px;
   margin: 0;
   border-radius: 0;
-  background: var(--arc-ground);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  background: var(--arc-surface-hover);
+  box-shadow: none;
 }
 
 .rowName {
@@ -334,60 +311,49 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: var(--font-mono);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: var(--arc-ink);
+  font-family: var(--font-body);
+  font-size: var(--text-l);
+  font-weight: var(--weight-semibold);
 }
 
 .rowMark {
   flex: none;
-  font-family: var(--font-arcade);
-  font-size: 9px;
-  letter-spacing: 0.08em;
-  color: var(--arc-two);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  color: var(--arc-red);
 }
 
-/* Full height and hard against the edge: the row's own margin marker, so a
-   picked row is still obvious with a thumb over the middle of it. */
 .rowBar {
   flex: none;
   width: 4px;
   align-self: stretch;
-  background-color: transparent;
 }
 
 .rowOn .rowBar {
-  background-color: var(--arc-two);
+  background-color: var(--arc-red);
 }
 
-/* The room is the whole population, so an empty result is a fact about the
-   room and says so. There is no invite-by-handle to offer instead. */
 .empty {
   padding: 34px 12px;
-  font-family: var(--font-arcade);
-  font-size: 9px;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
   line-height: 2.2;
-  letter-spacing: 0.1em;
-  color: var(--arc-quiet);
+  color: var(--arc-disabled);
   text-align: center;
 }
 
-/* ---- CONFIRM ---------------------------------------------------------- */
+/* --- confirm ------------------------------------------------------------- */
 
 .scroller {
   flex: 1;
   min-height: 0;
   overflow: hidden auto;
-  padding: 18px 14px;
+  padding: 20px;
   scrollbar-width: thin;
-  scrollbar-color: var(--arc-rule) var(--arc-card);
+  scrollbar-color: var(--arc-line) var(--arc-surface);
 }
 
-/* The opponent's photograph, filling the versus plate the way a fighter fills
-   the other one. Square, because the plate is — and doubled for the same
-   reason .avatar is. */
+/* Doubled for the same reason as .avatar. */
 .plateImage.plateImage {
   width: 100%;
   height: 100%;
@@ -399,15 +365,14 @@
 
 .closing {
   margin-top: 16px;
-  font-family: var(--font-arcade);
-  font-size: 8px;
-  line-height: 2.2;
-  letter-spacing: 0.1em;
-  color: var(--arc-quiet);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  line-height: 2;
+  color: var(--arc-muted);
   text-align: center;
 }
 
-/* ---- THE ANSWER ------------------------------------------------------- */
+/* --- the answer ---------------------------------------------------------- */
 
 .answerRow {
   flex: none;
@@ -415,45 +380,43 @@
   z-index: 3;
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 18px 14px 0;
+  gap: 8px;
+  padding: 20px 20px 0;
 }
 
 .answerDot {
   flex: none;
-  width: 7px;
-  height: 7px;
-  background-color: var(--arc-two);
-  animation: battle-setup-blink 900ms steps(1) infinite;
+  width: 10px;
+  height: 10px;
+  background-color: var(--arc-green);
+  animation: battle-setup-blink 1.1s steps(1) infinite;
 }
 
 .answerDotRed {
-  background-color: var(--arc-one);
+  background-color: var(--arc-red);
   animation: none;
 }
 
 .answerTag {
   flex: 1;
-  font-family: var(--font-arcade);
-  font-size: 9px;
-  letter-spacing: 0.2em;
-  color: var(--arc-two);
+  font-family: var(--font-display);
+  font-size: var(--display-s);
+  color: var(--arc-green);
 }
 
 .answerTagRed {
-  color: var(--arc-one);
+  color: var(--arc-red);
 }
 
 .answerWhen {
   flex: none;
-  font-family: var(--font-mono);
-  font-size: 12px;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
   color: var(--arc-muted);
 }
 
-/* They took it, and are standing there. Behind the content rather than in the
-   flow, the same way the challenger's fighter stands behind their invite: the
-   news reads in the same place whatever the figure's proportions are. */
+/* Their fighter stands behind the news, the way the challenger's stands behind
+   their invite on the other phone. */
 .answerHero {
   position: absolute;
   z-index: 2;
@@ -466,11 +429,10 @@
 }
 
 .answerHeroArt {
-  animation: battle-setup-slam 340ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  animation: battle-setup-slam 340ms steps(6, end) both;
 }
 
-/* The one non-pixel asset in the set, and the only thing on these screens
-   drawn smoothly. */
+/* The one non-pixel asset in the set, told not to sample like one. */
 .lockup {
   flex: 0 1 auto;
   min-height: 0;
@@ -484,33 +446,46 @@
   image-rendering: auto;
 }
 
+/* Spent: drained of colour rather than faded, so nothing ghosts through. */
 .lockupSpent {
-  opacity: 0.45;
+  filter: grayscale(1) brightness(0.5);
 }
 
 .endHead {
   flex: none;
   position: relative;
   z-index: 3;
-  padding: 10px 18px 0;
-  font-family: var(--font-arcade);
-  font-size: 9px;
-  letter-spacing: 0.2em;
-  color: var(--arc-two);
+  padding: 10px 20px 0;
+  font-family: var(--font-display);
+  font-size: var(--text-m);
+  color: var(--arc-green);
   text-align: center;
 }
 
+/* CHALLENGE SENT and NO CONTEST, 13a2/13a3: the loudest line on the screen,
+   with a hard 4px drop. */
 .endName {
+  --text-shadow-color: var(--arc-deep);
   flex: none;
   position: relative;
   z-index: 3;
-  margin-top: 7px;
-  padding: 0 18px;
+  margin-top: 8px;
+  padding: 0 24px;
   font-family: var(--font-display);
-  font-size: 20px;
-  line-height: 1.25;
-  text-shadow: 3px 3px 0 #000;
+  font-size: 32px;
+  font-weight: var(--weight-bold);
+  line-height: 1.05;
+  text-shadow: 4px 4px 0 var(--text-shadow-color);
   text-align: center;
+}
+
+.glowRed ~ .endName {
+  color: var(--arc-red);
+}
+
+.glowGreen ~ .endName {
+  color: var(--arc-gold);
+  --text-shadow-color: var(--arc-magenta);
 }
 
 .songCard {
@@ -519,19 +494,19 @@
   z-index: 3;
   display: flex;
   align-items: center;
-  gap: 11px;
-  margin: 12px 14px 0;
-  padding: 10px 12px;
-  background-color: var(--arc-card);
-  box-shadow: inset 0 0 0 1px var(--arc-hair);
+  gap: 12px;
+  margin: 16px 20px 0;
+  padding: 14px 16px;
+  background-color: var(--arc-surface);
+  box-shadow: var(--well-deep);
 }
 
 .songArt {
   flex: none;
-  width: 42px;
-  height: 42px;
-  background-color: var(--arc-ground);
-  box-shadow: inset 0 0 0 2px var(--arc-two);
+  width: 48px;
+  height: 48px;
+  background-color: var(--arc-surface-hover);
+  box-shadow: inset 0 0 0 2px var(--arc-green);
   image-rendering: pixelated;
 }
 
@@ -544,56 +519,48 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: var(--font-mono);
-  font-size: 14px;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
 }
 
 .songMeta {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-top: 7px;
-  font-family: var(--font-arcade);
-  font-size: 8px;
-  letter-spacing: 0.1em;
-  color: var(--arc-quiet);
+  margin-top: 6px;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  color: var(--arc-muted);
 }
 
 .endCard {
   flex: none;
   position: relative;
-  margin: 10px 14px 0;
-  padding: 12px;
-  background-color: var(--arc-card);
-  box-shadow: inset 0 0 0 1px var(--arc-hair);
-  font-family: var(--font-arcade);
-  font-size: 9px;
-  line-height: 2;
-  letter-spacing: 0.1em;
-  color: var(--arc-muted);
+  margin: 14px 24px 0;
+  font-family: var(--font-body);
+  font-size: var(--text-xl);
+  line-height: 1.4;
+  color: var(--arc-text-2);
   text-align: center;
 }
 
 .endNote {
-  margin-bottom: 10px;
-  font-family: var(--font-arcade);
-  font-size: 8px;
+  margin-bottom: 12px;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
   line-height: 2;
-  letter-spacing: 0.12em;
-  color: var(--arc-quiet);
+  color: var(--arc-muted);
   text-align: center;
 }
 
 .endKey {
-  margin: 0;
+  margin-bottom: 0;
 }
 
-/* ---- MATCH SET and CANCELLED ------------------------------------------ */
+/* --- match set / cancelled ------------------------------------------------ */
 
-/* Both terminal, both here to say what just happened before the screen goes
-   away on its own. Centred rather than pinned to a footer: there is nothing
-   left to press. */
+/* Terminal, and on screen for about a second before it goes away on its own.
+   Centred rather than pinned to a footer: there is nothing left to press. */
 .closingBeat {
   flex: 1;
   min-height: 0;
@@ -601,70 +568,64 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 18px;
-  padding: 28px;
-  background-color: var(--arc-ground);
+  gap: 14px;
+  padding: 0 32px;
   text-align: center;
 }
 
 .closingTitle {
+  --text-shadow-color: var(--arc-deep);
   font-family: var(--font-display);
-  font-size: 19px;
+  font-size: 38px;
+  font-weight: var(--weight-bold);
+  line-height: 1.05;
   color: var(--arc-muted);
-  text-shadow: 3px 3px 0 #000;
+  text-shadow: 4px 4px 0 var(--text-shadow-color);
 }
 
+/* MATCH SET is 13a2's CHALLENGE SENT: gold, dropped in magenta. */
 .closingTitleSet {
-  color: var(--arc-two);
+  --text-shadow-color: var(--arc-magenta);
+  color: var(--arc-gold);
 }
 
 .closingPair {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  line-height: 1.9;
-  color: var(--arc-muted);
+  font-family: var(--font-body);
+  font-size: var(--text-xl);
+  color: var(--arc-text-2);
 }
 
 .closingNote {
-  font-family: var(--font-arcade);
-  font-size: 9px;
+  font-family: var(--font-display);
+  font-size: var(--text-m);
   line-height: 2;
-  letter-spacing: 0.14em;
-  color: var(--arc-gold);
-  animation: battle-setup-blink 900ms steps(1) infinite;
+  color: var(--arc-text-2);
+  animation: battle-setup-blink 1.1s steps(1) infinite;
 }
 
 .closingQuiet {
-  font-family: var(--font-arcade);
-  font-size: 9px;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
   line-height: 2;
-  letter-spacing: 0.14em;
-  color: var(--arc-quiet);
+  color: var(--arc-muted);
 }
 
-/* ---- THE FLYING SINGER ------------------------------------------------ */
-
-/* The chosen singer, in the air between two slots. It is the same object the
-   whole way: lifted out of the layout, animated by its own box rather than by
-   a transform, and dropped back into a slot that was empty while it was
-   travelling. Above the wash so it cannot be scanlined out of existence
-   mid-flight. */
+/* The chosen fighter in flight between two slots. It crosses the whole frame,
+   so it is lifted out of the layout, animated by its own box rather than by a
+   transform, and dropped back into a slot that was empty while it travelled.
+   Above the wash so it cannot be scanlined out of existence mid-flight. */
 .flyer {
   position: absolute;
   z-index: 46;
   overflow: hidden;
   pointer-events: none;
-  background-color: var(--arc-panel);
+  background-color: var(--arc-surface-hover);
   box-shadow: inset 0 0 0 2px var(--arc-gold);
   transition:
     left 420ms cubic-bezier(0.3, 0.85, 0.25, 1),
     top 420ms cubic-bezier(0.3, 0.85, 0.25, 1),
     width 420ms cubic-bezier(0.3, 0.85, 0.25, 1),
     height 420ms cubic-bezier(0.3, 0.85, 0.25, 1);
-
-  span {
-    transition: transform 420ms cubic-bezier(0.3, 0.85, 0.25, 1);
-  }
 }
 
 @keyframes battle-setup-slam {
@@ -673,7 +634,23 @@
   100% { transform: scale(1); opacity: 1; }
 }
 
+/* The README's blink: 1.1s, hard on and off. */
 @keyframes battle-setup-blink {
   0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0.12; }
+  50%, 100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slam,
+  .heroArt,
+  .selectedName,
+  .answerHeroArt,
+  .answerDot,
+  .closingNote {
+    animation: none;
+  }
+
+  .flyer {
+    transition: none;
+  }
 }

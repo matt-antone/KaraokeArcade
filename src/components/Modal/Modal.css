@@ -1,5 +1,5 @@
-/* A service panel that swings out over the chassis. Solid brushed face — never a
-   blur: when you open a panel on a deck, you cannot see through it.
+/* A panel that drops over the screen. Solid surface with an amber pixel
+   border — never a blur: you cannot see through it.
 
    Padding lives on the three sections, not on the dialog, so the title and
    button rules run edge to edge the way a real seam does. */
@@ -8,18 +8,19 @@
   flex-direction: column;
   opacity: 0;
   color: var(--ink);
-  background: var(--brush);
-  border: var(--hair-rule);
+  background: var(--faceplate);
+  border: none;
   border-radius: var(--radius-panel);
+  --pixel-border-color: var(--vu);
   /* wider than the handoff's fixed 480: this is a phone-first product and the
      modal is the one place a long path or a room list has to breathe */
   max-width: min(800px, 90vw);
   overflow: hidden;
-  box-shadow: var(--bevel), 0 0 0 100vmax rgba(0, 0, 0, 0);
+  box-shadow: var(--pixel-border), 0 0 0 100vmax rgba(0, 0, 0, 0);
 
   &[open] {
     animation: fadeIn var(--dur-ui) forwards;
-    box-shadow: var(--bevel), 0 0 0 100vmax rgba(0, 0, 0, 0.72);
+    box-shadow: var(--pixel-border), 0 0 0 100vmax var(--scrim);
   }
 }
 
@@ -32,12 +33,13 @@
   padding: 0 var(--gap-2) 0 var(--gap-4);
   border-bottom: var(--hair-rule);
 
-  /* one ink level up from the .silkscreen utility's --ink-3: a title is a
-     heading, not meta. Scoped here so the shared utility keeps its value. */
+  /* a title is a heading, not meta: yellow Silkscreen, not the utility's
+     --ink-3. Scoped here so the shared utility keeps its value. */
   h1 {
     flex: 1;
     margin: 0;
-    color: var(--ink-2);
+    font-size: var(--text-m);
+    color: var(--arc-yellow);
   }
 }
 

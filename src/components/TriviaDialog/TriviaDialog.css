@@ -1,5 +1,5 @@
-/* The pad fills the phone: the Modal's panel restyled as the arcade's dark,
-   its title bar as the screen's wordmark. */
+/* The pad fills the phone: the Modal's panel restyled as the arcade's ground,
+   its title bar as the screen's HUD label. */
 dialog.modal {
   box-sizing: border-box;
   width: 100vw;
@@ -7,11 +7,11 @@ dialog.modal {
   height: 100dvh;
   max-height: 100dvh;
   margin: 0;
-  border: 1px solid rgba(179, 136, 255, .4);
+  border: 0;
   border-radius: 0;
-  background: linear-gradient(180deg, #1a0b3a, #07040f);
-  box-shadow: inset 0 0 30px rgba(179, 136, 255, .2);
-  color: #fff;
+  background: var(--arc-ground);
+  box-shadow: none;
+  color: var(--arc-text);
   /* The dialog only exists while a round is on, so mounting is the cue: the
      frame blinks twice, the way an LED announces itself. Declared here rather
      than in variables.css because css-loader hashes animation names inside a
@@ -19,13 +19,23 @@ dialog.modal {
   animation: trivia-alert 220ms steps(1, end) 4;
 
   &[open] {
-    box-shadow: inset 0 0 30px rgba(179, 136, 255, .2);
+    box-shadow: none;
   }
 
-  /* the Modal's title bar, as the pad's wordmark */
+  /* A dialog sits in the top layer, above global.css's scanlines, so it
+     draws its own. */
+  &::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: var(--scanlines);
+  }
+
+  /* the Modal's title bar, as the HUD's TRIVIA */
   > :first-child {
     border-bottom: 0;
-    padding-left: 18px;
+    padding: 12px 12px 0 24px;
 
     button {
       color: var(--arc-text-2);
@@ -33,38 +43,16 @@ dialog.modal {
   }
 
   h1 {
-    font-family: var(--font-trivia);
+    font-family: var(--font-display);
     font-size: 14px;
     letter-spacing: 0;
-    text-transform: uppercase;
     color: var(--arc-yellow);
-    text-shadow: 0 0 10px rgba(255, 214, 0, .8), 2px 2px 0 var(--arc-magenta);
-  }
-
-}
-
-/* The reveal turns the frame magenta and the wordmark mint. */
-dialog.reveal {
-  border-color: rgba(255, 46, 136, .45);
-
-  &,
-  &[open] {
-    box-shadow: inset 0 0 30px rgba(255, 46, 136, .22);
-  }
-
-  h1 {
-    color: var(--arc-mint);
-    text-shadow: 0 0 10px rgba(126, 249, 208, .8);
   }
 }
 
 @keyframes trivia-alert {
-  0%, 49.9% { outline: 2px solid var(--arc-yellow); outline-offset: -2px; }
-  50%, 100% { outline: 2px solid transparent; outline-offset: -2px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .modal { animation: none; }
+  0%, 49.9% { outline: 4px solid var(--arc-yellow); outline-offset: -4px; }
+  50%, 100% { outline: 4px solid transparent; outline-offset: -4px; }
 }
 
 /* Everything under the title bar, as one column that fills what is left. */
@@ -74,7 +62,7 @@ dialog.reveal {
   flex-direction: column;
   gap: 12px;
   height: 100%;
-  padding: 0 4px 8px;
+  padding: 4px 10px 18px;
 }
 
 .centered {
@@ -82,50 +70,138 @@ dialog.reveal {
   justify-content: center;
 }
 
-.question {
-  padding: 4px 0;
-  text-align: center;
-  font-family: var(--font-trivia);
-  font-size: 16px;
-  line-height: 1.45;
-  color: #fff;
+.spacer {
+  flex: 1;
 }
 
-/* The same two by two the TV lays out, so "top right on my phone" and "top
-   right on the TV" are the same answer. It takes all the height left, so the
-   keys stay well above any touch-target floor. */
+.question {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1.2;
+  text-wrap: pretty;
+  color: var(--arc-text);
+}
+
+/* Stacked full width, A to D — the letters tie them to the TV's grid. */
 .keys {
-  flex: 1;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: minmax(110px, 1fr);
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hint,
+.caption,
+.note {
+  font-family: var(--font-display);
+  font-size: 11px;
+  color: var(--arc-muted);
 }
 
 .hint {
   text-align: center;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-  color: rgba(216, 204, 255, .5);
-}
-
-.missed {
-  color: rgba(255, 176, 212, .75);
 }
 
 .locked {
   text-align: center;
-  font-family: var(--font-trivia);
-  font-size: 12px;
-  letter-spacing: .1em;
-  text-transform: uppercase;
+  font-family: var(--font-display);
+  font-size: 13px;
   color: var(--arc-mint);
-  text-shadow: 0 0 12px rgba(126, 249, 208, .7);
 }
 
-/* ---- the standings, phone-sized -------------------------------------- */
+/* ---- the reveal (12f, 12f2, 12f3) ------------------------------------ */
+
+.verdict {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding-top: 24px;
+  text-align: center;
+  font-family: var(--font-display);
+}
+
+.headline {
+  font-weight: 700;
+  font-size: 48px;
+  line-height: 1.05;
+  text-transform: uppercase;
+  --text-shadow-color: var(--arc-deep);
+  text-shadow: 4px 4px 0 var(--text-shadow-color);
+}
+
+.right {
+  color: var(--arc-mint);
+}
+
+.wrong {
+  color: var(--arc-magenta);
+}
+
+.timeUp,
+.final {
+  font-size: 44px;
+  color: var(--arc-yellow);
+  --text-shadow-color: var(--arc-magenta);
+}
+
+.note {
+  font-size: 14px;
+}
+
+/* the points bursting in yellow to pink — the README's ptsburst */
+.points {
+  display: inline-block;
+  font-size: 36px;
+  line-height: 1;
+  color: var(--arc-yellow);
+  text-shadow: 3px 3px 0 var(--arc-magenta);
+  animation: ptsburst .9s ease-out 200ms both;
+}
+
+.nil {
+  color: var(--arc-disabled);
+  text-shadow: none;
+  animation: none;
+}
+
+.reveal .keys {
+  margin-top: 16px;
+}
+
+/* your character standing on their own stage, the stage washed down to the
+   ground so the figure reads */
+.art {
+  flex: 1;
+  min-height: 0;
+  margin: 0 -10px;
+  background-color: var(--arc-ground);
+  background-image:
+    var(--key),
+    linear-gradient(color-mix(in srgb, var(--arc-ground) 45%, transparent), color-mix(in srgb, var(--arc-ground) 45%, transparent)),
+    var(--stage);
+  background-repeat: no-repeat;
+  background-position: 50% calc(100% + 10px), 0 0, 50% 80%;
+  background-size: auto 100%, cover, cover;
+  image-rendering: pixelated;
+}
+
+.standing {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: -12px -10px -18px;
+  padding: 16px 24px 32px;
+  background: var(--arc-deep);
+  font-family: var(--font-display);
+}
+
+.standingValue {
+  font-size: 18px;
+  color: var(--arc-mint);
+}
+
+/* ---- the standings, phone-sized (12g) -------------------------------- */
 
 .scoreboard {
   display: flex;
@@ -135,10 +211,12 @@ dialog.reveal {
 
 .scoreRow {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
-  padding: 7px 11px;
-  background: rgba(179, 136, 255, .1);
+  padding: 8px;
+  background: var(--arc-surface);
+  box-shadow: inset 0 0 0 2px var(--arc-line);
+  font-family: var(--font-display);
 }
 
 /* your own row, carried down from wherever you actually stand */
@@ -147,17 +225,13 @@ dialog.reveal {
 }
 
 .rank {
-  font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--arc-text-rank);
+  color: var(--arc-disabled);
 }
 
-/* align-self because the row is baseline-aligned for its three bits of text,
-   and a square has no baseline to align to -- it would hang off the bottom. */
 .scoreAvatar {
-  width: 24px;
+  width: 36px;
   flex: none;
-  align-self: center;
 }
 
 .scoreName {
@@ -165,30 +239,34 @@ dialog.reveal {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 15px;
-  color: var(--arc-text-row);
+  font-size: 12px;
+  color: var(--arc-text-2);
 }
 
 .score {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 15px;
-  color: var(--arc-mint);
+  font-size: 14px;
+  color: var(--arc-text);
   font-variant-numeric: tabular-nums;
 }
 
-/* yellow is "yours" on the arcade */
+/* amber is "yours" on the arcade */
 .mine {
-  background: rgba(255, 214, 0, .14);
-  box-shadow: inset 0 0 0 1px rgba(255, 214, 0, .5);
+  box-shadow: inset 0 0 0 2px var(--mine);
 
   .rank,
   .scoreName,
   .score {
-    color: var(--arc-yellow);
+    color: var(--mine);
   }
+}
 
-  .scoreName {
-    font-weight: 700;
-  }
+@keyframes ptsburst {
+  0% { transform: scale(.3); opacity: 0; text-shadow: 0 0 0 transparent; }
+  35% { transform: scale(1.35); opacity: 1; text-shadow: var(--glow-burst); }
+  100% { transform: scale(1); opacity: 1; text-shadow: 3px 3px 0 var(--arc-magenta); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal,
+  .points { animation: none; }
 }

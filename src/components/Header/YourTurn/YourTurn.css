@@ -5,8 +5,8 @@
    the tint changes, and it is the state:
 
      on stage  --vu-well       amber, the channel that is live
-     standby   --standby-well  teal, armed but not running
-     paused    --key-well      neutral, a dead channel
+     standby   --standby-well  mint, armed but not running
+     paused    --arc-surface   neutral, a dead channel
 
    No new colour enters the palette to do this; each well already exists as the
    panel-value form of its signal. The strip is recessed rather than raised
@@ -23,7 +23,7 @@
   align-items: center;
   gap: var(--gap-3);
   padding: var(--gap-2) var(--gap-4);
-  background-color: var(--key-well);
+  background-color: var(--arc-surface);
   border-radius: var(--radius-panel);
   box-shadow: var(--well);
   overflow: hidden;
@@ -72,12 +72,12 @@
   margin-bottom: 3px;
 }
 
-/* the one number in the app set in Michroma: it has to be readable at arm's
-   length, in a dark room, by someone holding a drink */
+/* the number that has to be readable at arm's length, in a dark room, by
+   someone holding a drink: Silkscreen, amber */
 .wait {
   font-family: var(--font-display);
-  font-size: 1.15rem;
-  letter-spacing: .08em;
+  font-size: 1rem;
+  letter-spacing: .04em;
   text-transform: uppercase;
   line-height: 1;
   color: var(--vu);

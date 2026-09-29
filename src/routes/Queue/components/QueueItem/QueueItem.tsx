@@ -39,6 +39,8 @@ interface QueueItemProps {
   /** Absent on an optimistic row until the server echoes it back. */
   keyChange?: number
   pctPlayed: number
+  /** 1-based place in the turns still to come. Absent on played and current rows. */
+  position?: number
   queueId: number
   songId: number
   starCount: number
@@ -93,7 +95,7 @@ const rowActions = (
   ].filter(Boolean) as SwipeAction[]
 }
 
-/** The chip over the avatar: how long until this row, or that it is on now.
+/** The chip at the row's right edge: how long until this row, or that it is on now.
  *  The current row reads NOW — without it the amber state is unreachable,
  *  since isUpcoming and isCurrent are exclusive. */
 const WaitChip = ({ isCurrent, isUpcoming, isPaused, wait }: {
@@ -106,7 +108,7 @@ const WaitChip = ({ isCurrent, isUpcoming, isPaused, wait }: {
 
   return (
     <div className={clsx(styles.wait, isCurrent && styles.waitIsCurrent)}>
-      {isPaused ? <Icon icon='PAUSE' size={12} /> : isCurrent ? 'NOW' : wait}
+      {isPaused ? 'Hold' : isCurrent ? 'NOW' : wait}
     </div>
   )
 }
@@ -131,6 +133,7 @@ const QueueItem = ({
   keyChange = 0,
   onMoveClick,
   pctPlayed,
+  position,
   queueId,
   songId,
   starCount,
@@ -166,12 +169,12 @@ const QueueItem = ({
         className={clsx(
           styles.shell,
           isOwner && styles.isOwner,
-          isOwner && isPaused && styles.ownerPaused,
         )}
       >
         <div
           className={clsx(
             styles.container,
+            isCurrent && styles.current,
             isCurrent && !isPlaying && styles.paused,
             isSpent && styles.spent,
             isErrored && styles.errored,
@@ -193,10 +196,10 @@ const QueueItem = ({
             </div>
           )}
 
+          {position !== undefined && <div className={styles.position}>{position}</div>}
+
           <div className={styles.imageContainer}>
             <UserAvatar avatarId={userAvatarId} className={styles.avatar} />
-            {/* the chip marks the playing row and the waits ahead of it */}
-            <WaitChip isCurrent={isCurrent} isUpcoming={isUpcoming} isPaused={isPaused} wait={wait} />
           </div>
 
           <div className={styles.primary} translate='no'>
@@ -204,6 +207,9 @@ const QueueItem = ({
             <div className={styles.artist}>{artist}</div>
             <div className={clsx(styles.user, isOwner && styles.userIsOwner)}>{userDisplayName}</div>
           </div>
+
+          {/* the wait marks the playing row and the turns ahead of it */}
+          <WaitChip isCurrent={isCurrent} isUpcoming={isUpcoming} isPaused={isPaused} wait={wait} />
 
           {/* a shifted key is a fact about how this row will sound, so it reads
               on the row face rather than only inside the dialog that set it */}

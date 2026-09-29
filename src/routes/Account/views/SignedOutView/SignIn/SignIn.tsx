@@ -41,9 +41,9 @@ const SignIn = ({
       <Button type='submit' variant='primary'>
         Sign In
       </Button>
-      <Button onClick={onForgotPassword} variant='default'>
+      <button type='button' className={styles.link} onClick={onForgotPassword}>
         Forgot password?
-      </Button>
+      </button>
     </form>
   )
 }

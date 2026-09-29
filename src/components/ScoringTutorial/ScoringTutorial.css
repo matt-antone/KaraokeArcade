@@ -1,0 +1,187 @@
+/* How scoring works. See ScoringTutorial.tsx. Lifted from Arcade Flow v2, 03b. */
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden auto;
+}
+
+.masthead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gap-3);
+  padding: var(--gap-6) 24px 0;
+  text-align: center;
+}
+
+.portrait {
+  --pixel-border-color: var(--arc-amber);
+
+  position: relative;
+  width: 88px;
+  height: 88px;
+  overflow: hidden;
+  background-color: var(--arc-surface-hover);
+  box-shadow:
+    0 -3px 0 var(--pixel-border-color),
+    0 3px 0 var(--pixel-border-color),
+    -3px 0 0 var(--pixel-border-color),
+    3px 0 0 var(--pixel-border-color);
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    image-rendering: pixelated;
+  }
+}
+
+.heading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--display-m);
+  font-weight: var(--weight-regular);
+}
+
+.lede {
+  margin: 0;
+  font-size: 15px;
+  color: var(--arc-text-2);
+  text-wrap: pretty;
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-3);
+  padding: 24px 24px 0;
+}
+
+.card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: var(--gap-4);
+  padding: var(--gap-4) 16px;
+  background-color: var(--arc-surface);
+  box-shadow: var(--well);
+}
+
+.what {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+}
+
+.sub {
+  font-size: 13px;
+  color: var(--arc-muted);
+}
+
+.trivia {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-3);
+}
+
+.levels {
+  display: flex;
+  gap: var(--gap-2);
+}
+
+.level {
+  flex: 1;
+  padding: 7px 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: var(--text-s);
+  color: var(--arc-text-2);
+  background-color: var(--arc-surface-hover);
+}
+
+.levelHard {
+  color: var(--arc-on-amber);
+  background-color: var(--arc-yellow);
+}
+
+/* A value bursts in, glowing yellow to pink at the peak, and settles to its
+   own colour. The glow is the one blur the system allows, and only here. */
+.pts {
+  display: inline-block;
+  font-family: var(--font-display);
+  animation: scoring-pts-burst 800ms ease-out var(--delay, 0ms) both;
+}
+
+.amber,
+.yellow,
+.mint {
+  font-size: 20px;
+}
+
+.amber {
+  color: var(--arc-amber);
+}
+
+.yellow {
+  color: var(--arc-yellow);
+}
+
+.mint {
+  color: var(--arc-mint);
+}
+
+/* the highlight sweeping across a card once its value has landed */
+.shine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 35%;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--arc-ring), transparent);
+  animation: scoring-shine 900ms ease-in-out var(--delay, 0ms) both;
+}
+
+.footer {
+  margin-top: auto;
+  padding: var(--gap-5) 24px calc(28px + env(safe-area-inset-bottom));
+}
+
+.key {
+  padding: 16px 0;
+  font-size: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pts {
+    animation: none;
+  }
+
+  .shine {
+    display: none;
+  }
+}
+
+@keyframes scoring-pts-burst {
+  0% { transform: scale(.3); opacity: 0; text-shadow: none; }
+  35% { transform: scale(1.35); opacity: 1; text-shadow: var(--glow-burst); }
+  100% { transform: scale(1); opacity: 1; text-shadow: none; }
+}
+
+/* the sweep is a pale wash, so its strength lives in the keyframes */
+@keyframes scoring-shine {
+  0% { transform: translateX(-150%) skewX(-20deg); opacity: .35; }
+  100% { transform: translateX(400%) skewX(-20deg); opacity: .35; }
+}

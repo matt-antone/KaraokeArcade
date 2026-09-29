@@ -18,10 +18,11 @@
     width: 22px;
     height: 22px;
     margin: 0;
-    border-radius: var(--radius-round);
-    border: 2px solid var(--hairline);
+    /* square, like everything else: a radio is a lamp, not a dot */
+    border-radius: var(--radius-key);
+    border: none;
     background: var(--key-well);
-    box-shadow: var(--well);
+    box-shadow: var(--well-deep);
     outline: none;
     cursor: pointer;
 
@@ -30,9 +31,9 @@
     }
 
     &:checked {
-      border-color: var(--vu);
-      background: radial-gradient(circle, var(--vu) 0%, var(--vu) 58%, transparent 58%);
-      box-shadow: var(--bevel);
+      /* a lit square inside the amber outline */
+      background: var(--vu);
+      box-shadow: inset 0 0 0 2px var(--vu), inset 0 0 0 5px var(--key-well);
     }
   }
 }

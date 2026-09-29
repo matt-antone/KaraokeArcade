@@ -68,29 +68,26 @@ const LibraryHeader = () => {
       )}
 
       <div className={styles.searchRow}>
-        <Icon
-          icon='MAGNIFIER'
-          size={24}
-          className={clsx(styles.magnifier, filterStr && styles.magnifierActive)}
-        />
-        <input
-          type='search'
-          className={styles.searchInput}
-          placeholder='search'
-          aria-label='Search the library'
-          value={value}
-          onChange={handleChange}
-          ref={searchInput}
-        />
-        {filterStr && (
-          <Button
-            icon='CLEAR'
-            size={24}
-            aria-label='Clear search'
-            onClick={clearSearch}
-            className={styles.btnClear}
+        <div className={clsx(styles.field, filterStr && styles.fieldActive)}>
+          <input
+            type='search'
+            className={styles.searchInput}
+            placeholder='search'
+            aria-label='Search the library'
+            value={value}
+            onChange={handleChange}
+            ref={searchInput}
           />
-        )}
+          {filterStr && (
+            <Button
+              icon='CLEAR'
+              size={24}
+              aria-label='Clear search'
+              onClick={clearSearch}
+              className={styles.btnClear}
+            />
+          )}
+        </div>
         <button
           type='button'
           aria-label='Starred only'

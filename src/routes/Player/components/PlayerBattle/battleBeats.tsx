@@ -5,11 +5,14 @@ import useSpriteFrame from './useSpriteFrame'
 import { formatDuration } from 'lib/dateTime'
 import {
   BATTLE_LOCKUP,
+  BATTLE_STAGE_PLATE,
   battleSingerKeyArt,
   battleSingerOrDefault,
   battleSingerPortrait,
+  battleSingerStage,
 } from 'lib/battleSingers'
 import type { BattleSingerLoop, RosterSinger } from 'lib/battleSingers'
+import { POINTS_BATTLE_TAKE_PART, POINTS_BATTLE_WIN } from 'shared/types'
 import type { BattleSide, BattleSong, BattleTurn } from 'shared/types'
 import styles from './PlayerBattle.css'
 
@@ -25,7 +28,16 @@ import styles from './PlayerBattle.css'
  * --px in PlayerBattle.css; see the note at the top of that file. Nothing here
  * sets a size directly, which is what lets the whole stage rescale to any
  * display as one piece.
+ *
+ * Drawn to Arcade Flow v2's TV screens: 13c versus, 13d/13f ready, 13e/13g
+ * the rounds, 13h the vote and 13i the winner.
  */
+
+/** The word art. battleSingers.ts builds the fighters' paths; these three sit
+ *  beside the lockup in the same folder and are nobody's but this stage's. */
+const WORD_BEGIN = 'assets/battle/word-begin.png'
+const WORD_WINS = 'assets/battle/word-wins.png'
+const WORD_GAME_OVER = 'assets/battle/word-game-over.png'
 
 /* --- reading a turn --------------------------------------------------- */
 
@@ -47,8 +59,7 @@ const singerOf = (turn: BattleTurn, side: BattleSide): RosterSinger =>
  *  left of the stage and looks across, so side 1 is the one that flips. */
 const facingOf = (side: BattleSide) => (side === 1 ? 'right' : 'left')
 
-/** Title and artist on one line, in the mono face every other number and song
- *  title in this feature is set in. */
+/** Title and artist on one line, the one form every beat shows a song in. */
 const songLine = (song: BattleSong) => `${song.title} — ${song.artist}`
 
 const roleOf = (side: BattleSide) => (side === 1 ? 'Singer 1' : 'Singer 2')
@@ -67,6 +78,32 @@ const pickedBy = (turn: BattleTurn, side: BattleSide) =>
  *  cut short by the song ending still fills a bar that means something. */
 const progress = (turn: BattleTurn, msLeft: number) =>
   1 - msLeft / Math.max(1, turn.endsAt - turn.sentAt)
+
+/** A fighter's own room.
+ *
+ *  A fighter may ship a `location.png` and most will not, so the 404 is the
+ *  ordinary path rather than the error one — the same bargain every portrait
+ *  makes, and the dive bar stands in. Keyed on the src so a battle between two
+ *  different fighters re-tries rather than inheriting the last one's failure.
+ *
+ *  No loading state and no async step on purpose. The src is derived from the
+ *  fighter's id, which is on the first beat and does not change for the rest
+ *  of the fight, so the room at 'logo' is the room at 'winner'. A background
+ *  resolved through the fighter listing would draw the dive bar until that
+ *  fetch landed and then pop to the art mid-battle. */
+export const StagePlate = ({ src, className = styles.plate }: { src: string, className?: string }) => {
+  const [isMissing, setIsMissing] = useState(false)
+
+  return (
+    <img
+      key={src}
+      className={className}
+      src={isMissing ? BATTLE_STAGE_PLATE : src}
+      alt=''
+      onError={() => setIsMissing(true)}
+    />
+  )
+}
 
 /** A fighter's portrait chip, ringed in their own colour. */
 const Portrait = ({ singer, className }: { singer: RosterSinger, className: string }) => (
@@ -99,13 +136,16 @@ export const Logo = () => (
 
 /* --- versus ----------------------------------------------------------- */
 
-/** The two colour wedges, meeting at a diagonal over the middle of the stage.
- *  Both beats that show the pair show this behind them: it is what says the
- *  fight has two sides before a word of it has been read. */
-const SplitField = () => (
-  <div className={styles.field}>
-    <div className={styles.wedgeOne} />
-    <div className={styles.wedgeTwo} />
+/** Both fighters' rooms, one each side of a seam. On the versus card (13c)
+ *  the seam is a gold diagonal, 58% across the top to 42% across the foot; on
+ *  the vote (13h) it is straight down the middle. Both beats that show the
+ *  pair show this behind them: it is what says the fight has two sides before
+ *  a word of it has been read. */
+const SplitField = ({ turn, isStraight }: { turn: BattleTurn, isStraight?: boolean }) => (
+  <div className={clsx(styles.field, isStraight && styles.fieldStraight)}>
+    <StagePlate src={battleSingerStage(singerOf(turn, 1))} className={styles.wedgeOne} />
+    <StagePlate src={battleSingerStage(singerOf(turn, 2))} className={styles.wedgeTwo} />
+    {!isStraight && <div className={styles.seam} />}
   </div>
 )
 
@@ -142,20 +182,22 @@ export const Versus = ({ turn, msLeft }: { turn: BattleTurn, msLeft: number }) =
 
   return (
     <div className={styles.vsScene} style={{ '--t0': `${-elapsedMs}ms` } as React.CSSProperties}>
-      <SplitField />
+      <SplitField turn={turn} />
       <Pair turn={turn} className={styles.pairVersus} />
       <div className={clsx(styles.display, styles.vsWord)}>VS</div>
+      <img className={styles.vsBegin} src={WORD_BEGIN} alt='' />
       <div className={styles.vsBand}>
         {([1, 2] as BattleSide[]).map(side => (
           <div
             key={side}
             className={clsx(styles.vsHalf, side === 2 && styles.vsHalfTwo, sideClass(side))}
           >
+            <div className={clsx(styles.silk, styles.vsRole)}>{side === 1 ? 'Challenger' : 'Opponent'}</div>
             <div className={clsx(styles.display, styles.vsName, styles.oneLine)} translate='no'>
               {nameOf(turn, side)}
             </div>
-            <div className={clsx(styles.silk, styles.vsSings)}>Sings</div>
             <div className={clsx(styles.vsSong, styles.oneLine)} translate='no'>
+              <span className={styles.vsSings}>sings </span>
               {songLine(songOf(turn, side))}
             </div>
           </div>
@@ -167,38 +209,55 @@ export const Versus = ({ turn, msLeft }: { turn: BattleTurn, msLeft: number }) =
 
 /* --- intro ------------------------------------------------------------ */
 
-/** One fighter alone in a spotlight, with the song the other one picked for
- *  them. Twelve seconds is long enough that a still pose would read as a
- *  frozen screen, so this is the dance loop. */
+/** 13d/13f: one fighter dancing in their room, and across from them who is
+ *  on, what they are singing, and who chose it. Twelve seconds is long enough
+ *  that a still pose would read as a frozen screen, so this is the dance loop.
+ *  The fighter stands where they will stand to sing, so the handoff into the
+ *  song does not move them. */
 export const Intro = ({ turn, at }: { turn: BattleTurn, at: BattleSide }) => {
   const singer = singerOf(turn, at)
   const frame = useSpriteFrame(singer, 'dance')
+  const song = songOf(turn, at)
 
   return (
     <div className={sideClass(at)}>
-      <div className={styles.soloField} />
-      <div className={styles.introPlate}>
-        <div className={clsx(styles.silk, styles.introRole)}>{roleOf(at)}</div>
-        <div className={clsx(styles.display, styles.introName)} translate='no'>
-          {nameOf(turn, at)}
-        </div>
-      </div>
+      <div className={clsx(styles.soloField, at === 2 && styles.soloFieldTwo)} />
       <BattleLoop
         src={frame}
         facing={facingOf(at)}
-        className={styles.introSprite}
+        className={clsx(styles.singSprite, at === 1 ? styles.singSpriteOne : styles.singSpriteTwo)}
       />
-      <div className={styles.introSong}>
-        <div className={clsx(styles.silk, styles.pickedBy)} translate='no'>{pickedBy(turn, at)}</div>
-        <div className={clsx(styles.songTitle, styles.oneLine)} translate='no'>
-          {songLine(songOf(turn, at))}
+      <div className={clsx(styles.introText, at === 2 && styles.introTextTwo)}>
+        <div className={clsx(styles.silk, styles.introRole)}>{`${roleOf(at)} · On stage next`}</div>
+        <div className={clsx(styles.display, styles.introName)} translate='no'>
+          {nameOf(turn, at)}
         </div>
+        <div className={styles.introTitle} translate='no'>{song.title}</div>
+        <div className={styles.introArtist} translate='no'>{song.artist}</div>
+      </div>
+      <div className={clsx(styles.introFoot, at === 2 && styles.introTextTwo)}>
+        <span className={clsx(styles.silk, styles.roundChip)}>{`Battle · round ${at}`}</span>
+        <span className={clsx(styles.silk, styles.pickedBy, sideClass(at === 1 ? 2 : 1))} translate='no'>
+          {pickedBy(turn, at)}
+        </span>
       </div>
     </div>
   )
 }
 
 /* --- singing ---------------------------------------------------------- */
+
+/** One fighter in the singing beats' top bar: their chip and their name,
+ *  lit while they sing and dimmed while the other one does (13e/13g). Side 2
+ *  reads the other way round, so the two chips sit at the bar's two ends. */
+const HudSide = ({ turn, side, isLive }: { turn: BattleTurn, side: BattleSide, isLive: boolean }) => (
+  <div className={clsx(styles.hudSide, side === 2 && styles.hudSideTwo, !isLive && styles.hudIdle, sideClass(side))}>
+    <Portrait singer={singerOf(turn, side)} className={styles.hudPortrait} />
+    <div className={clsx(styles.silk, styles.hudName, styles.oneLine)} translate='no'>
+      {nameOf(turn, side)}
+    </div>
+  </div>
+)
 
 /**
  * The busiest beat, and the only one with something behind it: the karaoke
@@ -232,31 +291,18 @@ export const Sing = ({ turn, at, msLeft }: { turn: BattleTurn, at: BattleSide, m
       </div>
 
       <div className={styles.hud}>
-        <div className={styles.hudWho}>
-          <Portrait singer={singer} className={styles.hudPortrait} />
-          <div className={styles.oneLine}>
-            <div className={clsx(styles.display, styles.hudName, styles.oneLine)} translate='no'>
-              {nameOf(turn, at)}
-            </div>
-            <div className={clsx(styles.silk, styles.hudRole)}>
-              {roleOf(at)}
-              {' · On stage'}
-            </div>
-          </div>
-        </div>
+        <HudSide turn={turn} side={1} isLive={at === 1} />
         <div className={styles.hudSong}>
-          <div className={clsx(styles.silk, styles.pickedBy)} translate='no'>{pickedBy(turn, at)}</div>
-          <div className={clsx(styles.songTitle, styles.oneLine)} translate='no'>
-            {songLine(songOf(turn, at))}
+          <div className={clsx(styles.silk, styles.hudRound)}>{`Battle · round ${at} of 2`}</div>
+          <div className={clsx(styles.hudTitle, styles.oneLine)} translate='no'>
+            {`${songLine(songOf(turn, at))} · ${pickedBy(turn, at).toLowerCase()}`}
           </div>
         </div>
-        <div className={styles.hudClock}>
-          {/* A two-minute cut counted in bare seconds opens at 120, which reads
-              as a score rather than as a clock. formatDuration is what every
-              other length in the app is set in. */}
-          <div className={styles.clockBig}>{formatDuration(Math.ceil(msLeft / 1000))}</div>
-          <div className={clsx(styles.silk, styles.hudCut)}>Two minute cut</div>
-        </div>
+        <HudSide turn={turn} side={2} isLive={at === 2} />
+        {/* A two-minute cut counted in bare seconds opens at 120, which reads
+            as a score rather than as a clock. formatDuration is what every
+            other length in the app is set in. */}
+        <div className={clsx(styles.silk, styles.hudClock)}>{formatDuration(Math.ceil(msLeft / 1000))}</div>
       </div>
 
       <div className={styles.songBar}>
@@ -271,9 +317,9 @@ export const Sing = ({ turn, at, msLeft }: { turn: BattleTurn, at: BattleSide, m
 
 /* --- judging ---------------------------------------------------------- */
 
-/** The two keys a voter presses, named. Left card is right-aligned and right
- *  card left-aligned, so the two names sit as close together as the layout
- *  allows — they are one choice, not two panels. */
+/** The two keys a voter presses, named, across the foot of the vote (13h):
+ *  side one's chip on the far left, side two's on the far right, the names
+ *  reading inward toward each other. */
 const VoteCards = ({ turn }: { turn: BattleTurn }) => (
   <div className={styles.ballotCards}>
     {([1, 2] as BattleSide[]).map(side => (
@@ -282,7 +328,7 @@ const VoteCards = ({ turn }: { turn: BattleTurn }) => (
         className={clsx(styles.ballotCard, side === 2 && styles.ballotCardTwo, sideClass(side))}
       >
         <div className={clsx(styles.silk, styles.ballotPress)}>{`Press ${side}`}</div>
-        <div className={clsx(styles.display, styles.ballotName, styles.oneLine)} translate='no'>
+        <div className={clsx(styles.silk, styles.ballotName, styles.oneLine)} translate='no'>
           {nameOf(turn, side)}
         </div>
       </div>
@@ -340,7 +386,7 @@ export const Judge = ({ turn, msLeft }: { turn: BattleTurn, msLeft: number }) =>
 
   return (
     <>
-      <SplitField />
+      <SplitField turn={turn} isStraight />
       {/* Under the scrim on the crowd path and over it on the ballot. On the
           crowd path the ask is the whole screen and the two of them are
           scenery behind it; on the ballot they are the thing being chosen
@@ -356,13 +402,12 @@ export const Judge = ({ turn, msLeft }: { turn: BattleTurn, msLeft: number }) =>
         <div className={clsx(styles.silk, styles.judgeLede)}>
           {isBallot ? 'Silent ballot' : 'The room decides'}
         </div>
+        {isBallot && <div className={styles.judgeClock}>{formatDuration(secs)}</div>}
       </div>
 
       {isBallot && (
         <>
-          <div className={styles.judgeClock}>{secs}</div>
           <div className={styles.ballot}>
-            <VoteCards turn={turn} />
             <BallotRow turn={turn} />
             <div className={clsx(styles.silk, styles.sealed, !turn.ballotsOf && styles.sealedAlone)}>
               Sealed until time · Nobody sees the split
@@ -375,6 +420,7 @@ export const Judge = ({ turn, msLeft }: { turn: BattleTurn, msLeft: number }) =>
             </div>
             <div className={clsx(styles.silk, styles.ballotCloses)}>{`Ballot closes in ${secs}s`}</div>
           </div>
+          <VoteCards turn={turn} />
         </>
       )}
 
@@ -392,16 +438,16 @@ export const Judge = ({ turn, msLeft }: { turn: BattleTurn, msLeft: number }) =>
 const CELLS = 24
 
 /** Where a cell sits on the scale decides its colour, not how loud the room
- *  is: the top four are amber and the four below them orange on every beat, so
+ *  is: the top four are gold and the four below them amber on every beat, so
  *  the same shout looks the same for both fighters. Below that it is the
  *  fighter's own colour, which is what makes a glance tell you who is being
  *  measured without reading the name. */
 const cellFill = (i: number, level: number, side: BattleSide) => {
-  if (i >= Math.round(level * CELLS)) return '#222528'
-  if (i > 19) return '#ffd166'
-  if (i > 14) return '#ff8a1e'
+  if (i >= Math.round(level * CELLS)) return 'var(--arc-surface-hover)'
+  if (i > 19) return 'var(--arc-gold)'
+  if (i > 14) return 'var(--arc-amber)'
 
-  return side === 1 ? '#c01723' : '#0d7039'
+  return side === 1 ? 'var(--arc-red)' : 'var(--arc-green)'
 }
 
 /** The room being measured for one fighter, on the crowd-scoring path only.
@@ -483,22 +529,32 @@ const marginLine = (turn: BattleTurn) => {
   return `By ${Math.abs(turn.challengerScore - turn.opponentScore)}`
 }
 
-/** One fighter's half of the score band. Side 2's is reversed and right-set so
- *  the two blocks read outward from the margin between them, rather than both
- *  starting at the left and leaving the room to work out which score is whose. */
+/** What a side takes home from the fight, in the server's own numbers: the
+ *  win alone to the winner, the part to the loser and to both on a draw. */
+const pointsOf = (turn: BattleTurn, side: BattleSide) => {
+  const mine = side === 1 ? turn.challengerScore : turn.opponentScore
+  const theirs = side === 1 ? turn.opponentScore : turn.challengerScore
+
+  return mine > theirs ? POINTS_BATTLE_WIN : POINTS_BATTLE_TAKE_PART
+}
+
+/** One fighter's card at the head of the verdict (13i): their chip and name
+ *  in their colour, the score, and the points it earned bursting in. Side 2's
+ *  is mirrored so the two cards read outward from the middle. */
 const Score = ({ turn, side }: { turn: BattleTurn, side: BattleSide }) => (
   <div className={clsx(styles.winSide, side === 2 && styles.winSideTwo, sideClass(side))}>
     <Portrait singer={singerOf(turn, side)} className={styles.winPortrait} />
-    <div className={styles.oneLine}>
-      <div className={clsx(styles.silk, styles.winSideName, styles.oneLine)} translate='no'>
-        {nameOf(turn, side)}
-      </div>
-      {/* Zero-padded, which is arcade for "this is a score out of a hundred"
-          and keeps the two numbers the same width so the band does not shift
-          when one of them crosses ten. */}
-      <div className={styles.winScore}>
-        {String(side === 1 ? turn.challengerScore : turn.opponentScore).padStart(2, '0')}
-      </div>
+    <div className={clsx(styles.silk, styles.winSideName, styles.oneLine)} translate='no'>
+      {nameOf(turn, side)}
+    </div>
+    {/* Zero-padded, which is arcade for "this is a score out of a hundred"
+        and keeps the two numbers the same width so the card does not shift
+        when one of them crosses ten. */}
+    <div className={clsx(styles.silk, styles.winScore)}>
+      {String(side === 1 ? turn.challengerScore : turn.opponentScore).padStart(2, '0')}
+    </div>
+    <div className={clsx(styles.silk, styles.winPts, side === 2 && styles.winPtsLate)}>
+      {`+${pointsOf(turn, side)}`}
     </div>
   </div>
 )
@@ -556,6 +612,10 @@ export const Winner = ({ turn, msLeft, upNext }: {
   // serverNow. The pair is what makes this the one figure the whole room
   // agrees on.
   const elapsedMs = (turn.endsAt - turn.sentAt) - msLeft
+  // The word art and the points are CSS animations played from where in the
+  // beat this screen joined. Read once: an animation-delay that changes
+  // restarts its animation, which would be every tick of the clock.
+  const [t0] = useState(() => -Math.max(0, elapsedMs))
 
   /** The winner celebrates and the loser goes down. On a draw nobody won, so
    *  nobody gets the victory: both take the knockdown, which is the only pair
@@ -564,7 +624,7 @@ export const Winner = ({ turn, msLeft, upNext }: {
     (!isDraw && side === at ? 'victory' : 'ko')
 
   return (
-    <>
+    <div className={styles.winScene} style={{ '--t0': `${t0}ms` } as React.CSSProperties}>
       <div className={styles.winScrim} />
       {([1, 2] as BattleSide[]).map(side => (
         <WinFighter
@@ -576,14 +636,27 @@ export const Winner = ({ turn, msLeft, upNext }: {
           isRaised={!!upNext}
         />
       ))}
-      <div className={styles.winHead}>
-        <div className={clsx(styles.display, styles.winName)} translate='no'>
-          {isDraw ? 'Draw' : nameOf(turn, at)}
-        </div>
-        <div className={clsx(styles.display, styles.winVerb)}>
-          {isDraw ? 'Nobody wins' : 'Takes it'}
-        </div>
+      <div className={styles.winCards}>
+        <Score turn={turn} side={1} />
+        <Score turn={turn} side={2} />
       </div>
+      <div className={clsx(styles.silk, styles.winMargin)}>{marginLine(turn)}</div>
+      {isDraw
+        ? (
+            <div className={styles.winHead}>
+              <div className={clsx(styles.display, styles.winName)}>Draw</div>
+              <div className={clsx(styles.display, styles.winVerb)}>Nobody wins</div>
+            </div>
+          )
+        : (
+            // WINS, dropped in under the winner's own card.
+            <img
+              className={clsx(styles.winWord, at === 1 ? styles.winWordOne : styles.winWordTwo)}
+              src={WORD_WINS}
+              alt='Takes it'
+            />
+          )}
+      <img className={styles.gameOver} src={WORD_GAME_OVER} alt='' />
       {/* The handover, on the one beat with room for it.
           The page that normally names the next singer is stood down before a
           battle — it can only name one of two fighters — so the fifteen
@@ -604,11 +677,6 @@ export const Winner = ({ turn, msLeft, upNext }: {
           )}
         </div>
       )}
-      <div className={styles.winBand}>
-        <Score turn={turn} side={1} />
-        <div className={clsx(styles.silk, styles.winMargin)}>{marginLine(turn)}</div>
-        <Score turn={turn} side={2} />
-      </div>
-    </>
+    </div>
   )
 }

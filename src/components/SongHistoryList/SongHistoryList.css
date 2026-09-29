@@ -23,7 +23,7 @@
 }
 
 .item + .item {
-  border-top: var(--seam-rule);
+  border-top: 2px solid var(--arc-surface);
 }
 
 .primary {
@@ -32,22 +32,19 @@
 }
 
 /* Song titles are never truncated, site-wide: they wrap and the row grows.
-   Spent, dimmed by stepping down the ink ramp — never by opacity. */
+   Plain text on the ground. */
 .title {
   font-size: var(--text-m);
   font-weight: var(--weight-semibold);
   line-height: 1.3;
   overflow-wrap: anywhere;
-  color: var(--ink-4);
+  color: var(--arc-text);
 }
 
 .artist {
   margin-top: 2px;
-  font-family: var(--font-mono);
-  font-size: var(--silkscreen-size);
-  letter-spacing: var(--silkscreen-tracking);
-  text-transform: uppercase;
-  color: var(--ink-5);
+  font-size: 13px;
+  color: var(--arc-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -55,9 +52,9 @@
 
 .date {
   flex-shrink: 0;
-  font-family: var(--font-mono);
-  font-size: var(--text-s);
-  color: var(--ink-3);
+  font-family: var(--font-display);
+  font-size: 11px;
+  color: var(--arc-muted);
 }
 
 .star {

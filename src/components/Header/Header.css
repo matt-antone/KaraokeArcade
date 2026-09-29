@@ -1,5 +1,4 @@
-/* The app's chrome: a solid brushed faceplate with a seam under it. No blur —
-   a deck's faceplate is opaque.
+/* The app's chrome: a solid surface panel with a seam under it. No blur.
 
    The handoff has the wordmark row scrolling away above a sticky YourTurn.
    The page does not own the scroll — every route is its own full-viewport
@@ -27,18 +26,9 @@
   }
 }
 
-/* wordmark left, the room you are in silkscreened right */
+/* the lockup under the HUD row, 16px in from the top on library screens */
 .wordmarkRow {
   display: flex;
   align-items: center;
-  gap: var(--gap-3);
-  padding: var(--gap-3) var(--gutter);
-}
-
-.room {
-  margin-left: auto;
-  flex-shrink: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  padding: var(--gap-4) var(--gutter) var(--gap-3);
 }

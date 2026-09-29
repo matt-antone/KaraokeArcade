@@ -8,8 +8,10 @@ import PlayerHeadline from './PlayerHeadline/PlayerHeadline'
 import Icon from 'components/Icon/Icon'
 import UserAvatar from 'components/UserAvatar/UserAvatar'
 import VuMeter from 'components/VuMeter/VuMeter'
+import { BATTLE_STAGE_PLATE, battleSingerFrontArt, battleSingerOrDefault, battleSingerStage } from 'lib/battleSingers'
 import useNow from 'lib/useNow'
 import { isBattleItem, isTriviaItem, type QueueItem } from 'shared/types'
+import overlayState from './overlayState'
 import styles from './PlayerTextOverlay.css'
 
 /** How long the "on stage" panel names the singer at the top of a song. */
@@ -20,9 +22,6 @@ const QUEUE_DEPTH_FULL = 20
  * song is playing — the Fullscreen API can only be invoked from the document
  * that is going fullscreen, so this only reaches a Player tab in the same
  * browser as Settings. Must match Settings/components/Player/PlaybackCtrl. */
-
-/** Six mutually exclusive states — never two at once. */
-type OverlayState = 'upNow' | 'upNextTease' | 'intermission' | 'idle' | 'empty' | 'errored'
 
 interface PlayerTextOverlayProps {
   queueItem?: QueueItem
@@ -85,36 +84,43 @@ const Intermission = ({
     )
   }
 
-  // one order, always: next song, face, name, countdown, coming up
+  const singer = battleSingerOrDefault(nextQueueItem?.userAvatarId)
+
+  // 11a · on stage next: the singer standing on their own stage, named with
+  // their song, the clock under them and the two after them along the bottom
   return (
-    <>
-      {nextSongTitle && (
-        <div className={styles.nextSong} translate='no'>
-          <div className={styles.nextSongTitle}>{nextSongTitle}</div>
-          {nextSongArtist && <div className={styles.nextSongArtist}>{nextSongArtist}</div>}
-        </div>
-      )}
+    <div
+      className={styles.stage}
+      style={{ backgroundImage: `url('${battleSingerStage(singer)}'), url('${BATTLE_STAGE_PLATE}')` }}
+    >
+      <div className={styles.stageScrim} />
       {nextQueueItem && (
-        <UserAvatar
-          avatarId={nextQueueItem.userAvatarId}
-          size={80}
-          className={styles.nextAvatar}
-        />
+        <img className={styles.fighter} src={battleSingerFrontArt(singer).url} alt='' />
       )}
-      <PlayerHeadline tone='vu'>{nextQueueItem ? nextQueueItem.userDisplayName : 'Up next'}</PlayerHeadline>
-      <PlayerHeadline key={secondsLeft} size='var(--display-xl)' className={styles.countdown}>
-        {secondsLeft}
-      </PlayerHeadline>
+      <div className={styles.billing} translate='no'>
+        <span className={styles.billingLabel}>On stage next</span>
+        <span className={styles.billingName}>{nextQueueItem ? nextQueueItem.userDisplayName : 'Up next'}</span>
+        {nextSongTitle && <span className={styles.nextSongTitle}>{nextSongTitle}</span>}
+        {nextSongArtist && <span className={styles.nextSongArtist}>{nextSongArtist}</span>}
+        <span key={secondsLeft} className={styles.countdown}>{secondsLeft}</span>
+      </div>
       {comingUpQueueItems.length > 0 && (
         <div className={styles.comingUp} translate='no'>
-          <div className={clsx('silkscreen', styles.comingUpHeading)}>coming up</div>
-          {comingUpQueueItems.map((item, i) => {
-            const title = comingUpSongTitles[i]
-            return title ? `${item.userDisplayName} — ${title}` : item.userDisplayName
-          }).join(', ')}
+          <span className={styles.comingUpHeading}>coming up</span>
+          <div className={styles.comingUpCards}>
+            {comingUpQueueItems.map((item, i) => (
+              <div key={item.queueId} className={styles.comingUpCard}>
+                <UserAvatar avatarId={item.userAvatarId} className={styles.comingUpAvatar} />
+                <div className={styles.comingUpText}>
+                  <span className={styles.comingUpSinger}>{item.userDisplayName}</span>
+                  {comingUpSongTitles[i] && <span className={styles.comingUpTitle}>{comingUpSongTitles[i]}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
-    </>
+    </div>
   )
 }
 
@@ -141,32 +147,6 @@ const UpNow = ({ singer, songTitle, songArtist }: {
 
 const handleFullscreen = () => {
   if (screenfull.isEnabled) screenfull.request(document.getElementById('player-fs-container'))
-}
-
-/**
- * Which of the six states the stage is in. Its own function because it is a
- * priority ladder — the earlier tests win — and a ladder is much easier to
- * check for holes when it is not interleaved with the markup for its own
- * outcomes.
- */
-const overlayState = ({ isQueueEmpty, isAtQueueEnd, nextQueueItem, queueItem, isErrored, intermissionEndsAt, isSongEnding }: {
-  isQueueEmpty: boolean
-  isAtQueueEnd: boolean
-  nextQueueItem?: QueueItem
-  queueItem?: QueueItem
-  isErrored: boolean
-  intermissionEndsAt?: number
-  isSongEnding: boolean
-}): OverlayState => {
-  if (isQueueEmpty || (isAtQueueEnd && !nextQueueItem)) return 'empty'
-  if (!queueItem || (isAtQueueEnd && nextQueueItem)) return 'idle'
-  if (isErrored) return 'errored'
-  if (intermissionEndsAt) return 'intermission'
-  // Not before a battle: the corner panel names one singer, and a battle is two
-  // of them. The stage is about to draw the pair properly.
-  if (isSongEnding && nextQueueItem && !isBattleItem(nextQueueItem)) return 'upNextTease'
-
-  return 'upNow'
 }
 
 const PlayerTextOverlay = ({
@@ -203,11 +183,12 @@ const PlayerTextOverlay = ({
       style={{ width, height }}
       className={styles.container}
     >
+      {/* the join screen behind this draws the rest; see PlayerJoin */}
       {state === 'empty' && (
-        <>
-          <div className={clsx('silkscreen', styles.stateLabel)}>queue empty</div>
-          <PlayerHeadline tone='vu'>Add a song</PlayerHeadline>
-        </>
+        <div className={styles.emptyNote}>
+          <div className={styles.stateLabel}>queue empty</div>
+          <div className={styles.emptyPrompt}>Add a song</div>
+        </div>
       )}
 
       {state === 'errored' && (

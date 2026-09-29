@@ -3,10 +3,10 @@
    in vh so the whole alphabet always fits the phone; do not convert to px. */
 .container {
   align-items: center;
-  color: var(--ink-5);
+  color: var(--ink-3);
   display: flex;
   flex-direction: column;
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: max(10px, 1.7vh);
   padding: var(--gap-2) 0;
   position: fixed;

@@ -10,6 +10,8 @@ interface AccountFormProps {
   onDirtyChange?(isDirty: boolean): void
   onFirstFieldRef?(el: HTMLInputElement | null): void
   onSubmit(formData: FormData): void
+  /** Off where the screen already offers Change singer (My account's card). */
+  showAvatar?: boolean
   showRole?: boolean
   showUsername?: boolean
   showPassword?: boolean
@@ -164,6 +166,7 @@ const AccountForm = ({
   onDirtyChange,
   onFirstFieldRef,
   onSubmit,
+  showAvatar = true,
   showRole,
   showUsername = true,
   showPassword = true,
@@ -263,10 +266,15 @@ const AccountForm = ({
       noValidate
       onSubmit={handleSubmit}
     >
-      <InputAvatar
-        avatarId={state.avatarId ?? user?.avatarId}
-        onSelect={handleAvatarChange}
-      />
+      {/* A new account picks its singer on the next screen, the sign-in
+          gate's, which is also what shows it how scoring works. Asking here
+          too would skip both. */}
+      {isExisting && showAvatar && (
+        <InputAvatar
+          avatarId={state.avatarId ?? user?.avatarId}
+          onSelect={handleAvatarChange}
+        />
+      )}
 
       <input
         type='text'

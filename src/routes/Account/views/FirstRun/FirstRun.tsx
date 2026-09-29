@@ -1,5 +1,4 @@
 import React from 'react'
-import clsx from 'clsx'
 import { useAppDispatch } from 'store/hooks'
 import { createAccount } from 'store/modules/user'
 import Button from 'components/Button/Button'
@@ -14,7 +13,7 @@ const FirstRun = () => {
 
   return (
     <div className={styles.container}>
-      <h1 className={clsx('silkscreen', styles.heading)}>first run</h1>
+      <h1 className={styles.heading}>First run</h1>
       <p className={styles.blurb}>
         Create your admin account to get started. All data is stored locally and
         never shared.

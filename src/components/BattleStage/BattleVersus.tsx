@@ -1,6 +1,7 @@
 import React from 'react'
 import clsx from 'clsx'
 import BattleKey from './BattleKey'
+import { POINTS_BATTLE_TAKE_PART, POINTS_BATTLE_WIN } from 'shared/types'
 import styles from './BattleVersus.css'
 
 /**
@@ -79,6 +80,17 @@ export const BattleSummary = ({ rows, isWide }: { rows: BattleSummaryRow[], isWi
         {row.onEdit && <BattleKey variant='link' onClick={row.onEdit}>EDIT</BattleKey>}
       </div>
     ))}
+  </div>
+)
+
+/** What the fight is worth, on both phones before anybody commits (13b). The
+ *  numbers are the server's own — the winner takes the win alone, and the
+ *  loser, or both on a draw, take the part — so they are read from the shared
+ *  constants rather than written out a second time. */
+export const BattleStakes = () => (
+  <div className={styles.stakes}>
+    <span className={clsx(styles.stake, styles.tintGold)}>{`WIN +${POINTS_BATTLE_WIN}`}</span>
+    <span className={clsx(styles.stake, styles.stakePlay)}>{`PLAY +${POINTS_BATTLE_TAKE_PART}`}</span>
   </div>
 )
 

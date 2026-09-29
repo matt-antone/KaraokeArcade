@@ -1,53 +1,24 @@
-/* A library folder row: a label separated by a seam, not a key — only the
-   songs underneath are pressable in the key sense. */
+/* A library artist row: name left, song count and a chevron right, ruled off
+   from the next by a surface seam. Only the songs underneath are keys. */
 .container {
   display: flex;
   align-items: center;
-  gap: var(--gap-3);
+  justify-content: space-between;
+  gap: var(--gap-4);
   width: 100%;
   min-height: var(--row-artist);
-  padding: 0;
+  padding: var(--gap-3) var(--gutter);
   font: inherit;
   text-align: left;
   color: inherit;
   background: transparent;
   border: none;
-  border-bottom: var(--seam-rule);
+  border-bottom: 2px solid var(--arc-surface);
   cursor: pointer;
-}
 
-.folder {
-  position: relative;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  color: var(--ink-5);
-}
-
-/* a starred child lights the folder amber */
-.folderStarred {
-  color: var(--vu);
-}
-
-/* silkscreened inside the folder glyph; swaps for a chevron when open */
-.count {
-  position: absolute;
-  top: 54%;
-  transform: translateY(-50%);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--ink);
-  pointer-events: none;
-}
-
-.chevron {
-  position: absolute;
-  color: var(--ink);
-}
-
-.folderStarred .count,
-.folderStarred .chevron {
-  color: var(--on-vu);
+  &:active {
+    background-color: var(--arc-surface);
+  }
 }
 
 .name {
@@ -55,7 +26,7 @@
   min-width: 0;
   font-family: var(--font-body);
   font-size: var(--text-xl);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-semibold);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -65,4 +36,34 @@
 /* a queued child lights the name amber */
 .upcoming {
   color: var(--vu);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-3);
+  flex-shrink: 0;
+}
+
+.count {
+  font-family: var(--font-display);
+  font-size: var(--text-s);
+  color: var(--ink-3);
+}
+
+/* a starred child lights the count yellow */
+.countStarred {
+  color: var(--arc-yellow);
+}
+
+.chevron {
+  font-family: var(--font-display);
+  font-size: var(--display-s);
+  color: var(--ink-4);
+}
+
+/* open, the chevron turns amber and points down */
+.chevronOpen {
+  color: var(--vu);
+  transform: rotate(90deg);
 }

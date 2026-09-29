@@ -46,10 +46,12 @@ const render = (props = {}) => renderToStaticMarkup(
 )
 
 describe('PlayerTextOverlay intermission', () => {
-  it('draws the next singer as their own fighter', () => {
+  it('draws the next singer as their own fighter, on their own stage', () => {
     // the live account id, not a snapshot and not an upload: the overlay names
     // whoever is up next, and who they are is an account-level fact
-    expect(render()).toContain('assets/battle/fighters/halloween/hex/views/portrait-80.png')
+    const html = render()
+    expect(html).toContain('assets/battle/fighters/halloween/hex/views/front.png')
+    expect(html).toContain('assets/battle/fighters/halloween/hex/location.png')
   })
 
   it('shows the next singer\'s name without an "up next" prefix', () => {
@@ -58,9 +60,10 @@ describe('PlayerTextOverlay intermission', () => {
     expect(text).not.toContain('up next')
   })
 
-  it('names the next song and artist above the singer', () => {
+  it('bills the singer, then their song and artist', () => {
+    // 11a · on stage next: the name is the headline, the song sits under it
     const text = render().replace(/<[^>]+>/g, '')
-    expect(text.indexOf('Spaceballs the Song')).toBeLessThan(text.indexOf('Dot Matrix'))
+    expect(text.indexOf('Dot Matrix')).toBeLessThan(text.indexOf('Spaceballs the Song'))
     expect(text).toContain('Winnebago')
   })
 
@@ -69,9 +72,10 @@ describe('PlayerTextOverlay intermission', () => {
       comingUpSongTitles: ['Ludicrous Speed', 'Combing the Desert'],
     }).replace(/<[^>]+>/g, '')
 
+    // one card each: the singer, then their song
     expect(text).toContain('coming up')
-    expect(text).toContain('Barf — Ludicrous Speed')
-    expect(text).toContain('Lone Starr — Combing the Desert')
+    expect(text).toContain('BarfLudicrous Speed')
+    expect(text).toContain('Lone StarrCombing the Desert')
   })
 
   // The mark is drawn behind this overlay and already says a round is coming,

@@ -6,7 +6,7 @@ import UserAvatar from 'components/UserAvatar/UserAvatar'
 import BattleFrame from 'components/BattleStage/BattleFrame'
 import BattleKey from 'components/BattleStage/BattleKey'
 import BattleSprite from 'components/BattleStage/BattleSprite'
-import BattleVersus, { BattleSummary } from 'components/BattleStage/BattleVersus'
+import BattleVersus, { BattleStakes, BattleSummary } from 'components/BattleStage/BattleVersus'
 import useBattleIris, { BATTLE_TONE } from 'components/BattleStage/useBattleIris'
 import type { BattleRect } from 'components/BattleStage/useBattleIris'
 import {
@@ -388,6 +388,8 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
           ]}
         />
 
+        <BattleStakes />
+
         <div className={styles.closing}>
           NEXT UP &middot; YOU PICK THE SONG
           {' '}
@@ -541,7 +543,7 @@ const BattleSetup = ({ isOpen, outcome = null, onClose }: BattleSetupProps) => {
   return (
     <BattleFrame
       variant='setup'
-      title='SINGER BATTLE'
+      title='BATTLE'
       pips={[true, isPast]}
       iris={iris}
       frameRef={frameRef}

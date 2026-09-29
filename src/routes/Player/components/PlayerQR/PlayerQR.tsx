@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useAppSelector } from 'store/hooks'
+import clsx from 'clsx'
 import { CSSTransition } from 'react-transition-group'
 import { QRCode } from 'react-qrcode-logo'
 import type { QueueItem, IRoomPrefs } from 'shared/types'
@@ -12,13 +13,15 @@ interface PlayerQRProps {
   height: number
   prefs: IRoomPrefs['qr']
   queueItem: QueueItem
+  /** Sat in the idle screen's join panel rather than parked in a corner. */
+  isDocked?: boolean
 }
 
 // the value --ink resolves to. The code is painted to a canvas, so it needs a
 // real colour rather than the token; keep the two in step.
-const INK = '#e6e4de'
+const INK = '#e9e2ff'
 
-const PlayerQR = ({ height, prefs, queueItem }: PlayerQRProps) => {
+const PlayerQR = ({ height, prefs, queueItem, isDocked }: PlayerQRProps) => {
   const ref = useRef<HTMLDivElement>(null)
   const maxTimerID = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastToggleTime = useRef<number>(0)
@@ -88,7 +91,8 @@ const PlayerQR = ({ height, prefs, queueItem }: PlayerQRProps) => {
     url.searchParams.append('password', btoa(prefs.password))
   }
 
-  const size = Math.round(height * (0.05 + (prefs.size ?? 0.5) / 5)) // min: 5vh, max: 25vh
+  // docked, it is the panel's centrepiece at the design's size; parked, the room's pref sizes it
+  const size = Math.round(height * (isDocked ? 0.28 : 0.05 + (prefs.size ?? 0.5) / 5)) // min: 5vh, max: 25vh
   const quietZoneSize = 5 + (10 * (prefs.size ?? 0.5)) // min: 5px, max: 15px
 
   return (
@@ -114,7 +118,7 @@ const PlayerQR = ({ height, prefs, queueItem }: PlayerQRProps) => {
       }}
     >
       <div
-        className={styles.container}
+        className={clsx(styles.container, isDocked && styles.docked)}
         ref={ref}
       >
         <QRCode

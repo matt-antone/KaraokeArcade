@@ -5,8 +5,10 @@ import alertCue from 'lib/alertCue'
 import useBattleStage, { sideOfPhase } from 'lib/useBattleStage'
 import {
   BATTLE_LOCKUP,
+  BATTLE_STAGE_PLATE,
   battleSingerOrDefault,
   battleSingerPortrait,
+  battleSingerStage,
 } from 'lib/battleSingers'
 import { castBattleVote } from 'store/modules/battle'
 import { BATTLE_JUDGE_BALLOT_MS } from 'shared/types'
@@ -38,10 +40,31 @@ import styles from './BattleVote.css'
  *
  * The two fighters get none of it. They are holding a microphone rather than a
  * phone, the ballot is not theirs to cast, and BattleStrip already captions the
- * battle for everyone in the deck's own language — a full-screen arcade
- * takeover aimed at the person least able to look at it is a screen nobody
- * reads.
+ * battle for everyone — a full-screen takeover aimed at the person least able
+ * to look at it is a screen nobody reads.
+ *
+ * Drawn to Arcade Flow v2's 13h (vote), 13h2 (vote locked) and 13j3 (winner,
+ * for watchers). Watchers earn nothing from a battle, so no points appear
+ * here; the fighters' own phones are BattleStrip's.
  */
+
+/** A fighter's own room, behind their half of the ballot and behind the
+ *  winner. Most fighters ship no location.png, so the 404 is the ordinary
+ *  path and falls back to the dive bar — the TV's stage plate makes the same
+ *  bargain. */
+const Room = ({ src }: { src: string }) => {
+  const [isMissing, setIsMissing] = useState(false)
+
+  return (
+    <img
+      key={src}
+      className={styles.room}
+      src={isMissing ? BATTLE_STAGE_PLATE : src}
+      alt=''
+      onError={() => setIsMissing(true)}
+    />
+  )
+}
 
 /** What a fighter sang, in the one form every screen here shows it. */
 const songLine = (song: BattleSong) => `${song.title} \u2014 ${song.artist}`
@@ -73,6 +96,15 @@ interface Iris {
   y: string
   tone: string
   isCovering: boolean
+}
+
+/** The HUD's right-hand word, per screen. */
+const STATUS = {
+  waiting: 'LIVE',
+  ballot: 'VOTING',
+  cast: 'VOTED',
+  result: 'RESULT',
+  missed: 'CLOSED',
 }
 
 /** Mid-iris, where the swap is invisible. */
@@ -136,7 +168,7 @@ const BattleVote = () => {
     setIris({
       x: `${Math.round((key.left + key.width / 2 - frame.left) / frame.width * 100)}%`,
       y: `${Math.round((key.top + key.height / 2 - frame.top) / frame.height * 100)}%`,
-      tone: at === 1 ? '#c01723' : '#0d7039',
+      tone: at === 1 ? 'var(--arc-red)' : 'var(--arc-green)',
       isCovering: true,
     })
     timers.current = [
@@ -200,46 +232,50 @@ const BattleVote = () => {
     </div>
   )
 
-  /** BALLOT · the ask, the clock, and the only two keys on the screen. */
+  /** BALLOT · 13h: the two fighters stacked in their own rooms with VS
+   *  between them, and each half is the key that votes for it. Then the ask,
+   *  the clock and the rule. */
   const ballot = (
     <div className={clsx(styles.body, styles.slam)}>
-      <div className={clsx(styles.masthead, styles.mastheadAsk)}>
-        <div className={styles.ask}>WHO WINS?</div>
-        <div className={styles.lede}>ONE VOTE &middot; ANONYMOUS &middot; NO TAKEBACKS</div>
+      <div className={styles.keys}>
+        {([1, 2] as BattleSide[]).map((at) => {
+          const fighter = sideOf(turn, at)
+
+          return (
+            <React.Fragment key={at}>
+              {at === 2 && <div className={styles.vsBand}>VS</div>}
+              <button
+                type='button'
+                className={clsx(styles.key, at === 1 ? styles.keyOne : styles.keyTwo)}
+                onClick={e => onVote(at, e)}
+              >
+                <Room src={battleSingerStage(fighter.singer)} />
+                <img className={styles.keyArt} src={battleSingerPortrait(fighter.singer, 80)} alt='' />
+                <span className={styles.keyText}>
+                  <span className={styles.keyLabel}>{`VOTE P${at}`}</span>
+                  <span className={styles.keyName} translate='no'>{fighter.name}</span>
+                  <span className={styles.keySong} translate='no'>{songLine(fighter.song)}</span>
+                </span>
+              </button>
+            </React.Fragment>
+          )
+        })}
       </div>
 
-      <div className={styles.clockRow}>
+      <div className={styles.askPanel}>
+        <div className={styles.clockRow}>
+          <div className={styles.ask}>WHO WINS?</div>
+          <div className={clsx(styles.clock, isUrgent && styles.clockUrgent)}>
+            {`0:${String(seconds).padStart(2, '0')}`}
+          </div>
+        </div>
         <div className={styles.clockWell}>
           <div
             className={styles.clockFill}
             style={{ width: `${Math.max(0, Math.min(1, msLeft / BATTLE_JUDGE_BALLOT_MS)) * 100}%` }}
           />
         </div>
-        <div className={clsx(styles.clock, isUrgent && styles.clockUrgent)}>
-          {String(seconds).padStart(2, '0')}
-        </div>
-      </div>
-
-      <div className={styles.keys}>
-        {([1, 2] as BattleSide[]).map((at) => {
-          const fighter = sideOf(turn, at)
-
-          return (
-            <button
-              key={at}
-              type='button'
-              className={clsx(styles.key, at === 1 ? styles.keyOne : styles.keyTwo)}
-              onClick={e => onVote(at, e)}
-            >
-              <img className={styles.keyArt} src={battleSingerPortrait(fighter.singer, 80)} alt='' />
-              <span className={styles.keyText}>
-                <span className={clsx(styles.keyLabel, at === 1 ? styles.tintOne : styles.tintTwo)}>VOTE</span>
-                <span className={styles.keyName} translate='no'>{fighter.name}</span>
-                <span className={styles.keySong} translate='no'>{songLine(fighter.song)}</span>
-              </span>
-            </button>
-          )
-        })}
+        <div className={styles.lede}>ONE VOTE &middot; ANONYMOUS &middot; NO TAKEBACKS</div>
       </div>
     </div>
   )
@@ -265,28 +301,25 @@ const BattleVote = () => {
   const roomSize = Math.max(1, turn.ballotsOf)
   const ballotsIn = Math.min(turn.ballotsIn, roomSize)
 
-  /** CAST · sealed, and the room filling up around it. */
+  /** CAST · 13h2: sealed, and the room filling up around it. */
   const cast = (
-    <div className={clsx(styles.body, styles.slam)}>
-      <div className={clsx(styles.masthead, styles.mastheadSealed)}>
-        <div className={styles.castTitle}>VOTE IN</div>
-        <div className={styles.lede}>SEALED UNTIL TIME &middot; NOBODY SEES THE SPLIT</div>
-      </div>
-
+    <div className={clsx(styles.body, styles.slam, styles.centred)}>
       <div className={clsx(styles.pick, vote?.side === 2 ? styles.pickTwo : styles.pickOne)}>
-        <img className={styles.pickArt} src={battleSingerPortrait(picked.singer)} alt='' />
-        <div className={styles.pickText}>
-          <div className={styles.pickLabel}>YOU VOTED</div>
-          <div
-            className={clsx(styles.pickName, vote?.side === 2 ? styles.tintTwo : styles.tintOne)}
-            translate='no'
-          >
-            {picked.name}
-          </div>
-        </div>
+        <img className={styles.pickArt} src={battleSingerPortrait(picked.singer, 80)} alt='' />
       </div>
 
-      <div className={styles.gap} />
+      <div className={styles.castTitle}>VOTE IN</div>
+
+      <div className={styles.pickText}>
+        <span className={styles.pickLabel}>YOU VOTED</span>
+        {' '}
+        <span
+          className={clsx(styles.pickName, vote?.side === 2 ? styles.tintTwo : styles.tintOne)}
+          translate='no'
+        >
+          {picked.name}
+        </span>
+      </div>
 
       <div className={styles.tally}>
         <div className={styles.cells}>
@@ -295,7 +328,7 @@ const BattleVote = () => {
           ))}
         </div>
         <div className={styles.count}>{`${ballotsIn} OF ${roomSize} IN`}</div>
-        <div className={styles.closes}>{`BALLOT CLOSES IN ${String(seconds).padStart(2, '0')}S`}</div>
+        <div className={styles.closes}>{`RESULTS ON THE TV \u00b7 0:${String(seconds).padStart(2, '0')}`}</div>
       </div>
 
       <div className={styles.footer}>YOU CANNOT CHANGE IT</div>
@@ -307,17 +340,19 @@ const BattleVote = () => {
   const winner = didWinOne ? one : two
   const wasRight = (vote?.side === 1) === didWinOne
 
-  /** RESULT · the verdict, the tally it was hidden behind, and whether this
-   *  phone was on the right side of it. */
+  /** RESULT · 13j3: the winner standing in their own room, the tally it
+   *  was hidden behind as two bars, and whether this phone was on the right
+   *  side of it. */
+  const total = Math.max(1, one.score + two.score)
   const result = (
     <div className={clsx(styles.body, styles.slam, styles.slamCentre)}>
-      <div className={styles.masthead}>
-        <div className={styles.decided}>THE ROOM DECIDED</div>
-        <div className={styles.winner} translate='no'>{isDraw ? 'A DRAW' : winner.name}</div>
-      </div>
-
       <div className={styles.hero}>
+        {!isDraw && <Room src={battleSingerStage(winner.singer)} />}
         {!isDraw && <img className={styles.heroArt} src={battleSingerPortrait(winner.singer, 80)} alt='' />}
+        <div className={styles.heroText}>
+          <div className={styles.decided}>THE ROOM DECIDED</div>
+          <div className={styles.winner} translate='no'>{isDraw ? 'A DRAW' : winner.name}</div>
+        </div>
       </div>
 
       <div className={styles.plates}>
@@ -325,12 +360,10 @@ const BattleVote = () => {
           const fighter = sideOf(turn, at)
 
           return (
-            <div className={styles.plate} key={at}>
-              <div
-                className={clsx(styles.plateName, at === 1 ? styles.tintOne : styles.tintTwo)}
-                translate='no'
-              >
-                {fighter.name}
+            <div className={clsx(styles.plate, at === 1 ? styles.plateOne : styles.plateTwo)} key={at}>
+              <div className={styles.plateName} translate='no'>{fighter.name}</div>
+              <div className={styles.plateBar}>
+                <div className={styles.plateFill} style={{ width: `${fighter.score / total * 100}%` }} />
               </div>
               <div className={styles.plateScore}>{String(fighter.score).padStart(2, '0')}</div>
             </div>
@@ -368,14 +401,16 @@ const BattleVote = () => {
       ref={rootRef}
       style={iris ? { '--fx-x': iris.x, '--fx-y': iris.y } as React.CSSProperties : undefined}
     >
-      <div className={styles.accent} />
+      {(screen === 'result' || screen === 'missed') && (
+        <div className={clsx(styles.accent, screen === 'missed' && styles.accentSpent)} />
+      )}
 
+      {/* 13h's HUD row: the feature, who is holding the phone, and what this
+          screen is doing. */}
       <div className={styles.header}>
-        <div className={styles.headerText}>
-          <div className={styles.eyebrow}>IN THE ROOM</div>
-          <div className={styles.wordmark}>SINGER BATTLE</div>
-        </div>
+        <div className={styles.wordmark}>BATTLE</div>
         <div className={styles.handle} translate='no'>{handle}</div>
+        <div className={styles.hudStatus}>{STATUS[screen]}</div>
       </div>
 
       {screen === 'waiting' && waiting}
@@ -384,11 +419,9 @@ const BattleVote = () => {
       {screen === 'result' && result}
       {screen === 'missed' && missed}
 
-      {/* Over everything, touchable through: a CRT wash and a vignette that
-          sit on all four battle screens so the room is looking at one cabinet
-          from four places. */}
+      {/* Over everything, touchable through: the CRT wash every screen in the
+          redesign carries. */}
       <div className={styles.scanlines} />
-      <div className={styles.vignette} />
 
       {iris && (
         <div className={styles.fx}>

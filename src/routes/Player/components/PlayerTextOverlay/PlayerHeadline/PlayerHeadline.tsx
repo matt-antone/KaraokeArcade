@@ -12,7 +12,7 @@ interface PlayerHeadlineProps {
   className?: string
 }
 
-// The player's voice: Michroma, wide-tracked, amber or ink. Replaces the old
+// The player's voice: Silkscreen, wide-tracked, amber or ink. Replaces the old
 // rainbow per-character ColorCycle entirely — this brand shouts by being large.
 const PlayerHeadline = ({ children, tone = 'ink', size, className }: PlayerHeadlineProps) => (
   <div

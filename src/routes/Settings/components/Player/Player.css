@@ -42,13 +42,15 @@
   gap: var(--gap-2);
   min-height: var(--target);
   padding: var(--gap-3);
-  font-family: var(--font-body);
+  /* a link dressed as Button's primary key, so it matches the keys around it */
+  font-family: var(--font-display);
   font-size: var(--text-m);
-  font-weight: var(--weight-bold);
+  font-weight: var(--weight-regular);
+  letter-spacing: var(--silkscreen-tracking);
+  text-transform: uppercase;
   color: var(--on-vu);
-  background-color: var(--vu);
-  background-image: var(--key-face-vu);
-  box-shadow: var(--bevel);
+  background: var(--vu);
+  box-shadow: var(--bevel-vu);
   border-radius: var(--radius-key);
   text-decoration: none;
   transition: transform var(--dur-key) var(--ease-key);

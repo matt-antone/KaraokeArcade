@@ -1,8 +1,10 @@
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { Provider } from 'react-redux'
 import { describe, it, expect } from 'vitest'
-import PlayerTrivia from './PlayerTrivia'
+import PlayerTrivia, { PlayerTriviaSplash } from './PlayerTrivia'
 import { triviaResult, triviaRound } from 'lib/triviaFixtures'
+import type { LeaderboardEntry } from 'shared/types'
 
 const render = (props: Partial<React.ComponentProps<typeof PlayerTrivia>>) =>
   renderToStaticMarkup(<PlayerTrivia round={triviaRound()} width={1280} height={720} {...props} />)
@@ -82,5 +84,33 @@ describe('PlayerTrivia', () => {
 
     expect(markup).not.toContain('Dot Matrix')
     expect(markup).toContain('answer')
+  })
+
+  /** The title card stands up the night's leaders, and says nothing when
+   *  nobody has scored yet rather than an empty row. */
+  it('shows the night\'s top five on the splash, and hides an empty board', () => {
+    const splash = (leaderboard: LeaderboardEntry[]) => renderToStaticMarkup(
+      <Provider
+        store={{
+          getState: () => ({
+            user: { roomId: 1 },
+            rooms: { entities: { 1: { name: 'Loveshack' } } },
+            points: { leaderboard },
+          }),
+          subscribe: () => () => {},
+          dispatch: () => {},
+        } as never}
+      >
+        <PlayerTriviaSplash width={1280} height={720} />
+      </Provider>,
+    )
+
+    const board = splash(Array.from({ length: 7 }, (_, i): LeaderboardEntry => ({ userId: i, name: `P${i}`, avatarId: null, points: 700 - i * 100 })))
+    expect(board).toContain('Loveshack')
+    expect(board).toContain('Tonight&#x27;s top 5')
+    expect(board).toContain('P4')
+    expect(board).not.toContain('P5')
+
+    expect(splash([])).not.toContain('Tonight')
   })
 })

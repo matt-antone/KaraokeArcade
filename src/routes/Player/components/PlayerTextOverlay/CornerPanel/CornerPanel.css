@@ -1,63 +1,67 @@
-/* Solid, never transparent: a deck's faceplate is opaque, and the video behind
-   it would eat the type otherwise. Top-right, so lyrics keep the lower two-thirds. */
+/* 11b · the playing bar. Solid, never a wash: the video behind it would eat
+   the type otherwise. Sized in vh from the design's 540px-tall canvas. */
 .panel {
   position: absolute;
-  /* set by PlayerTextOverlay: steps down while the fullscreen key is up */
-  top: var(--corner-panel-top, 2vh);
-  right: 2vh;
-  transition: top var(--dur-ui) var(--ease-key);
-  max-width: 46vw;
-  padding: 1.4vh 2vh;
-  background: var(--brush);
-  border: var(--hair-rule);
-  border-radius: var(--radius-panel);
-  box-shadow: var(--bevel);
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 3vh;
+  height: 11vh;
+  padding: 0 5.2vh;
+  background: var(--arc-deep);
+  box-shadow: 0 0.74vh 0 var(--arc-line);
 }
 
-/* one ink level up from the .silkscreen utility's --ink-3: this is read from
-   across the room, not from a phone in your hand. Nested so it outranks the
-   global utility without changing it. */
-.panel .label {
-  font-size: 1.1vh;
-  margin-bottom: 0.5vh;
-  color: var(--ink-2);
+.logo {
+  display: block;
+  flex: none;
+  height: 3vh;
+}
+
+.rule {
+  flex: none;
+  width: 0.37vh;
+  height: 4vh;
+  background: var(--arc-line);
+}
+
+.label {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 2vh;
+  color: var(--arc-muted);
 }
 
 .singer {
-  font-family: var(--font-body);
-  font-size: 2vh;
-  font-weight: var(--weight-semibold);
-  color: var(--ink);
+  flex: none;
+  max-width: 30vw;
+  font-family: var(--font-display);
+  font-size: 2.6vh;
+  color: var(--arc-mint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .vu {
-  color: var(--vu);
+  color: var(--arc-amber);
 }
 
 .song {
-  margin-top: 0.6vh;
-  padding-top: 0.6vh;
-  border-top: var(--hair-rule);
-}
-
-/* a song title always shows in full: it wraps, it never ellipsises */
-.title {
+  flex: 1;
+  min-width: 0;
   font-family: var(--font-body);
-  font-size: 1.6vh;
-  font-weight: var(--weight-medium);
-  line-height: 1.25;
-  text-wrap: pretty;
-  color: var(--ink);
-}
-
-.artist {
-  font-family: var(--font-body);
-  font-size: 1.4vh;
-  color: var(--ink-2);
+  font-size: 2.8vh;
+  font-weight: var(--weight-semibold);
+  color: var(--arc-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.artist {
+  font-weight: var(--weight-regular);
+  color: var(--arc-text-2);
 }

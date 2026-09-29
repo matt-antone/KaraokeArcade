@@ -1,26 +1,22 @@
+/* the arcade "91 Loading" readout: the word in yellow Silkscreen over a
+   12-cell amber strip, centred in whatever box it is given */
 .container {
   display: flex;
+  flex-direction: column;
   height: 100%;
   align-items: center;
   justify-content: center;
+  gap: var(--gap-4);
   padding: var(--gap-5);
 }
 
 .meter {
-  max-width: 180px;
+  width: 240px;
+  max-width: 100%;
 }
 
-/* "No loading copy anywhere in the product" is about what people see. A
-   role=status region still needs to say something, so the word is here for
-   assistive tech and off the panel. */
 .label {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-l);
+  color: var(--arc-yellow);
 }

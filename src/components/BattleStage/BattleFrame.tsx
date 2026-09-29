@@ -13,15 +13,14 @@ import styles from './BattleFrame.css'
  * player is always gold-or-their-own-tint and the header says which player
  * they are.
  *
- * The scanline wash and the vignette are the last children and take no
- * pointer events, so they sit over the whole screen — including the iris —
- * without eating a tap meant for the key underneath.
+ * The scanline wash is the last child and takes no pointer events, so it sits
+ * over the whole screen without eating a tap meant for the key underneath.
  */
 
 interface BattleFrameProps {
   /** Which side of the negotiation is holding this phone. */
   variant: 'setup' | 'invite'
-  /** The one line in Michroma under PLAYER n. Fixed on setup; the invite
+  /** The gold wordmark under PLAYER n. Fixed on setup; the invite
    *  renames itself per step, which is the only progress cue it has. */
   title: string
   /** One entry per step, true for the ones already behind. */
@@ -77,11 +76,10 @@ const BattleFrame = ({
 
     {children}
 
-    {/* Over everything, touchable through: the wash and the vignette sit on all
-        four battle screens so the room is looking at one cabinet from four
-        places. */}
+    {/* Over everything, touchable through: the CRT wash sits on every
+        screen in the redesign, so the room is looking at one cabinet from
+        every phone in it. */}
     <div className={styles.scanlines} />
-    <div className={styles.vignette} />
 
     {iris.isBursting && (
       <div className={styles.fx} key={iris.n}>

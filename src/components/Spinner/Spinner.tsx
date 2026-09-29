@@ -6,7 +6,8 @@ import styles from './Spinner.css'
  * The only loading indicator: a VU meter drifting at low level. Deliberately
  * close to the real meter, because on this panel "working" and "level" look
  * alike. It never reaches peak and never lights red — it is idle signal, not
- * activity. No spinner rings, no skeletons, no loading copy.
+ * activity. No spinner rings, no skeletons. The arcade "91 Loading" screen
+ * sets the word itself in yellow Silkscreen over a 12-cell strip.
  */
 const LOW = 0.12
 const HIGH = 0.62
@@ -39,7 +40,7 @@ const Spinner = () => {
       <VuMeter
         className={styles.meter}
         value={value}
-        segments={16}
+        segments={12}
         peakFrom={2}
         height={14}
       />

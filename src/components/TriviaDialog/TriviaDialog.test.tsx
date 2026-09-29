@@ -1,6 +1,7 @@
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { Provider } from 'react-redux'
+import { MemoryRouter } from 'react-router'
 import { describe, it, expect } from 'vitest'
 import TriviaDialog from './TriviaDialog'
 import { triviaResult, triviaRound } from 'lib/triviaFixtures'
@@ -14,7 +15,9 @@ const render = (trivia: { round: TriviaRound, result: TriviaResult }) => renderT
       dispatch: () => {},
     } as never}
   >
-    <TriviaDialog />
+    <MemoryRouter>
+      <TriviaDialog />
+    </MemoryRouter>
   </Provider>,
 )
 
@@ -33,7 +36,9 @@ const renderOpen = () => renderToStaticMarkup(
       dispatch: () => {},
     } as never}
   >
-    <TriviaDialog />
+    <MemoryRouter>
+      <TriviaDialog />
+    </MemoryRouter>
   </Provider>,
 )
 
@@ -111,8 +116,8 @@ describe('TriviaDialog', () => {
       result: triviaResult({ correctIdx: 0, scoresFrom: Date.now() + 5000 }),
     })
 
-    // the correct key carries the answer's own text
-    expect(markup).toMatch(/class="[^"]*correct[^"]*"[^>]*>[^<]*<span[^>]*>Ludicrous Speed/)
+    // the correct key carries the answer's own text, after its letter
+    expect(markup).toMatch(/class="[^"]*correct[^"]*"[^>]*><span[^>]*>A<\/span><span[^>]*>Ludicrous Speed/)
     expect(markup).not.toContain('Dot Matrix')
   })
 })

@@ -110,6 +110,7 @@ const PathPrefs = () => {
       <div className={styles.heading}>
         <Icon icon='FOLDER_MUSIC' />
         <div>Media Folders</div>
+        <span className={styles.songCount}>{`${totalSongs.toLocaleString()} songs`}</span>
       </div>
     )}
     >

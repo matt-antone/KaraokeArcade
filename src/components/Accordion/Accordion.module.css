@@ -1,15 +1,10 @@
 .container {
   background: var(--key-well);
   box-shadow: var(--well);
-  border-radius: var(--radius-key);
 
   &[data-expanded] {
     .icon {
       transform: rotate(90deg);
-    }
-
-    .headingContainer {
-      border-radius: var(--radius-key) var(--radius-key) 0 0;
     }
   }
 }
@@ -32,10 +27,13 @@
   align-items: center;
   min-height: var(--target);
   padding: 0 var(--gap-3);
+  font-family: var(--font-display);
+  font-size: var(--text-m);
+  letter-spacing: var(--silkscreen-tracking);
+  text-transform: uppercase;
   color: var(--ink);
-  background: var(--key-face);
+  background: var(--faceplate);
   box-shadow: var(--bevel);
-  border-radius: var(--radius-key);
   cursor: pointer;
 
   button {
@@ -44,6 +42,9 @@
     align-items: center;
     min-width: 0;
     color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
     background: none;
     border: none;
     cursor: pointer;

@@ -1,25 +1,21 @@
-/* An un-queued song is a raised key; a queued song is a teal standby well;
-   a played song loses its key face entirely and dims. State is physical. */
+/* A song row is flat type on the ground, ruled off from the next by a surface
+   seam. Queued songs sit in a mint standby well; played ones lose their ink up
+   the disabled ramp. State is colour, never opacity. */
 .container {
   display: flex;
   align-items: center;
-  gap: var(--gap-3);
+  gap: var(--gap-4);
   min-height: var(--row-song);
-  margin-bottom: 3px;
-  padding: var(--gap-2) var(--gap-2) var(--gap-2) 0;
-  background-image: var(--key-face);
-  box-shadow: var(--bevel);
-  border-radius: var(--radius-key);
-  transition: transform var(--dur-key) var(--ease-key);
+  padding: var(--gap-3) var(--gutter);
+  background-color: transparent;
+  border-bottom: 2px solid var(--arc-surface);
 
   &:has(.primary:active) {
-    transform: translateY(1px);
+    background-color: var(--arc-surface);
   }
 
   &.upcoming {
-    background-image: none;
     background-color: var(--standby-well);
-    box-shadow: none;
 
     .title {
       color: var(--standby);
@@ -27,50 +23,43 @@
   }
 
   &.played:not(.upcoming) {
-    background-image: none;
-    background-color: transparent;
-    box-shadow: inset 0 0 0 1px var(--seam);
-
     .title {
       color: var(--ink-4);
     }
 
-    .meta {
-      color: var(--ink-5);
+    .meta,
+    .duration {
+      color: var(--ink-4);
     }
   }
 
   /* Nothing can be queued at all — no room, or a room that is not playing.
-     The whole list is like this at once, so it is deliberately quieter than
-     .played: a key face that has lost its bevel and dimmed, not three hundred
-     rows shouting. The reason is printed once above the list rather than on
-     every row, and the star keeps its full ink because starring still works. */
+     The whole list is like this at once, so it dims by colour and quietly: the
+     reason is printed once above the list rather than on every row, and the
+     star keeps its full ink because starring still works. */
   &.blocked:not(.upcoming):not(.played) {
-    box-shadow: none;
-
     .title {
       color: var(--ink-3);
     }
 
     .meta {
-      color: var(--ink-5);
+      color: var(--ink-4);
     }
   }
 
-  /* the press travel is feedback for something happening, and nothing is */
+  /* the press tint is feedback for something happening, and nothing is */
   &.blocked:has(.primary:active) {
-    transform: none;
+    background-color: transparent;
   }
 }
 
 .duration {
   flex-shrink: 0;
   align-self: center;
-  width: 38px;
-  font-family: var(--font-mono);
-  font-size: 10px;
+  width: 36px;
+  font-family: var(--font-display);
+  font-size: var(--text-s);
   color: var(--ink-3);
-  text-align: right;
 }
 
 .primary {
@@ -97,7 +86,7 @@
 /* titles always show in full: they wrap, and the row grows to fit */
 .title {
   font-family: var(--font-body);
-  font-size: var(--text-m);
+  font-size: var(--text-xl);
   font-weight: var(--weight-semibold);
   line-height: 1.3;
   overflow-wrap: break-word;
@@ -106,8 +95,8 @@
 
 /* counts ride inline, mono, quiet — never a coloured badge */
 .numMedia {
-  font-family: var(--font-mono);
-  font-size: 10px;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
   opacity: .75;
 }
 
@@ -116,18 +105,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: .06em;
-  text-transform: uppercase;
+  font-family: var(--font-body);
+  font-size: 13px;
   color: var(--ink-3);
 }
 
 .queued {
   flex-shrink: 0;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: .1em;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
   color: var(--standby);
 }
 

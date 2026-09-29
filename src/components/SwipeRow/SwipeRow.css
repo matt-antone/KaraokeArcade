@@ -1,6 +1,6 @@
 /* Swipe-to-reveal. The row slides aside in one piece and the action keys sit
-   underneath it, bolted to the chassis — you are moving the cartridge aside to
-   get at the panel behind it, not pulling a menu out of the row.
+   underneath it — you are moving the cartridge aside to get at the panel
+   behind it, not pulling a menu out of the row.
 
    Nothing expands and nothing reflows, so the row's own content never changes
    width and a long song title is never squeezed by actions appearing. */
@@ -27,13 +27,13 @@
   gap: 4px;
   width: var(--swipe-action-width);
   border: none;
-  border-left: 1px solid var(--chassis-deep);
+  border-left: 2px solid var(--chassis-deep);
   cursor: pointer;
 
   /* the label is what makes the payoff of the gesture obvious */
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: .08em;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  letter-spacing: var(--silkscreen-tracking);
   text-transform: uppercase;
 }
 
@@ -49,7 +49,7 @@
 
 .alert {
   background-image: var(--key-face-alert);
-  color: var(--ink);
+  color: var(--on-alert);
 }
 
 /* The one opaque layer. It must stay at opacity 1 — anything transparent here

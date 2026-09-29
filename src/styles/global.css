@@ -21,6 +21,17 @@ body {
   padding: 0;
 }
 
+/* CRT scanlines over every screen. Static, click-through, and above the app's
+   own stacking; a <dialog> in the top layer still draws over it. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  background: var(--scanlines);
+}
+
 body.scroll-lock {
   overflow: hidden;
   position: fixed;
@@ -33,12 +44,12 @@ a {
   cursor: pointer;
 }
 
-/* The silkscreen label: every label printed on the panel — section headings,
+/* The silkscreen label: every label printed on the cabinet — section headings,
    panel titles, durations, tags, counts, waits, meter legends. A utility
-   because it is a package, not a size. The rule it enforces: if it is
-   language, it is Figtree; if it is data, it is mono. */
+   because it is a package, not a size. If it is language, it is Chakra
+   Petch; if it is a label or a number, it is Silkscreen. */
 .silkscreen {
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--silkscreen-size);
   font-weight: var(--weight-regular);
   letter-spacing: var(--silkscreen-tracking);
@@ -46,9 +57,9 @@ a {
   color: var(--ink-3);
 }
 
-/* Focus is a hard 2px amber ring with a chassis-coloured gap, never blurred.
-   Set once here so every focusable thing gets the gap; the components that
-   declare `outline: var(--focus-outline)` themselves just restate the ring. */
+/* Focus is a hard 2px amber ring with a gap, never blurred. Set once here so
+   every focusable thing gets the gap; the components that declare
+   `outline: var(--focus-outline)` themselves just restate the ring. */
 :focus-visible {
   outline: var(--focus-outline);
   outline-offset: 2px;
@@ -80,7 +91,7 @@ input[type="text"]:focus,
 input[type="email"]:focus,
 input[type="password"]:focus,
 input[type="search"]:focus {
-  /* the field stays a well; focus is a hard ring, not an inner glow */
+  /* the field stays a well; focus is a hard ring, not a glow */
   box-shadow: var(--well);
   outline: var(--focus-outline);
   outline-offset: 2px;
@@ -104,9 +115,7 @@ select {
   color: var(--ink);
   border: none;
   border-radius: var(--radius-key);
-  /* a native field is a recessed well, like the inputs above. This was
-     --input-bg-color, which was LIGHT in the old brand; swapping the alias for
-     its nearest token gave a light slab on a graphite panel. */
+  /* a native field is a recessed well, like the inputs above */
   background-color: var(--key-well);
   box-shadow: var(--well);
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' height='1rem' viewBox='0 0 24 24'><path fill='currentColor' d='M7.41,8.58L12,13.17L16.59,8.58L18,10L12,16L6,10L7.41,8.58Z'/></svg>");

@@ -17,10 +17,10 @@
   color: var(--vu);
 }
 
-/* the count is data: mono, tight against the star */
+/* the count is data: Silkscreen, tight against the star */
 .starCount {
-  font-family: var(--font-mono);
-  font-size: 9px;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
   line-height: 1;
   pointer-events: none;
 }

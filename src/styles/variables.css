@@ -1,190 +1,200 @@
-/* DECK — a graphite component-hi-fi faceplate.
-   Machined in steps of light rather than hue. One signal colour (amber), one
-   secondary indicator (teal), one fault red. Wanting a fifth colour means
-   wanting a fifth indicator — reconsider instead of adding one.
+/* ARCADE — the KaraokeArcade cabinet.
+   Night-violet ground, square corners, hard pixel edges, and a handful of lit
+   colours that each mean one thing: amber is the action (and "yours/live"),
+   mint is queued/standby, magenta is the fault and the 1UP, yellow and gold
+   are score and battle. Source: KaraokeArcadeRedesign/README.md, "Design
+   Tokens".
 
-   The trivia answer keys are the one set that held that conversation and came
-   out the other side: four peers that are not indicators at all. They live in
-   their own block and are closed by their own test.
+   The file is in two layers:
 
-   This file is now the source of truth for these tokens. The LEGACY block
-   at the bottom re-pointed the old Karaoke Eternal variable names onto DECK
-   values so existing var() references repainted without touching each
-   component. Components adopt the DECK names directly as they are rebuilt and
-   an alias dies with its last consumer — three are left. */
+   1. PALETTE — the only literal colours in the product. Every hex a
+      stylesheet may use lives here, and arcade-rules.test.ts holds every
+      other stylesheet to this set (screens not yet repainted sit on its
+      TEMPORARY list until they are).
+   2. SEMANTIC — the names components consume (--chassis, --key, --ink,
+      --vu, --standby, --alert, ...). They kept their DECK-era names so every
+      screen repainted through them without being touched; each is now a
+      var() onto the palette. Wanting a new colour means adding a palette
+      entry first, deliberately — palette.test.ts counts them.
+
+   Shape: radius is 0 everywhere; the one circle is the Knob (--radius-round).
+   Depth is hard-edged: a raised key is a light top edge and a dark bottom
+   edge (--bevel), an outline is the four-shadow pixel border
+   (--pixel-border), and type drops a hard 3px offset (--text-shadow-hard).
+   Blur exists only at the peak of a glow burst (--glow-burst), inside
+   @keyframes. */
 
 :root {
-  /* ---- colour ------------------------------------------------------ */
+  /* ================================================================== */
+  /* PALETTE                                                            */
+  /* ================================================================== */
 
-  /* chassis — the box the panel is mounted in */
-  --chassis: #141414;
-  --chassis-deep: #0d0e0f;   /* seams, insets, the gap between keys */
+  --arc-ground: #120a24;        /* the screen */
+  --arc-deep: #0b0618;          /* insets, wells, the dark edge of a key */
+  --arc-surface: #1b1330;       /* panels, rows */
+  --arc-surface-hover: #2a1f48; /* keys, inactive tabs */
+  --arc-line: #3a2d5c;          /* outlines, the light edge of a dark key */
 
-  /* faceplate — the brushed panel */
-  --faceplate: #1e1f21;
-  --faceplate-lo: #1a1c1e;
-  --faceplate-hi: #232528;
+  --arc-text: #e9e2ff;
+  --arc-text-2: #d8ccff;
+  --arc-muted: #a08fd0;
+  --arc-disabled: #6e6488;
+  --arc-dead-letter: #4b4166;   /* unlit glyphs, empty segments */
+
+  --arc-amber: #ff8a1e;         /* action */
+  --arc-amber-hi: #ff9c3c;      /* the amber key's light top edge */
+  --arc-on-amber: #20130a;      /* dark text on amber, gold, yellow */
+  --arc-yellow: #ffd600;
+  --arc-ring: #fff4b0;          /* pale glow */
+  --arc-magenta: #ff2e88;
+  --arc-magenta-hi: #ff7ab4;    /* the magenta key's light top edge */
+  --arc-magenta-lo: #7a1040;    /* ...and its dark bottom edge */
+  --arc-mint: #7ef9d0;
+  --arc-mint-dim: #3f7c68;      /* mint's lit-but-low meter step */
+  --arc-gold: #ffd166;          /* battle key */
+  --arc-gold-shadow: #7a4310;   /* gold's hard drop; also amber's dark edge */
+  --arc-green: #7fe3a5;         /* battle opponent */
+  --arc-red: #ff8a8a;           /* battle challenger */
+  --arc-white: #fff;
+
+  /* trivia's cabinet extras */
+  --arc-violet: #b388ff;
+  --arc-ink-mint: #04241c;
+  --arc-ink-yellow: #2a1d00;
+  --arc-ink-violet: #1a0b33;
+
+  /* ---- trivia names, folded onto the palette ------------------------- */
+  --arc-well: var(--arc-ground);
+  --arc-dead: var(--arc-surface);
+  --arc-dead-ink: var(--arc-disabled);
+  --arc-text-row: var(--arc-text);
+  --arc-text-rank: var(--arc-muted);
+  --arc-text-muted: rgba(216, 204, 255, .4);
+  --arc-shadow-violet: rgba(124, 58, 237, .7);
+
+  /* ================================================================== */
+  /* SEMANTIC                                                           */
+  /* ================================================================== */
+
+  /* the ground everything sits on */
+  --chassis: var(--arc-ground);
+  --chassis-deep: var(--arc-deep);
+
+  /* panels — flat; the three steps survive as names only */
+  --faceplate: var(--arc-surface);
+  --faceplate-lo: var(--arc-surface);
+  --faceplate-hi: var(--arc-surface);
 
   /* keys — anything you press */
-  --key: #282a2d;
-  --key-hi: #34373b;         /* top of the key's gradient */
-  --key-lo: #25272a;         /* bottom of the key's gradient */
-  --key-well: #17181a;       /* the recess a key sits in; also input fields */
+  --key: var(--arc-surface-hover);
+  --key-hi: var(--arc-surface-hover);
+  --key-lo: var(--arc-surface-hover);
+  --key-well: var(--arc-deep);     /* recesses and input fields */
 
-  /* engraving */
-  --hairline: #4a4e54;
-  --seam: #16181a;
+  /* rules */
+  --hairline: var(--arc-line);
+  --seam: var(--arc-deep);
 
   /* ink */
-  --ink: #e6e4de;            /* primary text — warm off-white, not pure white */
-  --ink-2: #b4b6ba;          /* secondary: artist, silkscreen labels */
-  --ink-3: #8b8d92;          /* tertiary: meta, counts, placeholders */
-  --ink-4: #63666b;          /* spent: already sung */
-  --ink-5: #4c5055;          /* off: unlit icons, empty meter segments */
+  --ink: var(--arc-text);
+  --ink-1: var(--ink);              /* alias: InputAvatar reads it */
+  --ink-2: var(--arc-text-2);
+  --ink-3: var(--arc-muted);
+  --ink-4: var(--arc-disabled);     /* spent: already sung */
+  --ink-5: var(--arc-dead-letter);  /* off: unlit icons, empty segments */
 
   /* signal — amber. Level, progress, now playing, primary action. */
-  --vu: #ff8a1e;
-  --vu-hi: #ff9c3c;          /* top of the amber key gradient */
-  --vu-lo: #e87510;          /* bottom of the amber key gradient */
-  --vu-dim: #7a4310;         /* lit-but-low meter segments */
-  --vu-well: #2a2118;        /* amber at panel value, for fills and washes */
-  --on-vu: #20130a;          /* text on amber */
+  --vu: var(--arc-amber);
+  --vu-hi: var(--arc-amber-hi);
+  --vu-lo: var(--arc-amber);
+  --vu-dim: var(--arc-gold-shadow); /* lit-but-low meter segments */
+  --vu-well: var(--arc-on-amber);   /* amber wash behind a highlight */
+  --on-vu: var(--arc-on-amber);
 
-  /* indicator — teal. Queued, standby, "armed but not running". */
-  --standby: #35c8b0;
-  --standby-dim: #1a6458;    /* lit-but-low meter segments, as --vu-dim is to --vu */
-  --standby-well: #17211f;
+  /* indicator — mint. Queued, standby, "armed but not running". */
+  --standby: var(--arc-mint);
+  --standby-dim: var(--arc-mint-dim);
+  --standby-well: var(--arc-ink-mint);
 
-  /* fault */
-  --alert: #e5484d;
-  --alert-hi: #ec5b60;
-  --alert-lo: #c9383d;
+  /* fault — magenta. A filled magenta key carries white Silkscreen at
+     display size (the design's "Leave room"); a label on the ground is
+     magenta itself. */
+  --alert: var(--arc-magenta);
+  --alert-key-hi: var(--arc-magenta);
+  --alert-key-lo: var(--arc-magenta);
+  --on-alert: var(--arc-white);
 
-  /* A *filled* destructive key has to carry 14px text, and --alert cannot:
-     it measures 2.65:1 against --ink and 3.55:1 against --on-vu, both under
-     AA's 4.5. These two are the same hue stepped down in lightness until ink
-     clears the bar (4.89:1) — the signal colour above is untouched, and this
-     is the same -hi/-lo relationship --vu already has. Used only by
-     --key-face-alert; a red *label* on graphite still uses --alert. */
-  --alert-key-hi: #b62b2f;
-  --alert-key-lo: #9d2529;
+  /* the you-channel: amber is also "your row" */
+  --mine: var(--vu);
 
   /* ---- answer keys ------------------------------------------------- */
-  /* The four trivia answers. This is the fifth-colour conversation the file
-     warns about, held and answered rather than dodged: a trivia round needs
-     four channels that are peers, and every existing colour already means
-     something — amber is "yours/live", teal is "queued", red is "fault". A
-     round's answers are none of those, so reusing them would say the wrong
-     thing four times.
-
-     They are answer channels, not signals: nothing in the app is ever "in the
-     --ans-2 state". That is why they sit outside the vu/standby/alert family
-     the palette test counts, and have a closure assertion of their own.
-
-     Tuned rather than picked. Every -hi stop measures 4.84-4.87:1 against
-     --ink, the same footing --alert-key-hi has (4.89), so no answer looks
-     louder than another and one ink colour carries all four.
-
-     Chroma is levelled as well as contrast, and that is a second pass over
-     the first set. Matching four hues on contrast alone left them at
-     saturations of 0.66 to 0.80: the moss came out greyer than the indigo
-     beside it, and a board of four peers read as one dull key and three
-     lit ones. All eight stops now sit at saturation 0.88, which is as pure
-     as this luminance allows before the ink stops clearing 4.5 — the keys
-     are more chromatic than they were and not one step brighter.
-
-     The answer text on the key is the real mapping; colour is a third
-     channel, because roughly one in twelve men cannot separate red from
-     green. The phone and the screen carry the same four in the same 2x2
-     order, so an answer is identifiable without seeing any colour at all.
-
-     --ans-3 is indigo at hue 226, well off the old brand's banned azure at
-     hue 209. What was banned there was a *brand* blue used for chrome; this
-     is a dark key face in a set of four. Different job, different colour.
-     (Spelled in hex, and this comment avoids the banned function form on
-     purpose — deck-rules greps the stylesheets, comments included.) */
+  /* The four trivia answers: channels, not signals, closed at four by
+     palette.test.ts. Each -hi stop carries --ink at AA. Owned by trivia. */
   --ans-1-hi: #c01723;      /* crimson */
   --ans-1-lo: #a7141e;
   --ans-2-hi: #0d7039;      /* moss */
   --ans-2-lo: #0b592d;
   --ans-3-hi: #1d4ef1;      /* indigo */
   --ans-3-lo: #1944d4;
-  /* plum sits at hue 292 rather than a rounder 285: indigo and crimson are
-     its neighbours on both sides and the set's tightest pair has to stay
-     above 60 degrees. Amber and teal being spoken for is what squeezes the
-     four into the arc they have. */
   --ans-4-hi: #a416b9;      /* plum */
   --ans-4-lo: #8e13a0;
 
-  /* the you-channel: amber is also "your row", because on a deck the lit
-     channel is the one that's live. There is no separate personal colour. */
-  --mine: var(--vu);
+  /* ---- shape and depth --------------------------------------------- */
 
-  /* ---- depth ------------------------------------------------------- */
-  /* Light comes from above and the panel is machined. A key is raised, a well
-     is recessed. There is no glow anywhere — an indicator is lit by being
-     amber, not by bleeding light. */
+  --radius-key: 0;
+  --radius-panel: 0;
+  --radius-tab: 0;
+  --radius-round: 50%;    /* the Knob, and nothing else */
 
-  --radius-key: 3px;      /* keys, chips, fields, song rows */
-  --radius-panel: 4px;    /* panels, queue rows, the player stage */
-  --radius-tab: 3px;
-  --radius-round: 50%;    /* knobs only */
+  /* a raised key or row: light top edge, dark bottom edge, no blur */
+  --bevel: 0 -2px 0 var(--arc-line), 0 2px 0 var(--arc-deep);
+  --bevel-vu: 0 -4px 0 var(--arc-amber-hi), 0 4px 0 var(--arc-gold-shadow);
+  --bevel-alert: 0 -4px 0 var(--arc-magenta-hi), 0 4px 0 var(--arc-magenta-lo);
+  /* a recess: a hard inset outline */
+  --well: inset 0 0 0 2px var(--arc-surface-hover);
+  --well-deep: inset 0 0 0 2px var(--arc-line);
 
-  --bevel: inset 0 1px 0 rgba(255, 255, 255, .16), inset 0 -1px 0 rgba(0, 0, 0, .5), 0 1px 2px rgba(0, 0, 0, .6);
-  --well: inset 0 1px 3px rgba(0, 0, 0, .7);
-  --well-deep: inset 0 1px 3px rgba(0, 0, 0, .8);
+  --edge-top: 0 4px 0 var(--arc-deep);
+  --edge-bottom: 0 -4px 0 var(--arc-deep);
+  --hair-rule: 2px solid var(--hairline);
+  --seam-rule: 2px solid var(--seam);
 
-  --edge-top: 0 2px 6px rgba(0, 0, 0, .6);
-  --edge-bottom: 0 -2px 6px rgba(0, 0, 0, .6);
-  --hair-rule: 1px solid var(--hairline);
-  --seam-rule: 1px solid var(--seam);
+  /* Flat fills written as images, so they stay valid in background-image
+     as well as the background shorthand. */
+  --brush: linear-gradient(var(--faceplate), var(--faceplate));
+  --key-face: linear-gradient(var(--key), var(--key));
+  --key-face-vu: linear-gradient(var(--vu), var(--vu));
+  --key-face-alert: linear-gradient(var(--alert), var(--alert));
 
-  /* brushed metal: a very low-contrast vertical grade, never a visible gradient */
-  --brush: linear-gradient(180deg, var(--faceplate-hi) 0%, var(--faceplate-lo) 100%);
-  --key-face: linear-gradient(180deg, var(--key-hi) 0%, var(--key-lo) 100%);
-  --key-face-vu: linear-gradient(180deg, var(--vu-hi) 0%, var(--vu-lo) 100%);
-  --key-face-alert: linear-gradient(180deg, var(--alert-key-hi) 0%, var(--alert-key-lo) 100%);
-  --key-face-ans-1: linear-gradient(180deg, var(--ans-1-hi) 0%, var(--ans-1-lo) 100%);
-  --key-face-ans-2: linear-gradient(180deg, var(--ans-2-hi) 0%, var(--ans-2-lo) 100%);
-  --key-face-ans-3: linear-gradient(180deg, var(--ans-3-hi) 0%, var(--ans-3-lo) 100%);
-  --key-face-ans-4: linear-gradient(180deg, var(--ans-4-hi) 0%, var(--ans-4-lo) 100%);
+  /* The pixel border and the hard text drop take their colour from the
+     element they are used on: set --pixel-border-color / --text-shadow-color
+     locally, then use var(--pixel-border) / var(--text-shadow-hard). They are
+     declared per element in the `*` rule below, because a :root declaration
+     would freeze the colour at :root. These are the defaults. */
+  --pixel-border-color: var(--arc-line);
+  --text-shadow-color: var(--arc-deep);
+
+  /* the glow burst, yellow to pink — peak frame of a @keyframes only */
+  --glow-burst: 0 0 18px var(--arc-yellow), 0 0 44px var(--arc-amber), 0 0 80px var(--arc-magenta);
+
+  /* the dim behind a modal: --arc-deep at 88% */
+  --scrim: rgba(11, 6, 24, .88);
+
+  /* CRT scanlines, drawn over every screen by global.css */
+  --scanlines: repeating-linear-gradient(0deg, rgba(0, 0, 0, .3) 0 1px, transparent 1px 3px);
 
   /* focus: a hard amber ring. Visible, unambiguous, no blur. */
-  --focus-ring: 0 0 0 2px var(--chassis), 0 0 0 4px var(--vu);
+  --focus-outline: 2px solid var(--vu);
 
   /* ---- type -------------------------------------------------------- */
 
-  --font-display: 'Michroma', 'Arial Narrow', sans-serif;
-  --font-body: 'Figtree', system-ui, sans-serif;
+  /* Silkscreen: HUD, labels, headings, numbers. Chakra Petch: anything read
+     as a sentence or a song title. Mono: file paths and code only. */
+  --font-display: 'Silkscreen', ui-monospace, monospace;
+  --font-arcade: var(--font-display);
+  --font-trivia: var(--font-display);
+  --font-body: 'Chakra Petch', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  /* Arcade chrome, Singer Battle only. A bitmap face at 7-10px: micro-labels
-     and nothing else, never a sentence. Falls back to the mono stack so a
-     party with no uplink gets small caps rather than a serif. */
-  --font-arcade: 'Silkscreen', 'JetBrains Mono', ui-monospace, monospace;
-  /* Trivia only: the arcade-cabinet display face, set with hard offset
-     shadows. Everything a trivia screen reads as a sentence stays Figtree. */
-  --font-trivia: 'Rubik Mono One', 'Michroma', sans-serif;
-
-  /* ---- trivia arcade ----------------------------------------------- */
-  /* Trivia's own cabinet: four keys, a ring, and the dark it glows in. The
-     deck's graphite and amber stop at the trivia screens' edge. */
-  --arc-magenta: #ff2e88;
-  --arc-mint: #7ef9d0;
-  --arc-yellow: #ffd600;
-  --arc-violet: #b388ff;
-  --arc-ring: #fff4b0;
-  --arc-ink-mint: #04241c;
-  --arc-ink-yellow: #2a1d00;
-  --arc-ink-violet: #1a0b33;
-  --arc-dead: #1b1330;
-  --arc-dead-ink: #6e6488;
-  --arc-dead-letter: #4b4166;
-  --arc-well: #120a24;
-  --arc-text-2: #d8ccff;
-  --arc-text-row: #e9e2ff;
-  --arc-text-rank: #a08fd0;
-  --arc-text-muted: rgba(216, 204, 255, .4);
-  --arc-shadow-violet: rgba(124, 58, 237, .7);
 
   --weight-regular: 400;
   --weight-medium: 500;
@@ -192,7 +202,7 @@
   --weight-bold: 700;
 
   /* body scale — phone-first; inputs never below 16px (iOS zooms) */
-  --text-xs: 0.5938rem;   /* 9.5px  — silkscreen labels, meter legends */
+  --text-xs: 0.6875rem;   /* 11px   — Silkscreen labels, meter legends */
   --text-s: 0.75rem;      /* 12px   — tab labels, chips, counts */
   --text-m: 0.875rem;     /* 14px   — queue artist, table cells */
   --text-l: 1rem;         /* 16px   — form fields, banner copy */
@@ -200,14 +210,14 @@
   --text-2xl: 1.125rem;   /* 18px   — queue title */
   --text-3xl: 1.375rem;   /* 22px   — panel titles */
 
-  /* display scale — wordmark and player only */
-  --display-s: 0.7813rem; /* 12.5px — the app-header wordmark */
-  --display-m: 1.625rem;  /* 26px   — player singer name on a phone-sized stage */
+  /* display scale — Silkscreen sizes from the handoff (11/13/14/18/24/28/36) */
+  --display-s: 0.8125rem; /* 13px */
+  --display-m: 1.5rem;    /* 24px */
   --display-l: 5.5vh;     /* player singer name, on the TV */
   --display-xl: 11vh;     /* player countdown numeral */
 
   --silkscreen-size: var(--text-xs);
-  --silkscreen-tracking: 0.14em;
+  --silkscreen-tracking: 0.04em;
 
   --icon-s: 1rem;         /* 16px */
   --icon-m: 1.375rem;     /* 22px — row actions */
@@ -218,14 +228,14 @@
   /* Row heights are MINIMUMS, not fixed heights: song titles always show in
      full, so a long title wraps and its row grows. */
 
-  --gap-1: 2px;   /* the seam between adjacent keys */
+  --gap-1: 2px;
   --gap-2: 6px;
   --gap-3: 10px;
-  --gap-4: 14px;  /* panel padding — the standard screen gutter */
-  --gap-5: 20px;
+  --gap-4: 14px;  /* section gap */
+  --gap-5: 20px;  /* screen padding */
   --gap-6: 28px;
 
-  --gutter: 14px;
+  --gutter: 20px;
 
   /* Widest a reading column gets before it centres in the viewport. Mirrors
      MAX_CONTENT_WIDTH in store/modules/ui.ts, which the virtualized lists
@@ -242,32 +252,30 @@
   --avatar-form: 96px;
 
   --header-bar: 44px;
-  --nav-bar: 52px;
+  --nav-bar: 64px;
 
   /* ---- motion ------------------------------------------------------ */
-  /* Mechanical, not bouncy. A key travels 1px and stops. */
+  /* Mechanical, not bouncy. A key travels and stops. */
 
   --ease-key: cubic-bezier(.2, .8, .3, 1);
   --dur-key: 90ms;        /* key press */
   --dur-ui: 180ms;        /* tab change, tray open */
   --dur-slow: 320ms;      /* screen-level change */
 
-  /* ================================================================== */
-  /* LEGACY ALIASES — old Karaoke Eternal names, re-pointed onto DECK.   */
-  /* Do not add to this block. Delete entries as components adopt the    */
-  /* DECK tokens above. One left.                                       */
-  /* ================================================================== */
-
-  /* Michroma. Still overriding TextOverlay's silkscreen on the library's
-     empty-state h1 (routes/Library/views/LibraryView.css). Deleting that
-     rule retires this alias. */
-
   /* the two <video>/<canvas> surfaces in routes/Player */
   --border-radius: var(--radius-key);
+}
 
-  /* a hard amber ring, never blurred. Not legacy — this is the shared focus
-     ring, routed through one name by global.css and 6 components. */
-  --focus-outline: 2px solid var(--vu);
+/* see --pixel-border-color above */
+*,
+::before,
+::after {
+  --pixel-border:
+    0 -4px 0 var(--pixel-border-color),
+    0 4px 0 var(--pixel-border-color),
+    -4px 0 0 var(--pixel-border-color),
+    4px 0 0 var(--pixel-border-color);
+  --text-shadow-hard: 3px 3px 0 var(--text-shadow-color);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,54 +1,60 @@
+/* 09 Player: status, blurb, then the two keys side by side. The panel head
+   is the first row, so the column's 12px gap starts under it. */
 .content {
   display: flex;
   flex-direction: column;
-  gap: var(--gap-3);
+  gap: 12px;
+  padding: 12px 14px 14px;
 }
 
 .status {
   display: flex;
   align-items: center;
-  gap: var(--gap-3);
+  gap: 10px;
 }
 
-/* a recessed lamp, not a circle: knobs and radios are the only circles here */
+/* a flat lamp, unlit until a player connects */
 .lamp {
   flex-shrink: 0;
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: var(--radius-key);
-  background: var(--ink-5);
-  box-shadow: var(--well);
+  background: var(--arc-disabled);
 }
 
 .lit {
-  background: var(--vu);
+  background: var(--arc-amber);
 }
 
-/* read as a sentence, so Figtree */
+.statusText {
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  color: var(--arc-text-2);
+}
+
 .blurb {
   margin: 0;
-  font-family: var(--font-body);
   font-size: var(--text-m);
-  line-height: 1.5;
-  color: var(--ink-2);
+  color: var(--arc-text-2);
+  text-wrap: pretty;
 }
 
-/* the key that opens the player: navigation, so it stays a link, but it is
-   pressed like every other key — 1px of travel and no hover state */
-.openKey {
+.keys {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--gap-2);
-  min-height: var(--target);
-  padding: var(--gap-3);
-  font-family: var(--font-body);
-  font-size: var(--text-m);
-  font-weight: var(--weight-bold);
-  color: var(--on-vu);
-  background-color: var(--vu);
-  background-image: var(--key-face-vu);
-  box-shadow: var(--bevel);
+  gap: 8px;
+}
+
+/* the key that opens the player: navigation, so it stays a link. Flat amber,
+   no bevel, as 09 draws it. */
+.openKey {
+  flex: 1;
+  padding: 12px 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: var(--text-s);
+  font-weight: var(--weight-regular);
+  color: var(--arc-on-amber);
+  background: var(--arc-amber);
   border-radius: var(--radius-key);
   text-decoration: none;
   transition: transform var(--dur-key) var(--ease-key);
@@ -56,9 +62,10 @@
   &:active {
     transform: translateY(1px);
   }
+}
 
-  svg {
-    display: block;
-    height: var(--icon-m);
-  }
+.keys .joinKey {
+  flex: 1;
+  padding: 12px 0;
+  font-size: var(--text-s);
 }

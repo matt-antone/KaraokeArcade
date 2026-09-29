@@ -1,0 +1,96 @@
+/* 07d: the singer's own fighter location at .35 under a 70% deep scrim, with
+   one mint-ruled card centred on it. */
+
+.container {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 24px;
+  background: var(--arc-deep);
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: .35; /* design-dim */
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--arc-deep) 70%, transparent);
+}
+
+.card {
+  --pixel-border-color: var(--arc-mint);
+
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 20px;
+  background: var(--arc-surface);
+  box-shadow: var(--pixel-border);
+}
+
+.kicker {
+  font-family: var(--font-display);
+  font-size: 12px;
+  text-align: center;
+  color: var(--arc-mint);
+}
+
+.headline {
+  --text-shadow-color: var(--arc-magenta);
+
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.05;
+  text-align: center;
+  color: var(--arc-yellow);
+  text-shadow: var(--text-shadow-hard-4);
+}
+
+.song {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.artist {
+  font-size: 14px;
+  color: var(--arc-muted);
+}
+
+.clock {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 10px;
+  font-family: var(--font-display);
+}
+
+.clockLabel {
+  font-size: 12px;
+  color: var(--arc-muted);
+}
+
+.time {
+  font-size: 24px;
+  color: var(--arc-amber);
+}

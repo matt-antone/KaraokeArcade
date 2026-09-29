@@ -1,6 +1,5 @@
 import React from 'react'
 import clsx from 'clsx'
-import Highlighter from 'react-highlight-words'
 import ButtonStar from 'components/ButtonStar/ButtonStar'
 import { formatDuration } from 'lib/dateTime'
 import styles from './SongItem.css'
@@ -17,7 +16,6 @@ interface SongItemProps {
   isPlayed: boolean
   isStarred: boolean
   isUpcoming: boolean
-  isAdmin: boolean
   /** Nothing this device queues would be accepted right now — no room, or a
    *  room that is not playing. The row goes inert like a played one; the star
    *  stays live, because starring never needed a room. */
@@ -30,33 +28,34 @@ interface SongItemProps {
    * only: this is the song that person sings.
    */
   battleForName?: string
-  numStars: number
-  numMedia: number
-  filterKeywords: string[]
+  /** The starred-only list (04d): every row is drawn alike, queue state unshown. */
+  isStarredView?: boolean
+  /** A search is narrowing the list (04b): an unstarred row carries no star. */
+  isSearchView?: boolean
 }
 
 /**
- * The library's unit of action: an un-queued song is a raised key, a queued
- * song drops to a teal standby well and goes inert, a played song loses its
- * key face entirely and dims down the ink ramp. One tap queues it, and one
- * more takes your own queued song back out — the star is the row's only
- * other action.
- */
-/**
- * What a row is, reduced to the four answers the render actually asks for.
+ * What a row is, reduced to the answers the render actually asks for.
  *
  * Pulled out because the row has three overlapping modes — normally browsing,
  * picking for a battle, and a room that cannot take a song at all — and each
  * one flips a different subset of the same flags. Read down the middle of a
  * render they were six interlocking ternaries; named here they are a table.
  */
-const rowState = ({ isBattle, isMine, isUpcoming, isPlayed, isQueueBlocked }: {
+const rowState = ({ isBattle, isMine, isUpcoming, isPlayed, isQueueBlocked, isStarredView }: {
   isBattle: boolean
   isMine: boolean
   isUpcoming: boolean
   isPlayed: boolean
   isQueueBlocked?: boolean
+  isStarredView?: boolean
 }) => {
+  // The starred list (04d) draws every row alike: no mint well, no "Queued",
+  // just the lit star. A row drawn like any other acts like any other, so a
+  // song somebody else queued is not inert there either. Your own still comes
+  // back out on a tap: the row toggles, as it does on 04.
+  const isQueueShown = isUpcoming && !(isStarredView && !isBattle)
+
   // Normally a song somebody else has queued, or one the room has already sung,
   // is dead: tapping it would do nothing and the row says so rather than
   // swallowing the tap. In battle mode that rule is wrong — you are choosing
@@ -68,21 +67,28 @@ const rowState = ({ isBattle, isMine, isUpcoming, isPlayed, isQueueBlocked }: {
   // A blocked room kills the tap outright, including taking your own song back
   // out: removing from the queue goes through the same room check the server
   // applies to adding, so offering it would be the same lie one row over.
-  const isInert = !isBattle && (((isUpcoming || isPlayed) && !isMine) || !!isQueueBlocked)
+  const isInert = !isBattle && (((isQueueShown || isPlayed) && !isMine) || !!isQueueBlocked)
 
   // The row's one word of state, when it has one. In battle mode it is the
   // instruction instead, on exactly the rows that would otherwise read as
-  // unavailable — the star stays on every other row so the list does not change
-  // height and PaddedList's measurement cache stays valid.
-  const hasLabel = isUpcoming || (isBattle && isPlayed)
+  // unavailable — the star stays on every other row.
+  const hasLabel = isQueueShown || (isBattle && isPlayed)
 
-  // "tap to remove" on a row whose tap does nothing is the same lie the whole
+  // "Tap to remove" on a row whose tap does nothing is the same lie the whole
   // blocked state exists to stop telling.
-  const label = isBattle ? 'TAP TO PICK' : (isMine && !isInert) ? 'TAP TO REMOVE' : 'QUEUED'
+  const label = isBattle ? 'Tap to pick' : (isMine && !isInert) ? 'Tap to remove' : 'Queued'
 
-  return { isInert, hasLabel, label }
+  return { isInert, hasLabel, label, isWell: isMine && isQueueShown }
 }
 
+/**
+ * The library's unit of action (04): duration, title over "artist · genre ·
+ * decade", and a tag on the right. The row is one key: a tap anywhere on it,
+ * padding, duration and tag included, queues the song, and one more takes your
+ * own back out. Your own queued song sits in the mint well and says "Tap to
+ * remove"; somebody else's says "Queued" and goes inert; every other row
+ * carries the star, the row's only other action and a key of its own.
+ */
 const SongItem = ({
   songId,
   artist,
@@ -95,34 +101,34 @@ const SongItem = ({
   isPlayed,
   isStarred,
   isUpcoming,
-  isAdmin,
   isQueueBlocked,
   myQueueId,
   battleForName,
-  numStars,
-  numMedia,
-  filterKeywords,
+  isStarredView,
+  isSearchView,
 }: SongItemProps) => {
   const isMine = myQueueId !== undefined
   const isBattle = !!battleForName
-  const { isInert, hasLabel, label } = rowState({ isBattle, isMine, isUpcoming, isPlayed, isQueueBlocked })
+  const { isInert, hasLabel, label, isWell } = rowState({ isBattle, isMine, isUpcoming, isPlayed, isQueueBlocked, isStarredView })
 
   const handleClick = () => isMine && !isBattle ? onSongDequeue(myQueueId) : onSongQueue(songId)
   const handleStarClick = () => onSongStarClick(songId)
+
+  // the design's 04 template: artist, then the first two tags (genre · decade)
+  const meta = [artist, ...tags.slice(0, 2)].filter(Boolean).join(' · ')
+
+  // 04b draws an empty tag on a search result nobody has queued: no star
+  const hasStar = !hasLabel && !(isSearchView && !isStarred)
 
   return (
     <div
       className={clsx(
         styles.container,
-        isPlayed && styles.played,
-        isUpcoming && styles.upcoming,
-        isQueueBlocked && !isBattle && styles.blocked,
+        isWell && styles.mine,
+        isPlayed && !isUpcoming && styles.played,
+        isQueueBlocked && !isBattle && !isUpcoming && !isPlayed && styles.blocked,
       )}
     >
-      <div className={styles.duration}>
-        {formatDuration(duration)}
-      </div>
-
       <button
         type='button'
         onClick={isInert ? undefined : handleClick}
@@ -132,28 +138,21 @@ const SongItem = ({
           : isMine ? `Remove ${title} from queue` : undefined}
         className={styles.primary}
       >
-        {/* titles always show in full: they wrap, and the row grows to fit */}
-        <span className={styles.title}>
-          {filterKeywords?.length ? <Highlighter autoEscape textToHighlight={title} searchWords={filterKeywords} /> : title}
-          {isAdmin && numMedia > 1 && <span className={styles.numMedia}>{` (${numMedia})`}</span>}
+        <span className={styles.duration}>{formatDuration(duration)}</span>
+        <span className={styles.text}>
+          <span className={styles.title}>{title}</span>
+          {meta && <span className={styles.meta}>{meta}</span>}
         </span>
-        {(artist || tags.length > 0) && (
-          <span className={styles.meta}>
-            {[artist, tags.join(' · ')].filter(Boolean).join(' · ')}
-          </span>
-        )}
+        {!hasStar && <span className={styles.queued}>{hasLabel ? label : null}</span>}
       </button>
 
-      {hasLabel
-        ? <span className={styles.queued}>{label}</span>
-        : (
-            <ButtonStar
-              className={styles.btn}
-              onClick={handleStarClick}
-              isStarred={isStarred}
-              count={numStars}
-            />
-          )}
+      {hasStar && (
+        <ButtonStar
+          className={styles.btn}
+          onClick={handleStarClick}
+          isStarred={isStarred}
+        />
+      )}
     </div>
   )
 }

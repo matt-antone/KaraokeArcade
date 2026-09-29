@@ -1,15 +1,17 @@
-/* An arcade keycap: a flat palette fill, a neon glow in its own colour, and a
-   dark bevel along the bottom edge. Only the fill, ink and glow differ per key,
-   so they are the three properties each key sets. */
+/* A flat keycap: its answer's fill, its answer's ink, square corners. Only
+   the fill and ink differ per key, so they are the two properties each key
+   sets; the states below swap them, ring the key or dim it. Everything on it
+   is 700, the design's weight on the key: a <button>'s UA font resets it. */
 .key {
   display: flex;
   align-items: center;
   width: 100%;
   border: none;
-  border-radius: 4px;
+  border-radius: 0;
   background: var(--fill);
   color: var(--key-ink);
-  box-shadow: 0 0 var(--glow-size) var(--glow), inset 0 -5px 0 rgba(0, 0, 0, .3);
+  font-weight: 700;
+  text-align: left;
   cursor: pointer;
 
   &:disabled {
@@ -22,124 +24,123 @@
   }
 }
 
+.letter {
+  flex: none;
+  font-family: var(--font-display);
+}
+
 .label {
   flex: 1;
   font-family: var(--font-body);
-  font-weight: 800;
-}
-
-/* Across a room: the letter the room shouts, then the answer. */
-.player {
-  --glow-size: 26px;
-  gap: 16px;
-  padding: 16px 20px;
-
-  .label {
-    text-align: left;
-    font-size: 24px;
-    line-height: 1.2;
-  }
-}
-
-.letter {
-  font-family: var(--font-trivia);
-  font-size: 20px;
-  color: rgba(0, 0, 0, .45);
+  /* OpenTDB writes some long ones */
+  overflow-wrap: anywhere;
 }
 
 .tag {
-  font-family: var(--font-trivia);
-  font-size: 15px;
-  text-transform: uppercase;
-  color: var(--arc-ring);
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 12px;
 }
 
-/* In the hand, and centred in it: the key is thumbed at, so the text sits in
-   the middle of the target rather than along one edge of it. */
-.pad {
-  --glow-size: 18px;
-  justify-content: center;
-  height: 100%;
-  min-height: 0;
-  padding: 10px;
+/* 12b/12c: the TV's row of four. */
+.player {
+  gap: 10px;
+  padding: 10px 12px;
+
+  .letter {
+    font-size: 14px;
+  }
 
   .label {
-    text-align: center;
     font-size: 16px;
-    line-height: 1.25;
-    /* four keys in a phone-sized grid, and OpenTDB writes some long ones */
-    overflow-wrap: anywhere;
+  }
+}
+
+/* 12e: a full-width key in the hand. 68px tall, growing for a long answer. */
+.pad {
+  gap: 16px;
+  min-height: 68px;
+  padding: 0 18px;
+
+  .letter {
+    font-size: 18px;
+  }
+
+  .label {
+    font-size: 20px;
+  }
+}
+
+/* 12f*: the result cards under the verdict. */
+.card {
+  gap: 14px;
+  padding: 14px 16px;
+
+  .letter {
+    font-size: 18px;
+  }
+
+  .label {
+    font-size: 20px;
   }
 }
 
 .k0 {
   --fill: var(--arc-magenta);
-  --key-ink: #fff;
-  --glow: rgba(255, 46, 136, .5);
-  --glow-hot: rgba(255, 46, 136, .9);
+  --key-ink: var(--arc-white);
 }
 
 .k1 {
   --fill: var(--arc-mint);
   --key-ink: var(--arc-ink-mint);
-  --glow: rgba(126, 249, 208, .45);
-  --glow-hot: rgba(126, 249, 208, .85);
 }
 
 .k2 {
   --fill: var(--arc-yellow);
   --key-ink: var(--arc-ink-yellow);
-  --glow: rgba(255, 214, 0, .45);
-  --glow-hot: rgba(255, 214, 0, .85);
 }
 
 .k3 {
   --fill: var(--arc-violet);
   --key-ink: var(--arc-ink-violet);
-  --glow: rgba(179, 136, 255, .45);
-  --glow-hot: rgba(179, 136, 255, .85);
 }
 
-/* Chosen: yours, ringed in cream, answering still open. */
+/* Chosen: yours, ringed white, answering still open. */
 .chosen {
-  box-shadow: inset 0 0 0 3px var(--arc-ring), 0 0 24px var(--glow-hot);
+  box-shadow: inset 0 0 0 4px var(--arc-white);
 }
 
-/* Out: a dead key, never faded — the label stays readable on the dark. Two
-   roads here: `closed` is a key you never pressed, `wrong` is one the reveal
-   did not keep. */
-.closed,
+/* The three you did not press, once you have: still theirs, faded back. */
+.closed {
+  opacity: .35; /* design-dim */
+}
+
+/* Not the answer, on the TV's reveal: a dead key. */
 .wrong {
-  background: var(--arc-dead);
-  color: var(--arc-dead-ink);
-  box-shadow: inset 0 -5px 0 rgba(0, 0, 0, .4);
-
-  .letter {
-    color: var(--arc-dead-letter);
-  }
+  background: var(--arc-surface);
+  color: var(--arc-disabled);
+  box-shadow: var(--well);
 }
 
-/* The one you pressed and got wrong keeps its own fill, turned down, so "which
-   one did I press?" is answered by colour rather than by four dead keys. */
-.missed {
-  filter: brightness(.62) saturate(.9);
-}
-
-/* The answer: ringed, and throbbing on the TV. */
+/* The answer: on the TV ringed pale with the magenta glow the design holds
+   on it; on a phone's card, ringed mint. */
 .correct {
-  box-shadow: inset 0 0 0 3px var(--arc-ring), 0 0 30px var(--glow-hot);
+  box-shadow: inset 0 0 0 3px var(--arc-mint);
 
   &.player {
-    box-shadow: inset 0 0 0 4px var(--arc-ring), 0 0 46px var(--glow-hot), 0 0 90px rgba(255, 244, 176, .35);
-    animation: throb 1.1s ease-in-out infinite;
+    box-shadow: 0 0 0 3px var(--arc-ring), var(--glow-answer);
   }
 }
 
-@keyframes throb {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.035); }
+/* Yours, and right. */
+.right {
+  box-shadow: inset 0 0 0 3px var(--arc-yellow);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .correct.player { animation: none; }
+/* Yours, and wrong: dark, but ringed in the fault colour, so "which one did
+   I press?" still has an answer. */
+.missed {
+  background: var(--arc-surface);
+  color: var(--arc-muted);
+  box-shadow: inset 0 0 0 3px var(--arc-magenta);
 }

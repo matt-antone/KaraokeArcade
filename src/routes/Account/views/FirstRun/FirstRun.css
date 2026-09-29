@@ -1,20 +1,62 @@
-/* the gutter comes from AccountView's column. Width in CSS, not JS: two
-   thirds of the reading column, never narrower than a form field's 340px. */
-.container {
-  max-width: max(340px, min(66vw, calc(var(--content-max) * 0.66)));
-  margin: 0 auto;
-  overflow: hidden;
+/* First run: the admin account, drawn in 02 Join as's shell (Arcade Flow v2,
+   02): its own full screen over the empty chrome, HUD, logo, heading, the
+   wells 28px in from each edge, and the start button pinned to the foot. */
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden auto;
+  background-color: var(--arc-ground);
+
+  & > * {
+    flex-shrink: 0;
+  }
+
+  & > form {
+    flex: 1 0 auto;
+    margin: 22px 28px 0;
+  }
 }
 
-/* a section heading printed on the panel — silkscreen, via the global class */
+.logo {
+  display: block;
+  width: 220px;
+  margin: 28px auto 0;
+}
+
 .heading {
-  margin: var(--gap-5) 0 var(--gap-2);
+  margin: 32px 0 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: var(--weight-regular);
+  color: var(--arc-text);
 }
 
-/* read as a sentence, so Figtree */
+/* read as a sentence, so Chakra Petch, like 02's "Forgot password?" */
 .blurb {
-  margin: 0 0 var(--gap-4);
-  font-size: var(--text-m);
-  line-height: 1.5;
-  color: var(--ink-2);
+  margin: 14px 28px 0;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--arc-text-2);
+  text-wrap: pretty;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.cta {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 32px;
+}
+
+/* the account form nudges its submit key down; the start button sits flush */
+.screen .cta button[type='submit'] {
+  margin-top: 0;
 }

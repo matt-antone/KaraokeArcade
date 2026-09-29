@@ -12,24 +12,24 @@ import type { BattleSide } from 'shared/types'
  * one part of the screen a person singing is actually reading.
  *
  * So the same numbers that position the bezel in PlayerBattle.css are resolved
- * here in pixels and handed to Player. They are native design units off
- * TV-MAIN-SCREEN.md and have to stay in step with the `.video` rules in that
- * stylesheet: the video panel is `top: 63`, `bottom: 31`, and starts 132 units
- * in on the singer's side — the sprite keeps the outer third and the video
- * takes the rest, mirrored between the two beats.
+ * here in pixels and handed to Player. They are Arcade Flow v2's 13e/13g
+ * panel at 0.4 (the design's 960 x 540 TV is 384 x 216 units): 305.6 x 172,
+ * 33.6 from the top, 67.2 in from the left on round 1 and 11.2 on round 2 —
+ * the singer keeps the outer side and the video takes the rest, mirrored
+ * between the two beats.
  */
 
-/** The stage's own box: 384 x 224 design units, the dive bar plate's 12:7. */
+/** The stage's own box: 384 x 216 design units, the design's 16:9. */
 const STAGE_W = 384
-const STAGE_H = 224
+const STAGE_H = 216
 
-/** The opening, in those same units. 384 - 132 - 28 and 224 - 63 - 31. */
-const PANEL_W = 224
-const PANEL_H = 130
-const PANEL_TOP = 63
+/** The opening, in those same units. */
+const PANEL_W = 305.6
+const PANEL_H = 172
+const PANEL_TOP = 33.6
 /** How far in the panel starts on the side the singer is standing. The other
  *  beat mirrors it, which is the whole of the difference between them. */
-const PANEL_NEAR = 132
+const PANEL_NEAR = 67.2
 const PANEL_FAR = STAGE_W - PANEL_NEAR - PANEL_W
 
 export interface BattleVideoRect {
@@ -42,9 +42,8 @@ export interface BattleVideoRect {
 /**
  * `width` and `height` are the player's whole display. The stage is centred in
  * it by `place-items: center` and keeps its aspect ratio, so it is whichever
- * of the two axes runs out first that decides its size — on a 16:9 screen that
- * is the height, leaving the ~1.8% of pillarbox either side the stylesheet
- * mentions.
+ * of the two axes runs out first that decides its size — on a 16:9 screen,
+ * neither: it fills the display.
  */
 export default function battleVideoRect (width: number, height: number, side: BattleSide): BattleVideoRect {
   const stageW = Math.min(width, height * (STAGE_W / STAGE_H))

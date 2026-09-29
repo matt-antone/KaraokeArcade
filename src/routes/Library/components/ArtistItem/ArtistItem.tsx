@@ -1,62 +1,51 @@
 import React from 'react'
 import clsx from 'clsx'
-import Highlighter from 'react-highlight-words'
 import SongList from '../SongList/SongList'
-import Icon from 'components/Icon/Icon'
 import styles from './ArtistItem.css'
 
 interface ArtistItemProps {
   artistSongIds: number[]
-  filterKeywords?: string[]
   isExpanded: boolean
+  /** The letter group this artist opens ("#", "A"…), on the first of each group only. */
+  letter?: string
   name: string
-  numStars: number
   onArtistClick: () => void
-  starredSongs: number[]
   style?: object
-  upcomingSongs: number[]
 }
 
+/**
+ * A library artist row (06): name left, "22 songs" and a chevron right. Open,
+ * the row lights like the design's active row and its songs follow inline.
+ */
 const ArtistItem = ({
   artistSongIds,
-  filterKeywords,
   isExpanded,
+  letter,
   name,
   onArtistClick,
-  starredSongs,
   style,
-  upcomingSongs,
-}: ArtistItemProps): React.ReactElement => {
-  const isChildUpcoming = artistSongIds.some(songId => upcomingSongs.includes(songId))
-  const isChildStarred = artistSongIds.some(songId => starredSongs.includes(songId))
+}: ArtistItemProps): React.ReactElement => (
+  <div style={style} translate='no'>
+    {letter && <div className={styles.letter}>{letter}</div>}
 
-  return (
-    <div style={style} translate='no'>
-      <button
-        type='button'
-        onClick={onArtistClick}
-        aria-expanded={isExpanded}
-        className={styles.container}
-      >
-        <div className={clsx(styles.folder, isChildStarred && styles.folderStarred)}>
-          <Icon icon='FOLDER' size={28} />
-          <span className={styles.count}>{isExpanded ? '' : artistSongIds.length}</span>
-          {isExpanded && <Icon icon='CHEVRON_DOWN' size={18} className={styles.chevron} />}
-        </div>
-        <span className={clsx(styles.name, isChildUpcoming && styles.upcoming)}>
-          {filterKeywords?.length ? <Highlighter autoEscape textToHighlight={name} searchWords={filterKeywords} /> : name}
+    <button
+      type='button'
+      onClick={onArtistClick}
+      aria-expanded={isExpanded}
+      className={clsx(styles.container, isExpanded && styles.open)}
+    >
+      <span className={styles.name}>{name}</span>
+      <span className={styles.meta}>
+        <span className={styles.count}>
+          {artistSongIds.length}
+          {artistSongIds.length === 1 ? ' song' : ' songs'}
         </span>
-      </button>
+        <span className={styles.chevron} aria-hidden='true'>▸</span>
+      </span>
+    </button>
 
-      {isExpanded && (
-        <SongList
-          songIds={artistSongIds}
-          showArtist={false}
-          filterKeywords={filterKeywords}
-        />
-      )}
-    </div>
-  )
-}
+    {isExpanded && <SongList songIds={artistSongIds} showArtist={false} />}
+  </div>
+)
 
 export default ArtistItem

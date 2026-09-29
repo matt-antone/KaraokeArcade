@@ -8,7 +8,6 @@
   height: var(--avatar-form);
   padding: 0;
   border: 0;
-  border-radius: var(--radius-key);
   background: none;
   cursor: pointer;
 
@@ -33,11 +32,8 @@
   padding: 2px 0;
   font-size: 10px;
   text-align: center;
-  letter-spacing: .06em;
-  color: var(--ink-1);
-  background: rgba(0, 0, 0, .55);
-  border-bottom-left-radius: var(--radius-key);
-  border-bottom-right-radius: var(--radius-key);
+  color: var(--arc-text);
+  background: var(--arc-deep);
 }
 
 /* The grid is the same one the sign-in gate shows, so it is given the same

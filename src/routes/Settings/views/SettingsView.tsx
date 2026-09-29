@@ -26,8 +26,8 @@ const SettingsView = () => {
   return (
     <div className={styles.container}>
       <Rooms />
-      <Users />
       <Player />
+      <Users />
       <Prefs />
     </div>
   )

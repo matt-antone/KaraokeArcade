@@ -16,7 +16,9 @@ export interface SongHistoryDisplayItem {
 interface SongHistoryListProps {
   items: SongHistoryDisplayItem[]
   /** Starring a sung song favourites it for a future party. It cannot be re-queued tonight. */
-  onStar: (item: SongHistoryDisplayItem) => void
+  onStar?: (item: SongHistoryDisplayItem) => void
+  /** The design draws no star here; a caller that wants one opts in. */
+  showStar?: boolean
   emptyText?: string
   className?: string
 }
@@ -27,9 +29,10 @@ interface SongHistoryListProps {
  *
  * A song sung tonight is locked for the rest of the party, so these rows
  * carry no re-queue action and no key face anywhere they appear — they are
- * a record, not a menu. The only control is the star.
+ * a record, not a menu. The only control is the star, and only where a
+ * caller asks for it.
  */
-const SongHistoryList = ({ items, onStar, emptyText, className }: SongHistoryListProps) => {
+const SongHistoryList = ({ items, onStar, showStar, emptyText, className }: SongHistoryListProps) => {
   if (items.length === 0) {
     return (
       <p className={clsx('silkscreen', styles.empty, className)}>
@@ -47,12 +50,13 @@ const SongHistoryList = ({ items, onStar, emptyText, className }: SongHistoryLis
             <div className={styles.artist}>{item.artist}</div>
           </div>
           <div className={styles.date}>{item.date}</div>
-          <ButtonStar
-            className={styles.star}
-            isStarred={item.isStarred}
-            count={item.starCount}
-            onClick={() => onStar(item)}
-          />
+          {showStar && (
+            <ButtonStar
+              className={styles.star}
+              isStarred={item.isStarred}
+              onClick={() => onStar?.(item)}
+            />
+          )}
         </li>
       ))}
     </ul>

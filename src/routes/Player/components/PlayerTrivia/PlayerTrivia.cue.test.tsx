@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 import React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, render } from '@testing-library/react'
+import { cleanup, render as mount } from '@testing-library/react'
+import { Provider } from 'react-redux'
 import PlayerTrivia from './PlayerTrivia'
 import { triviaResult, triviaRound } from 'lib/triviaFixtures'
 
@@ -25,6 +26,16 @@ class FakeAudio {
 }
 
 vi.stubGlobal('Audio', FakeAudio)
+
+// the winner reads the night's board; one state, so every read is the same
+const state = { points: { leaderboard: [] as never[] } }
+const store = {
+  getState: () => state,
+  subscribe: () => () => {},
+  dispatch: () => {},
+} as never
+
+const render = (ui: React.ReactElement) => mount(ui, { wrapper: ({ children }) => <Provider store={store}>{children}</Provider> })
 
 const stage = (numCorrect: number, boardFrom: number | null = null) => (
   <PlayerTrivia
@@ -75,9 +86,9 @@ describe('the tally cue', () => {
     expect(played).toEqual(['assets/audience-applause.mp3'])
   })
 
-  /** A player that reloads onto the standings should not applaud a beat that
+  /** A player that reloads onto the winner should not applaud a beat that
    *  has already been and gone. */
-  it('stays quiet once the standings have taken over', () => {
+  it('stays quiet once the winner has taken over', () => {
     render(stage(3, Date.now() - 500))
     expect(played).toEqual([])
   })

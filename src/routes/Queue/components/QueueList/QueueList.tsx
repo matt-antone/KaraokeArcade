@@ -8,25 +8,23 @@ import QueueTriviaItem from '../QueueTriviaItem/QueueTriviaItem'
 import QueueListAnimator from '../QueueListAnimator/QueueListAnimator'
 import { formatSeconds } from 'lib/dateTime'
 import { isBattleItem, isTriviaItem, type QueueItem as QueueItemData } from 'shared/types'
+import { nightPointsByUser } from 'store/selectors/points'
 import { moveItem } from '../../modules/queue'
-import getMyUpcoming from '../../selectors/getMyUpcoming'
-import getPlayerHistory from '../../selectors/getPlayerHistory'
+import getQueueDisplay from '../../selectors/getQueueDisplay'
 import getQueueSections from '../../selectors/getQueueSections'
 import getRoundRobinQueue from '../../selectors/getRoundRobinQueue'
 import getWaits from '../../selectors/getWaits'
 
 const QueueList = () => {
   const artists = useAppSelector(state => state.artists)
-  const { errorMessage, isAtQueueEnd, isErrored, isPlaying, position, queueId } = useAppSelector(state => state.status)
+  const queueId = useAppSelector(state => state.status.queueId)
 
-  const playerHistory = useAppSelector(getPlayerHistory)
   const queue = useAppSelector(getRoundRobinQueue)
   const sections = useAppSelector(getQueueSections)
-  const myUpcoming = useAppSelector(getMyUpcoming)
+  const display = useAppSelector(getQueueDisplay)
   const pausedUserIds = useAppSelector(state => ensureState(state.queue).pausedUserIds)
+  const points = useAppSelector(nightPointsByUser)
   const songs = useAppSelector(state => state.songs)
-  const starredSongs = useAppSelector(state => ensureState(state.userStars).starredSongs)
-  const starCounts = useAppSelector(state => state.starCounts)
   const user = useAppSelector(state => state.user)
   const waits = useAppSelector(getWaits)
   const queueTab = useAppSelector(state => state.ui.queueTab)
@@ -49,12 +47,13 @@ const QueueList = () => {
     dispatch(moveItem({ queueId: qId, prevQueueId: lastPlayed }))
   }
 
-  // "queue"/"me" are upcoming only; "history" is what's been sung, newest first
+  // "queue"/"me" are the turns still to come, never the song on stage (the
+  // banner has it); "history" is what's been sung, newest first
   const result = queueTab === 'history'
     ? [...sections.played].reverse()
     : queueTab === 'me'
-      ? myUpcoming
-      : sections.upcoming
+      ? display.mine
+      : display.upcoming
 
   // reorder my own upcoming songs; the item lands after the one now above it
   const handleDragEnd = ({ source, destination }: DropResult) => {
@@ -70,13 +69,8 @@ const QueueList = () => {
     }
   }
 
-  /** Where a row sits relative to the player: on stage, still to come, or done.
-   *  Every row kind asks this and only this before anything else. */
-  const placeOf = (qId: number) => ({
-    isCurrent: (qId === queueId) && !isAtQueueEnd,
-    isUpcoming: qId !== queueId && !playerHistory.includes(qId),
-    isPlayed: qId !== queueId && playerHistory.includes(qId),
-  })
+  // every Queue and Me row is still to come; every History row is done
+  const isUpcoming = queueTab !== 'history'
 
   /** A battle can reach a song this device has never loaded — the library
    *  arrives by artist — so an absent title is an ordinary state here, not a
@@ -90,9 +84,9 @@ const QueueList = () => {
     }
   }
 
-  /** Which of a song row's actions this viewer may reach. Ten booleans off the
-   *  same four facts, and none of them about how the row draws. */
-  const songRowFlags = (item: QueueItemData, isCurrent: boolean, isUpcoming: boolean) => {
+  /** Which of a song row's actions this viewer may reach: permissions, none
+   *  of them about how the row draws. A paused singer's row is held (07c). */
+  const songRowFlags = (item: QueueItemData) => {
     const isOwner = item.userId === user.userId
     const isPaused = isUpcoming && pausedUserIds.includes(item.userId)
 
@@ -100,21 +94,16 @@ const QueueList = () => {
       isOwner,
       isPaused,
       isMovable: isUpcoming && !isPaused && user.isAdmin && queueTab !== 'me',
-      isPlayed: !isUpcoming && !isCurrent,
-      isPlaying: isCurrent && isPlaying,
+      isPlayed: !isUpcoming,
       isRemovable: isUpcoming && (isOwner || user.isAdmin),
-      isReplayable: (!isUpcoming || isCurrent) && (user.isAdmin || isOwner),
-      isSkippable: isCurrent && (user.isAdmin || isOwner),
-      // Me tab only: elsewhere the row already carries up to four keys, and a
-      // fifth puts the row past the travel a swipe can comfortably cover
+      // Me tab only: elsewhere the row already carries two keys, and a third
+      // is past the travel a swipe can comfortably cover
       isTunable: queueTab === 'me' && isUpcoming && isOwner,
     }
   }
 
-  const renderSong = (qId: number, item: QueueItemData, dragHandleProps?: DraggableProvidedDragHandleProps | null) => {
-    const { isCurrent, isUpcoming } = placeOf(qId)
-    const flags = songRowFlags(item, isCurrent, isUpcoming)
-    const duration = songs.entities[item.songId].duration
+  const renderSong = (qId: number, item: QueueItemData, position?: number, dragHandleProps?: DraggableProvidedDragHandleProps | null) => {
+    const flags = songRowFlags(item)
 
     return (
       <QueueItem
@@ -122,31 +111,27 @@ const QueueList = () => {
         {...flags}
         artist={artists.entities[songs.entities[item.songId].artistId].name}
         dragHandleProps={dragHandleProps}
-        errorMessage={isCurrent && errorMessage ? errorMessage : ''}
-        isCurrent={isCurrent}
         key={qId}
-        isErrored={isCurrent && isErrored}
-        isStarred={starredSongs.includes(item.songId)}
-        isUpcoming={isUpcoming}
-        pctPlayed={isCurrent ? position / duration * 100 : 0}
-        showStar={queueTab !== 'me'}
-        starCount={starCounts.songs[item.songId] || 0}
+        points={points[item.userId] ?? 0}
+        position={position}
         title={songs.entities[item.songId].title}
-        wait={flags.isPaused ? '' : formatSeconds(waits[qId], true)} // fuzzy
+        wait={isUpcoming && !flags.isPaused ? formatSeconds(waits[qId], true) : undefined} // fuzzy
         // actions
         onMoveClick={handleMoveClick}
       />
     )
   }
 
-  const renderItem = (qId: number, dragHandleProps?: DraggableProvidedDragHandleProps | null) => {
+  // 1, 2, 3 down the turns still to come. History has no line to be in.
+  const renderItem = (qId: number, i: number, dragHandleProps?: DraggableProvidedDragHandleProps | null) => {
     const item = queue.entities[qId]
-    const { isCurrent, isPlayed } = placeOf(qId)
+    const isPlayed = !isUpcoming
+    const position = isUpcoming ? i + 1 : undefined
 
     // a round has no song to read a duration or an artist from, and none of
     // the row's actions apply to it
     if (isTriviaItem(item)) {
-      return <QueueTriviaItem key={qId} isCurrent={isCurrent} isPlayed={isPlayed} />
+      return <QueueTriviaItem key={qId} isPlayed={isPlayed} position={position} />
     }
 
     // Two singers and two songs, so nothing in renderSong applies: it reads a
@@ -157,8 +142,8 @@ const QueueList = () => {
       return (
         <QueueBattleItem
           key={qId}
-          isCurrent={isCurrent}
           isPlayed={isPlayed}
+          position={position}
           challenger={{
             userId: item.userId,
             name: item.userDisplayName,
@@ -177,7 +162,7 @@ const QueueList = () => {
       )
     }
 
-    return renderSong(qId, item, dragHandleProps)
+    return renderSong(qId, item, position, dragHandleProps)
   }
 
   if ((queueTab === 'me' || (queueTab === 'queue' && user.isAdmin)) && result.length > 1) {
@@ -196,12 +181,14 @@ const QueueList = () => {
                   // somebody else's turn along with your own. Disabling it here
                   // rather than leaving the row without a handle: dnd asserts
                   // every enabled Draggable has one, and the assert fires as a
-                  // console error on every render.
-                  isDragDisabled={isTriviaItem(queue.entities[qId]) || isBattleItem(queue.entities[qId])}
+                  // console error on every render. A held row keeps its place
+                  // until its singer is back, so it does not move either.
+                  isDragDisabled={isTriviaItem(queue.entities[qId]) || isBattleItem(queue.entities[qId])
+                    || (queueTab === 'queue' && pausedUserIds.includes(queue.entities[qId].userId))}
                 >
                   {dragProvided => (
                     <div ref={dragProvided.innerRef} {...dragProvided.draggableProps}>
-                      {renderItem(qId, dragProvided.dragHandleProps)}
+                      {renderItem(qId, i, dragProvided.dragHandleProps)}
                     </div>
                   )}
                 </Draggable>
@@ -214,7 +201,7 @@ const QueueList = () => {
     )
   }
 
-  return <QueueListAnimator queueItems={result.map(qId => renderItem(qId))} />
+  return <QueueListAnimator queueItems={result.map((qId, i) => renderItem(qId, i))} />
 }
 
 export default QueueList

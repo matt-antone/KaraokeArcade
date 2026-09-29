@@ -16,7 +16,7 @@
   align-items: center;
   gap: var(--gap-3);
   padding: var(--gap-2) var(--gap-4);
-  background-color: var(--key-well);
+  background-color: var(--arc-surface);
   box-shadow: var(--well);
   border-top: var(--seam-rule);
   border-bottom: var(--hair-rule);
@@ -55,7 +55,7 @@
 .scores,
 .clock {
   flex: 0 0 auto;
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-variant-numeric: tabular-nums;
   color: var(--vu);
 }

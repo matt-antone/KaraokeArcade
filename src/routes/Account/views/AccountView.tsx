@@ -33,15 +33,12 @@ const AccountView = ({ isSignInRoute }: AccountViewProps) => {
     return <Navigate to={{ pathname: '/library', search: window.location.search }} replace />
   }
 
-  return (
-    <div className={styles.container}>
-      {isFirstRun && <FirstRun />}
+  if (isFirstRun) return <div className={styles.column}><FirstRun /></div>
 
-      {!isFirstRun && isSignInRoute && <SignedOutView />}
+  // 02 Join as draws its own full-screen shell
+  if (isSignInRoute) return <SignedOutView />
 
-      {!isFirstRun && !isSignInRoute && isSignedIn && <SignedInView />}
-    </div>
-  )
+  return isSignedIn ? <div className={styles.container}><SignedInView /></div> : null
 }
 
 export default AccountView

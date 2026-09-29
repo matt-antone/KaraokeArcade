@@ -1,50 +1,113 @@
-/* Placeholder layout until the new designs land: plain document flow, the same
-   column Account and Settings use. */
+/* 08b Tonight's scores: the title and the You strip are fixed, and only the
+   board under them scrolls. One viewport tall, clearing the fixed chrome with
+   the heights CoreLayout publishes. */
 .container {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: 100dvh;
   max-width: var(--content-max);
   margin: 0 auto;
-  padding:
-    calc(var(--header-h, 0px) + var(--gap-4))
-    var(--gutter)
-    calc(var(--nav-h, 0px) + var(--gap-5));
+  padding: var(--header-h, 0px) 0 var(--nav-h, 0px);
+  font-family: var(--font-display);
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 20px 20px 0;
 }
 
 .title {
-  margin: 0 0 var(--gap-4);
-  font-size: 20px;
+  margin: 0;
+  font-weight: var(--weight-bold);
+  font-size: 28px;
+  color: var(--arc-yellow);
+  --text-shadow-color: var(--arc-magenta);
+  text-shadow: var(--text-shadow-hard);
+}
+
+.count {
+  font-size: var(--text-s);
+  color: var(--arc-muted);
+}
+
+.you {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 20px 0;
+  padding: 10px 12px;
+  background: var(--arc-surface);
+  box-shadow: inset 0 0 0 2px var(--arc-surface-hover);
+}
+
+.youLabel {
+  flex: 1;
+  font-size: var(--text-xs);
+  color: var(--arc-muted);
+}
+
+.youRank {
+  font-size: var(--text-m);
+  color: var(--arc-mint);
+}
+
+.youPoints {
+  font-size: var(--text-2xl);
+  color: var(--arc-yellow);
 }
 
 .empty {
-  color: var(--ink-2);
+  margin: 0;
+  padding: 12px 20px;
+  font-family: var(--font-body);
+  font-size: var(--text-xl);
+  line-height: 1.4;
+  color: var(--arc-text-2);
 }
 
 .list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   margin: 0;
-  padding: 0;
+  padding: 12px 20px;
   list-style: none;
 
   & li {
     display: flex;
     align-items: center;
-    gap: var(--gap-3);
-    padding: var(--gap-2) 0;
-    border-bottom: 1px solid var(--hairline);
+    gap: 12px;
+    padding: 6px 8px;
   }
 }
 
-.me {
-  font-weight: 700;
+/* the current user: lit ground, an amber pixel ring and an amber name */
+.list .me {
+  background: var(--arc-surface-hover);
+  box-shadow: inset 0 0 0 2px var(--arc-amber);
 }
 
 .place {
-  width: 2ch;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
+  width: 28px;
+  flex: none;
+  font-size: var(--text-m);
+  color: var(--arc-disabled);
 }
 
-.avatar {
-  width: 34px;
+.top {
+  color: var(--arc-yellow);
+}
+
+.list .avatar {
+  width: 40px;
   flex: none;
+  margin: 0;
 }
 
 .name {
@@ -53,8 +116,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 13px;
+  color: var(--arc-text);
+}
+
+.me .name {
+  color: var(--arc-amber);
 }
 
 .points {
-  font-variant-numeric: tabular-nums;
+  flex: none;
+  font-size: var(--text-l);
+  color: var(--arc-yellow);
 }

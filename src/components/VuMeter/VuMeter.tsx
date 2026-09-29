@@ -7,19 +7,23 @@ interface VuMeterProps {
   /** 0-1. Values outside the range are clamped; NaN reads as 0. */
   value?: number
   /**
-   * Segment count. A *visual* choice, not a data one: keep it high (14-30) so
+   * Segment count. A *visual* choice, not a data one: keep it high (12-32) so
    * the bar reads as a level. Never map segments 1:1 onto a small quantity —
    * a four-segment meter reads as four blocks, not a level.
    */
   segments?: number
   /**
-   * Fraction of the scale above which segments light red instead of amber.
-   * Pass a value above 1 to switch peaking off entirely, which is what every
-   * non-audio meter wants: a scan reaching 90% is good news, not a fault.
+   * Fraction of the scale from which lit segments read yellow instead of
+   * amber (the HUD's 20/24, the TV's 28/32). Leave it out for no peak, which
+   * is what every non-audio meter wants.
    */
   peakFrom?: number
-  /** Bar thickness in px. */
-  height?: number
+  /** Every lit cell mint instead of amber/yellow (09 media). */
+  tone?: 'amber' | 'mint'
+  /** Bar thickness: px as a number, or any CSS length (the TV's vh). */
+  height?: number | string
+  /** Space between cells: px as a number, or any CSS length. */
+  gap?: number | string
   /** Stack bottom-up instead of left-to-right. */
   vertical?: boolean
   /** Describes what is being measured, for assistive tech. */
@@ -28,11 +32,15 @@ interface VuMeterProps {
   style?: React.CSSProperties
 }
 
+const length = (v: number | string) => typeof v === 'number' ? `${v}px` : v
+
 const VuMeter = ({
   value = 0,
   segments = 24,
-  peakFrom = 0.86,
+  peakFrom,
+  tone = 'amber',
   height = 12,
+  gap = 2,
   vertical,
   label,
   className,
@@ -42,13 +50,13 @@ const VuMeter = ({
 
   return (
     <div
-      className={clsx(styles.container, vertical && styles.vertical, className)}
+      className={clsx(styles.container, vertical && styles.vertical, tone === 'mint' && styles.mint, className)}
       role='meter'
       aria-valuemin={0}
       aria-valuemax={1}
       aria-valuenow={safe}
       aria-label={label}
-      style={{ '--vu-thickness': `${height}px`, ...style } as React.CSSProperties}
+      style={{ '--vu-thickness': length(height), '--vu-gap': length(gap), ...style } as React.CSSProperties}
     >
       {Array.from({ length: segments }, (_, i) => {
         const state = segmentState(i, segments, safe, peakFrom)
@@ -56,11 +64,7 @@ const VuMeter = ({
         return (
           <i
             key={i}
-            className={clsx(styles.seg, state !== 'off' && [
-              styles.lit,
-              state === 'peak' && styles.peak,
-              state === 'hot' && styles.hot,
-            ])}
+            className={clsx(styles.seg, state !== 'off' && styles.lit, state === 'peak' && styles.peak)}
           />
         )
       })}

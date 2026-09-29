@@ -13,6 +13,7 @@ import {
   type TriviaResult,
   type TriviaRound,
   type TriviaScore,
+  type TriviaStanding,
 } from '../../shared/types.js'
 import { TRIVIA_ROUND, TRIVIA_RESULT, QUEUE_PUSH } from '../../shared/actionTypes.js'
 
@@ -53,6 +54,9 @@ interface ActiveRound {
   /** Null between questions, while the answer is on screen. */
   current: ActiveQuestion | null
   timer: ReturnType<typeof setTimeout> | null
+  /** userId to what they have made of this round so far: everyone who has
+   *  answered at least once. The final result's standings come from here. */
+  tally: Map<number, { points: number, numCorrect: number }>
 }
 
 /** roomId to its round in progress. The server is the only place this can
@@ -84,6 +88,21 @@ function shuffle<T> (items: T[]): T[] {
   }
 
   return out
+}
+
+/** The round's result, best first, then by name so ties hold still. Names and
+ *  faces are read live, like the scoreboard's. */
+function getStandings (tally: ActiveRound['tally']): TriviaStanding[] {
+  const query = sql`SELECT userId, name, avatarId FROM users WHERE userId IN ${sql.in([...tally.keys()])}`
+
+  return db.all<{ userId: number, name: string, avatarId: string | null }>(String(query), query.parameters)
+    .map(u => ({ ...u, ...tally.get(u.userId)! }))
+    .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name))
+}
+
+/** A round played is a round on the ledger, whatever it paid. */
+function countRound (roomId: number, active: ActiveRound): void {
+  for (const userId of active.tally.keys()) Points.addTriviaRound(roomId, userId)
 }
 
 class Trivia {
@@ -246,7 +265,7 @@ class Trivia {
       return null
     }
 
-    rounds.set(roomId, { queueId, questions, index: -1, current: null, timer: null })
+    rounds.set(roomId, { queueId, questions, index: -1, current: null, timer: null, tally: new Map() })
 
     // asked, so it can never be asked again — this is what a player reload
     // walking back through the queue would otherwise do
@@ -336,6 +355,7 @@ class Trivia {
       isFinal,
       correctIdx: current.correctIdx,
       scores: this.getScores(roomId),
+      standings: isFinal ? getStandings(active.tally) : [],
       numCorrect,
       scoresFrom,
       boardFrom,
@@ -344,6 +364,8 @@ class Trivia {
     }
 
     active.current = null
+
+    if (isFinal) countRound(roomId, active)
 
     io.to(Rooms.prefix(roomId)).emit('action', {
       type: TRIVIA_RESULT,
@@ -384,6 +406,13 @@ class Trivia {
 
     if (active.timer) clearTimeout(active.timer)
     rounds.delete(roomId)
+
+    // skipped during a reveal: no final result goes up, but the round was played
+    if (active.tally.size) {
+      countRound(roomId, active)
+      Points.push(io, roomId)
+    }
+
     this.syncQueueAndPush(io, roomId)
   }
 
@@ -397,7 +426,8 @@ class Trivia {
     roundId: number
     answerIdx: number
   }): void {
-    const current = rounds.get(roomId)?.current
+    const active = rounds.get(roomId)
+    const current = active?.current
 
     // Matched on the question's own id, not the room's: between questions
     // there is nothing open, and a tap that lands during the reveal must not
@@ -413,7 +443,11 @@ class Trivia {
 
     // worth what its level is worth: a hard question is the one that moves
     // the standings, so it pays five times an easy one
-    const points = answerIdx === current.correctIdx ? triviaPoints(current.round.difficulty) : 0
+    const isCorrect = answerIdx === current.correctIdx
+    const points = isCorrect ? triviaPoints(current.round.difficulty) : 0
+    const mine = active.tally.get(userId) ?? { points: 0, numCorrect: 0 }
+
+    active.tally.set(userId, { points: mine.points + points, numCorrect: mine.numCorrect + Number(isCorrect) })
     const query = sql`
       INSERT INTO triviaScores (roomId, userId, score, numAnswered)
       VALUES (${roomId}, ${userId}, ${points}, 1)
@@ -425,7 +459,7 @@ class Trivia {
 
     // and onto the night's board, which the room is shown when this question
     // closes rather than now — see Points
-    Points.add(roomId, userId, points)
+    Points.add(roomId, userId, points, 'trivia')
   }
 
   /** Everyone who has answered at least once in this room, best first.

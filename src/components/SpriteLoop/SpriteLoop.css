@@ -1,0 +1,29 @@
+/* One element, one background image, swapped per frame — see SpriteBox. */
+.sprite {
+  position: absolute;
+}
+
+/* One frame of the sheet, fitted inside .sprite and standing on its bottom
+   edge. height and max-width together are the fit: whichever of the two the
+   box runs out of first is the one that bounds the frame, and aspect-ratio
+   supplies the other. Drawn at the browser's default smoothing, as the design
+   draws it.
+
+   The ratio is FRAME_WIDTH / FRAME_HEIGHT in lib/battleSingers.ts, which
+   battleSingers.test.ts measures against the sheets themselves. */
+.spriteFrame {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  height: 100%;
+  max-width: 100%;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  background-repeat: no-repeat;
+}
+
+/* Every fighter is drawn facing left, so the one looking right is the one that
+   gets flipped. */
+.spriteFlip {
+  transform: scaleX(-1);
+}

@@ -2,22 +2,27 @@ import React, { useState } from 'react'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
 import { DragDropContext, Droppable, DropResult } from '@hello-pangea/dnd'
 import HttpApi from 'lib/HttpApi'
-import Accordion from 'components/Accordion/Accordion'
-import Icon from 'components/Icon/Icon'
 import PathChooser from './PathChooser/PathChooser'
 import PathInfo from './PathInfo/PathInfo'
 import PathItem from './PathItem/PathItem'
 import Button from 'components/Button/Button'
 import Modal from 'components/Modal/Modal'
 import styles from './PathPrefs.css'
-import { receivePrefs, requestScan, requestScanAll, setPathPriority, setPathPrefs } from 'store/modules/prefs'
+import { receivePrefs, requestScan, requestScanAll, requestScanStop, setPathPriority, setPathPrefs } from 'store/modules/prefs'
 import { showErrorMessage } from 'store/modules/ui'
 import type { Path } from 'shared/types'
 
 const api = new HttpApi('prefs/path')
 
-const PathPrefs = () => {
+/** 09 Media folders: each folder with its song count and a mint meter, full
+ *  when idle and the scan's progress while one runs (the scan used to be a
+ *  row in the header). Reordering, re-scanning, per-folder settings and
+ *  adding a folder are the admin extras behind the panel's Manage key. */
+const PathPrefs = ({ isManaging }: { isManaging: boolean }) => {
   const paths = useAppSelector(state => state.prefs.paths)
+  const isScanning = useAppSelector(state => state.prefs.isScanning)
+  const scannerPct = useAppSelector(state => state.prefs.scannerPct)
+  const scannerText = useAppSelector(state => state.prefs.scannerText)
   const [isChoosing, setChoosing] = useState(false)
   const [editingPath, setEditingPath] = useState<Path | null>(null)
   const [removingPath, setRemovingPath] = useState<Path | null>(null)
@@ -101,89 +106,94 @@ const PathPrefs = () => {
   const handleInfo = (pathId: number) => setEditingPath(paths.entities[pathId])
   const handleRefresh = (pathId: number) => dispatch(requestScan(pathId))
   const handleRefreshAll = () => dispatch(requestScanAll())
+  const handleStopScan = () => dispatch(requestScanStop())
 
-  // total songs across all paths, so each row's meter can show its share of the library
-  const totalSongs = paths.result.reduce((sum, pathId) => sum + (paths.entities[pathId].numSongs || 0), 0)
+  const isEmpty = paths.result.length === 0
 
   return (
-    <Accordion headingComponent={(
-      <div className={styles.heading}>
-        <Icon icon='FOLDER_MUSIC' />
-        <div>Media Folders</div>
-      </div>
-    )}
-    >
-      <div className={styles.content}>
-        {paths.result.length === 0
-          && <p style={{ marginTop: 0 }}>Add a media folder to get started.</p>}
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId='droppable'>
-            {provided => (
-              <div ref={provided.innerRef} {...provided.droppableProps}>
-                {priority.map((pathId, i) => (
-                  <PathItem
-                    index={i}
-                    key={pathId}
-                    path={paths.entities[pathId]}
-                    onInfo={handleInfo}
-                    onRefresh={handleRefresh}
-                    totalSongs={totalSongs}
-                  />
-                ),
-                )}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+    <div className={styles.content}>
+      {isEmpty && (
+        <>
+          <p className={styles.empty}>Add a media folder to get started.</p>
+          <Button onClick={handleOpenChooser} variant='primary' cta>Add folder</Button>
+        </>
+      )}
 
-        <div className={styles.btnContainer}>
-          {paths.result.length > 0 && (
-            <Button onClick={handleRefreshAll} variant='default'>
-              Scan Folders
-            </Button>
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId='droppable'>
+          {provided => (
+            <div className={styles.list} ref={provided.innerRef} {...provided.droppableProps}>
+              {priority.map((pathId, i) => (
+                <PathItem
+                  index={i}
+                  key={pathId}
+                  path={paths.entities[pathId]}
+                  isManaging={isManaging}
+                  level={isScanning ? scannerPct / 100 : 1}
+                  onInfo={handleInfo}
+                  onRefresh={handleRefresh}
+                />
+              ),
+              )}
+              {provided.placeholder}
+            </div>
           )}
+        </Droppable>
+      </DragDropContext>
+
+      {isScanning && (
+        <div className={styles.scan}>
+          <span className={styles.scanText}>{scannerText}</span>
+          <button type='button' className={styles.stop} onClick={handleStopScan}>Stop</button>
+        </div>
+      )}
+
+      {isManaging && !isEmpty && (
+        <div className={styles.btnContainer}>
+          <Button onClick={handleRefreshAll} variant='default'>
+            Scan folders
+          </Button>
           <Button onClick={handleOpenChooser} variant='default'>
-            Add Folder
+            Add folder
           </Button>
         </div>
+      )}
 
-        {isChoosing && (
-          <PathChooser
-            onCancel={handleCloseChooser}
-            onChoose={handleAdd}
-          />
-        )}
+      {isChoosing && (
+        <PathChooser
+          onCancel={handleCloseChooser}
+          onChoose={handleAdd}
+        />
+      )}
 
-        {!!editingPath && (
-          <PathInfo
-            onClose={handleCloseInfo}
-            onRemove={handleRemove}
-            onUpdate={handleUpdate}
-            path={editingPath}
-          />
-        )}
+      {!!editingPath && (
+        <PathInfo
+          onClose={handleCloseInfo}
+          onRemove={handleRemove}
+          onUpdate={handleUpdate}
+          path={editingPath}
+        />
+      )}
 
-        {!!removingPath && (
-          <Modal
-            onClose={handleRemoveCancel}
-            title='Remove Folder'
-            buttons={(
-              <>
-                <Button onClick={handleRemoveConfirm} variant='danger'>Remove Folder</Button>
-                <Button onClick={handleRemoveCancel} variant='primary'>Cancel</Button>
-              </>
-            )}
-          >
-            <p className={styles.removePath}>{removingPath.path}</p>
-            <p>
-              Every song in this folder disappears from the library and from
-              anyone&rsquo;s queue. The files on disk are not touched.
-            </p>
-          </Modal>
-        )}
-      </div>
-    </Accordion>
+      {!!removingPath && (
+        <Modal
+          onClose={handleRemoveCancel}
+          title='Remove Folder'
+          buttons={(
+            <>
+              <Button onClick={handleRemoveConfirm} variant='danger'>Remove Folder</Button>
+              <Button onClick={handleRemoveCancel} variant='primary'>Cancel</Button>
+            </>
+          )}
+        >
+          <p className={styles.removePath}>{removingPath.path}</p>
+          <p>
+            Every song in this folder disappears from the library and from
+            anyone&rsquo;s queue. The files on disk are not touched.
+          </p>
+        </Modal>
+      )}
+    </div>
   )
 }
 

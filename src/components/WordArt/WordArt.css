@@ -1,0 +1,72 @@
+/* The design's word art and its three entrances (Arcade Flow v2 <helmet>).
+   Offsets inside the keyframes are design px times --wa-u, which a screen not
+   drawn in design px (the battle stage's --px units) sets for itself. */
+
+.art {
+  --wa-u: 1px;
+  display: block;
+  height: auto;
+  pointer-events: none;
+}
+
+.wins {
+  transform-origin: 50% 30%;
+  animation: winsin 1.6s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.gameOver {
+  position: absolute;
+  z-index: 20;
+  left: 50%;
+  top: 50%;
+  animation: gameover 0.9s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.begin {
+  animation: beginslam 0.8s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+@keyframes winsin {
+  0% { transform: scale(1.6) translateY(calc(-30 * var(--wa-u))); opacity: 0; }
+  30% {
+    transform: scale(0.92);
+    opacity: 1;
+    filter: drop-shadow(0 0 calc(18 * var(--wa-u)) var(--arc-yellow)) drop-shadow(0 0 calc(40 * var(--wa-u)) var(--arc-amber));
+  }
+  50% { transform: scale(1.04); }
+  100% { transform: scale(1); opacity: 1; filter: none; }
+}
+
+/* Held on the 70% frame for most of the run so the word reads before it
+   leaves; the final frame parks it small at the top. */
+@keyframes gameover {
+  0% { top: 50%; transform: translate(-50%, -34%) scale(2.4); opacity: 0; }
+  18% { top: 50%; transform: translate(-50%, -34%) scale(1); opacity: 1; }
+  24% { top: 50%; transform: translate(-50%, -34%) scale(1.05); }
+  30% { top: 50%; transform: translate(-50%, -34%) scale(1); }
+  70% { top: 50%; transform: translate(-50%, -34%) scale(1); opacity: 1; }
+  100% { top: 0%; transform: translate(-50%, -35%) scale(0.28); opacity: 1; }
+}
+
+/* The design animates colour and text-shadow here too, which an image does
+   not have; what reaches the art is the slam. */
+@keyframes beginslam {
+  0% { transform: scale(3); opacity: 0; }
+  30% { transform: scale(0.9); opacity: 1; }
+  50% { transform: scale(1.06); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Every word still lands with the flourishes off, where it ends. */
+@media (prefers-reduced-motion: reduce) {
+  .wins,
+  .begin {
+    animation: none;
+  }
+
+  .gameOver {
+    animation: none;
+    top: 0;
+    transform: translate(-50%, -35%) scale(0.28);
+  }
+}

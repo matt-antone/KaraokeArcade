@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import React from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Provider } from 'react-redux'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import AvatarPicker, { AvatarGate } from './AvatarPicker'
@@ -30,8 +30,10 @@ vi.mock('lib/fighterSets', () => ({
     default: { belter: {}, crooner: {} },
     halloween: { hex: {} },
   }),
+  useFighterSet: (_group: string, _slug: string, _loop: string, fallback: unknown) => fallback,
 }))
 
+beforeEach(() => localStorage.clear())
 afterEach(cleanup)
 
 /** Enough store to subscribe to, so a prefs arrival re-renders the grid the
@@ -68,7 +70,8 @@ const inRoomWithHalloweenOn = {
   rooms: { entities: { 5: { prefs: { battle: { groups: { halloween: true } } } } } },
 }
 
-const groupLegend = () => screen.queryByText('halloween')
+/** The theme tabs, named as the design names them: 'Default 8'. */
+const tab = (name: RegExp) => screen.queryByRole('tab', { name })
 
 describe('AvatarPicker', () => {
   it('shows the shipped group first and grows when the room lands', () => {
@@ -76,21 +79,24 @@ describe('AvatarPicker', () => {
     render(<Provider store={store}><AvatarGate /></Provider>)
 
     // no room in the store yet, so no prefs: `default` is on unless a host
-    // turns it off, and every other group is off until one turns it on
-    expect(groupLegend()).toBeNull()
-    expect(screen.getByLabelText('BELTER')).toBeTruthy()
+    // turns it off, and every other group is off until one turns it on. The
+    // tab row is drawn either way.
+    expect(tab(/^Default 2$/)).not.toBeNull()
+    expect(tab(/^Halloween/)).toBeNull()
+    expect(screen.getByLabelText('Belter')).toBeTruthy()
 
     setState(inRoomWithHalloweenOn)
 
-    expect(groupLegend()).not.toBeNull()
-    expect(screen.getByLabelText('HEX')).toBeTruthy()
+    expect(tab(/^Halloween 1$/)).not.toBeNull()
+    expect(screen.getByLabelText('Hex')).toBeTruthy()
   })
 
-  it('arrives with a live NEXT rather than an empty selection', () => {
+  it('arrives with a live Select rather than an empty selection', () => {
     const { store, dispatched } = makeStore(signedOutOfAnyRoom)
     render(<Provider store={store}><AvatarGate /></Provider>)
 
-    fireEvent.click(screen.getByText('NEXT'))
+    fireEvent.click(screen.getByText('Select'))
+    fireEvent.click(screen.getByText('Continue'))
 
     // without a seeded selection the key would be the thing standing between
     // somebody and the app on their first screen
@@ -104,9 +110,21 @@ describe('AvatarPicker', () => {
     const onChoose = vi.fn()
     render(<Provider store={store}><AvatarPicker avatarId='p1' onChoose={onChoose} /></Provider>)
 
-    fireEvent.click(screen.getByLabelText('HEX'))
-    fireEvent.click(screen.getByText('NEXT'))
+    fireEvent.click(screen.getByLabelText('Hex'))
+    fireEvent.click(screen.getByText('Select'))
 
+    expect(onChoose).toHaveBeenCalledWith('halloween/hex')
+  })
+
+  it('selects the first fighter of a theme when its tab is pressed', () => {
+    const { store } = makeStore(inRoomWithHalloweenOn)
+    const onChoose = vi.fn()
+    render(<Provider store={store}><AvatarPicker avatarId='p1' onChoose={onChoose} /></Provider>)
+
+    fireEvent.click(tab(/^Halloween 1$/)!)
+
+    expect(screen.getByLabelText('Hex').getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(screen.getByText('Select'))
     expect(onChoose).toHaveBeenCalledWith('halloween/hex')
   })
 
@@ -114,8 +132,9 @@ describe('AvatarPicker', () => {
     const { store, dispatched } = makeStore(inRoomWithHalloweenOn)
     render(<Provider store={store}><AvatarGate /></Provider>)
 
-    fireEvent.click(screen.getByLabelText('HEX'))
-    fireEvent.click(screen.getByText('NEXT'))
+    fireEvent.click(screen.getByLabelText('Hex'))
+    fireEvent.click(screen.getByText('Select'))
+    fireEvent.click(screen.getByText('Continue'))
 
     // the thunk is dispatched with the silent flag: a stranger's first
     // interaction with this app is not a browser alert
@@ -123,5 +142,43 @@ describe('AvatarPicker', () => {
 
     expect(thunkArg.arg?.isSilent).toBe(true)
     expect(thunkArg.arg?.data.get('avatarId')).toBe('halloween/hex')
+  })
+
+  it('shows how scoring works after a first pick, once per account', () => {
+    const first = makeStore(signedOutOfAnyRoom)
+    render(<Provider store={first.store}><AvatarGate /></Provider>)
+
+    fireEvent.click(screen.getByText('Select'))
+
+    // the tutorial stands between the pick and the write, on the real values
+    expect(screen.getByText('How to score')).toBeTruthy()
+    expect(screen.getByText('+150')).toBeTruthy()
+    expect(screen.getByText('+1000')).toBeTruthy()
+    expect(screen.getByText('+250')).toBeTruthy()
+    expect(first.dispatched).toHaveLength(0)
+
+    fireEvent.click(screen.getByText('Continue'))
+    expect(first.dispatched).toHaveLength(1)
+    cleanup()
+
+    // the same account again (a new phone session, a cleared avatar): straight through
+    const again = makeStore(signedOutOfAnyRoom)
+    render(<Provider store={again.store}><AvatarGate /></Provider>)
+
+    fireEvent.click(screen.getByText('Select'))
+
+    expect(screen.queryByText('How to score')).toBeNull()
+    expect(again.dispatched).toHaveLength(1)
+  })
+
+  it('shows it to a different account on the same phone', () => {
+    localStorage.setItem('scoringSeen:1', '1')
+    const { store, dispatched } = makeStore({ ...signedOutOfAnyRoom, user: { userId: 2, roomId: null } })
+    render(<Provider store={store}><AvatarGate /></Provider>)
+
+    fireEvent.click(screen.getByText('Select'))
+
+    expect(screen.getByText('How to score')).toBeTruthy()
+    expect(dispatched).toHaveLength(0)
   })
 })

@@ -10,7 +10,6 @@ import getSongsStatus from '../../selectors/getSongsStatus'
 import getQueueBlocker from '../../selectors/getQueueBlocker'
 
 interface SongListProps {
-  filterKeywords?: string[]
   showArtist: boolean
   songIds: number[]
 }
@@ -20,9 +19,9 @@ const SongList = (props: SongListProps) => {
   const artists = useAppSelector(state => state.artists.entities)
   const songs = useAppSelector(state => state.songs.entities)
   const starredSongs = useAppSelector(state => ensureState(state.userStars).starredSongs)
-  const starredSongCounts = useAppSelector(state => state.starCounts.songs)
-  const isAdmin = useAppSelector(state => state.user.isAdmin)
   const { played, upcoming, current, mine } = useAppSelector(getSongsStatus)
+  const isStarredView = useAppSelector(state => state.library.filterStarred)
+  const isSearchView = useAppSelector(state => !!state.library.filterStr.trim()) && !isStarredView
 
   // The one question the library asks about battles. Selected down to a string
   // rather than taken as the object getBattlePick returns: that object is built
@@ -65,15 +64,14 @@ const SongList = (props: SongListProps) => {
       {...songs[songId]}
       artist={props.showArtist ? artists[songs[songId].artistId].name : ''}
       battleForName={battleForName}
-      filterKeywords={props.filterKeywords}
       isPlayed={played.includes(songId)}
       isQueueBlocked={isQueueBlocked}
       isUpcoming={upcoming.includes(songId) || current === songId}
       myQueueId={mine[songId]}
       isStarred={starredSongs.includes(songId)}
-      isAdmin={isAdmin}
+      isStarredView={isStarredView}
+      isSearchView={isSearchView}
       key={songId}
-      numStars={starredSongCounts[songId] || 0}
       onSongQueue={handleSongQueue}
       onSongDequeue={handleSongDequeue}
       onSongStarClick={handleSongStar}

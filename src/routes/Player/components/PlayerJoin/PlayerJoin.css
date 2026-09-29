@@ -1,0 +1,194 @@
+/* 10 · Idle / join. Sized in vh: the design is 540 tall, so 1px there is
+   0.1852vh here, and the layout scales with whatever TV it lands on. */
+.container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  /* its own stacking context, so the crowd's depth order never reaches the
+     text overlay drawn over it */
+  isolation: isolate;
+  background: var(--arc-ground);
+  color: var(--arc-text);
+}
+
+/* the stage the room stands on, once anybody is in; the plate under it */
+.stage {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  opacity: .5; /* design-dim */
+}
+
+/* the dark wash the join instructions sit on, fading out towards the crowd.
+   The crowd paints over it: its figures carry their own depth shading. */
+.panel {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--arc-ground) 95%, transparent) 0 46%,
+    color-mix(in srgb, var(--arc-ground) 25%, transparent)
+  );
+}
+
+/* the right-hand side, where the room stands. Not clipped: a figure may lean
+   over the panel, and only the screen's edge cuts it. */
+.crowd {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 44.79%;
+  right: 0;
+  pointer-events: none;
+}
+
+/* One figure, a square 460 of the design's 540 tall at the front. --row is
+   its depth (0 front, 9 back) and --x where it stands across the crowd, both
+   set per figure. Rows further back stand higher, smaller and darker. The
+   square's left edge sits 110px (scaled with the row) left of --x. */
+.member {
+  position: absolute;
+  left: calc(var(--x) * 1% - 20.37vh * (1 - var(--row) * 0.06));
+  bottom: calc((var(--row) * 22 + 8) / 5.4 * 1%);
+  height: calc((1 - var(--row) * 0.06) * 85.19%);
+  aspect-ratio: 1;
+  z-index: calc(10 - var(--row));
+  filter: brightness(calc(1 - var(--row) * 0.06));
+  transform-origin: 50% 100%;
+  transition: opacity .2s steps(2), transform .3s cubic-bezier(.3, 1.6, .5, 1);
+}
+
+/* a slot nobody has filled yet: a joiner pops in from here */
+.away {
+  opacity: 0;
+  transform: translateY(3.7vh) scale(.5);
+}
+
+/* No z-index, as in the design: the crowd's figures and the scanlines both
+   paint over the column. */
+.join {
+  position: absolute;
+  left: 8.89vh;
+  top: 8.15vh;
+  display: flex;
+  flex-direction: column;
+  gap: 4.07vh;
+}
+
+.logo {
+  display: block;
+  width: 55.56vh;
+}
+
+.headline {
+  --text-shadow-color: var(--arc-magenta);
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: 7.41vh;
+  line-height: 1.1;
+  color: var(--arc-yellow);
+  text-shadow: 0.74vh 0.74vh 0 var(--text-shadow-color);
+}
+
+.codeRow {
+  display: flex;
+  align-items: center;
+  gap: 4.44vh;
+}
+
+.code {
+  display: flex;
+  flex-direction: column;
+  gap: 1.48vh;
+  font-family: var(--font-display);
+}
+
+.codeLabel {
+  font-size: 2.41vh;
+  color: var(--arc-muted);
+}
+
+.codeValue {
+  font-size: 8.15vh;
+  letter-spacing: 0.08em;
+  color: var(--arc-mint);
+}
+
+/* the arcade's attract-mode blink: on, off, no fade */
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+.blink {
+  font-size: 2.59vh;
+  color: var(--arc-amber);
+  animation: blink 1.1s steps(1) infinite;
+}
+
+.joinCount {
+  font-size: 2.59vh;
+  color: var(--arc-yellow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blink {
+    animation: none;
+  }
+}
+
+/* The autoplay key (undesigned): the amber cta, at the TV's scale, under the
+   logo's width. Doubled class to sit over Button's own .cta sizing. */
+.playKey.playKey {
+  width: 55.56vh;
+  padding: 3.15vh 0;
+  font-size: 3.33vh;
+  box-shadow: 0 -0.74vh 0 var(--arc-amber-hi), 0 0.74vh 0 var(--arc-gold-shadow);
+}
+
+.venue {
+  position: absolute;
+  right: 5.19vh;
+  top: 4.07vh;
+  font-family: var(--font-display);
+  font-size: 2.59vh;
+  color: var(--arc-text-2);
+}
+
+/* the design's CRT layer, at the TV's own pitch (2px per 6px at 1080) */
+.scanlines {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  background: var(--scanlines-tv);
+}
+
+/* Undesigned: the fullscreen key, bottom right, over the crowd and the
+   scanlines so it stays crisp. Only while nothing is playing. */
+.fullscreenKey {
+  position: absolute;
+  right: 4vh;
+  bottom: 4vh;
+  z-index: 11;
+  display: grid;
+  place-items: center;
+  width: 6vh;
+  height: 6vh;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-key);
+  background: var(--key-face);
+  box-shadow: var(--bevel);
+  color: var(--arc-text-2);
+  cursor: pointer;
+
+  svg {
+    width: 2.8vh;
+    height: 2.8vh;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}

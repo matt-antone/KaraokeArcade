@@ -63,19 +63,18 @@ export const setFrameMs = (set: SetSpec): number => 1000 / set.fps
  *  assets/sprites/ but nothing plays them yet, so they are not copied in or
  *  named here — add the set and the sheet together.
  *
- *  Called `Loop` because two of the four are: `sing` and `dance` cycle
- *  seamlessly for as long as a beat lasts. `ko` and `victory` do not — see
- *  ONE_SHOT_SETS. */
+ *  Called `Loop` because three of the four are: `sing`, `dance` and `victory`
+ *  cycle for as long as a beat lasts. `ko` does not — see ONE_SHOT_SETS. */
 export type BattleSingerLoop = 'sing' | 'dance' | 'ko' | 'victory'
 
 /** The sets that play once and hold their last frame instead of cycling.
  *
- *  A ko ends with the fighter on the floor and a victory with their arm up,
- *  and neither drawing returns to where it started: cycling them pops the
- *  loser back onto their feet to be knocked down again every two seconds, and
- *  snaps the winner's arm back down mid-wave. useSpriteFrame reads this rather
- *  than taking a flag, so a caller cannot forget which kind it asked for. */
-export const ONE_SHOT_SETS: ReadonlySet<BattleSingerLoop> = new Set<BattleSingerLoop>(['ko', 'victory'])
+ *  A ko ends with the fighter on the floor, and cycling it pops the loser back
+ *  onto their feet to be knocked down again every two seconds. The victory is
+ *  not here: the design loops it for as long as the verdict is up (13i, 12d,
+ *  12e). useSpriteFrame reads this rather than taking a flag, so a caller
+ *  cannot forget which kind it asked for. */
+export const ONE_SHOT_SETS: ReadonlySet<BattleSingerLoop> = new Set<BattleSingerLoop>(['ko'])
 
 export interface RosterSinger {
   id: string
@@ -84,9 +83,12 @@ export interface RosterSinger {
   /** The fighter's folder inside its group. Separate from `id` because the
    *  default fighters' ids predate groups and cannot be renamed. */
   slug: string
-  /** Roster name, always drawn in caps. Not a person's name — the person keeps
+  /** Roster name as the manifest gives it (`Hype Man`), or the slug in title
+   *  case until the listing lands. Not a person's name — the person keeps
    *  their own handle and this is who they are singing as. */
   name: string
+  /** `5' 10"`, off the manifest. Absent until the listing lands. */
+  height?: string
   /** How each set is cut and played. A set absent from here is not drawn for
    *  this fighter and callers fall back to one that is. */
   loops: Partial<Record<BattleSingerLoop, SetSpec>>
@@ -104,25 +106,24 @@ const LOOPS: Record<BattleSingerLoop, SetSpec> = {
 
 export const DEFAULT_GROUP = 'default'
 
-const fighter = (
-  id: string,
-  group: string,
-  slug: string,
-  name = slug.replace(/-/g, ' ').toUpperCase(),
-  loops: Partial<Record<BattleSingerLoop, SetSpec>> = LOOPS,
-): RosterSinger => ({ id, group, slug, name, loops })
+/** `hype-man` → `Hype Man`: what every shipped manifest calls its fighter, so
+ *  a fighter resolved from an id alone reads the same as a listed one. */
+const nameOf = (slug: string) => slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 
-/** The shipped group, in select-grid order, under the ids they had before
- *  groups existed. */
+const fighter = (id: string, group: string, slug: string): RosterSinger =>
+  ({ id, group, slug, name: nameOf(slug), loops: LOOPS })
+
+/** The shipped group, in select-grid order (alphabetical), under the ids they
+ *  had before groups existed. */
 export const BATTLE_SINGERS: RosterSinger[] = [
   fighter('p1', DEFAULT_GROUP, 'belter'),
   fighter('p2', DEFAULT_GROUP, 'crooner'),
-  fighter('p3', DEFAULT_GROUP, 'hype-man', 'HYPEMAN'),
   fighter('p4', DEFAULT_GROUP, 'diva'),
-  fighter('p5', DEFAULT_GROUP, 'screamer'),
-  fighter('p6', DEFAULT_GROUP, 'outlaw'),
-  fighter('p7', DEFAULT_GROUP, 'idol'),
   fighter('p8', DEFAULT_GROUP, 'heavyweight'),
+  fighter('p3', DEFAULT_GROUP, 'hype-man'),
+  fighter('p7', DEFAULT_GROUP, 'idol'),
+  fighter('p6', DEFAULT_GROUP, 'outlaw'),
+  fighter('p5', DEFAULT_GROUP, 'screamer'),
 ]
 
 /** A folder name that is safe to put in a url(). Ids arrive from other phones
@@ -136,20 +137,22 @@ export { isBattleFolderName }
 
 /** The fighter at `group/slug`, reusing a default fighter's legacy id.
  *
- *  `loops` is the fighter's manifest if the caller has it. Nobody resolving a
- *  fighter from an id alone does — a queue row carries `halloween/deb`, not
- *  her frame counts — so the default is the shape and useFighterSet supplies
- *  the numbers once the roster has been listed. */
+ *  `loops`, `name` and `height` are the fighter's manifest if the caller has
+ *  it. Nobody resolving a fighter from an id alone does — a queue row carries
+ *  `halloween/deb`, not her frame counts — so the default is the shape and
+ *  useFighterSet supplies the numbers once the roster has been listed. */
 export const battleSingerAt = (
   group: string,
   slug: string,
   loops?: Partial<Record<BattleSingerLoop, SetSpec>>,
+  { name, height }: { name?: string, height?: string } = {},
 ): RosterSinger => {
-  const shipped = group === DEFAULT_GROUP && BATTLE_SINGERS.find(s => s.slug === slug)
+  const base = (group === DEFAULT_GROUP && BATTLE_SINGERS.find(s => s.slug === slug))
+    || fighter(`${group}/${slug}`, group, slug)
 
-  if (shipped) return loops ? { ...shipped, loops } : shipped
-
-  return fighter(`${group}/${slug}`, group, slug, undefined, loops)
+  return loops || name || height
+    ? { ...base, loops: loops ?? base.loops, name: name ?? base.name, height }
+    : base
 }
 
 const getBattleSinger = (id?: string | null): RosterSinger | null => {

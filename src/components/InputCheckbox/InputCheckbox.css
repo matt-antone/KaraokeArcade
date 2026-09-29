@@ -18,12 +18,12 @@
     flex-shrink: 0;
     width: 22px;
     height: 22px;
-    border-radius: 2px;
+    border-radius: var(--radius-key);
     display: grid;
     place-content: center;
     cursor: pointer;
     background: var(--key-well);
-    box-shadow: var(--well);
+    box-shadow: var(--well-deep);
 
     &:focus-visible {
       outline: var(--focus-outline);
@@ -41,7 +41,7 @@
 
     &:checked {
       background: var(--vu);
-      box-shadow: var(--bevel);
+      box-shadow: none;
     }
 
     &:checked::before {

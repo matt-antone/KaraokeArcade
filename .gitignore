@@ -57,3 +57,7 @@ exports/
 html pages/
 output/
 work/
+
+# design handoff bundle: the art it needs is lifted into assets/arcade/
+KaraokeArcadeRedesign/
+Karaoke Arcade Redesign.zip

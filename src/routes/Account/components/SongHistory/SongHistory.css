@@ -1,3 +1,16 @@
-.content {
+.heading {
+  margin-top: 8px;
+  font-family: var(--font-display);
+  font-size: var(--text-m);
+  color: var(--arc-magenta);
+}
+
+/* the undesigned empty line reads as a sentence on the ground, not a
+   Silkscreen caption in a panel's padding */
+.list:is(p) {
   padding: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-xl);
+  line-height: 1.4;
+  color: var(--arc-text-2);
 }

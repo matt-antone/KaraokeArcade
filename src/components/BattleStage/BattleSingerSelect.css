@@ -1,84 +1,145 @@
-/* Choosing who you sing as. See BattleSingerSelect.tsx. */
+/* Choosing who you sing as. See BattleSingerSelect.tsx. Lifted from Arcade
+   Flow v2, 03 Select your singer. */
 
-/* Every screen inside the frame is one of these: a column that owns the rest
-   of the phone and pins its own footer to the bottom. It arrives on a slam out
-   of the point the thumb just left, which is the same origin the iris is
-   growing from — the two are one motion, not two. */
+/* A column that owns the rest of the screen, scrolling rather than
+   squeezing on a short phone. */
 .body {
+  --accent: var(--arc-amber);
+
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden auto;
   background-color: var(--arc-ground);
-  transform-origin: var(--fx-x) var(--fx-y);
-  animation: battle-select-slam 260ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
-}
 
-.masthead {
-  flex: none;
-  padding: 16px 14px 12px;
-  text-align: center;
+  & > * {
+    flex-shrink: 0;
+  }
 }
 
 .title {
+  margin: var(--gap-4) 0 0;
+  text-align: center;
   font-family: var(--font-display);
-  font-size: 21px;
-  line-height: 1.15;
-  text-shadow: 3px 3px 0 #000;
+  font-size: var(--display-m);
+  font-weight: var(--weight-regular);
 }
 
-.lede {
-  margin-top: 10px;
-  font-family: var(--font-arcade);
-  font-size: 8px;
-  letter-spacing: 0.16em;
-  color: var(--arc-muted);
-}
-
-/* The grid is the only thing on this screen that scrolls. The masthead and the
-   footer chip are pinned, so the pick and the key that acts on it are both
-   visible however far down the roster somebody is. */
-.scroller {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden auto;
+/* theme tabs: the one on show is filled in its accent */
+.tabs {
   display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: 6px 12px 14px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--arc-rule) var(--arc-card);
+  gap: 4px;
+  margin: var(--gap-4) var(--gutter) 0;
 }
 
-/* One box per fighter group. A fieldset because the named groups want their
-   name cut into the top rule like a label on a cabinet, and a legend does that
-   notch natively. The shipped group has no legend and so is a plain box. */
-.box {
+.tab {
+  flex: 1;
+  padding: var(--gap-3) 0;
+  border: none;
+  background-color: var(--arc-surface);
+  color: var(--arc-text-2);
+  font-family: var(--font-display);
+  font-size: var(--display-s);
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: -2px;
+  }
+}
+
+.tabOn {
+  --accent: var(--arc-amber);
+
+  background-color: var(--accent);
+  color: var(--arc-on-amber);
+}
+
+.tabOn.alt {
+  --accent: var(--arc-violet);
+}
+
+/* the pick, standing on their own stage, framed in the theme's accent */
+.preview {
+  --pixel-border-color: var(--accent);
+
+  position: relative;
+  flex: none;
+  height: 300px;
+  margin: 18px 24px 0;
+  overflow: hidden;
+  background-color: var(--arc-surface);
+  box-shadow: var(--pixel-border);
+}
+
+.preview.alt {
+  --accent: var(--arc-violet);
+}
+
+.stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 75%;
+}
+
+/* the pick singing, 330px square, feet just under the frame */
+.figure {
+  left: 50%;
+  bottom: -10px;
+  transform: translateX(-50%);
+}
+
+.badge {
+  position: absolute;
+  left: var(--gap-3);
+  top: var(--gap-3);
+  padding: 4px 8px;
+  font-family: var(--font-display);
+  font-size: var(--text-s);
+  color: var(--arc-on-amber);
+  background-color: var(--arc-amber);
+}
+
+.nameRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--gap-3);
+  padding: 18px 28px 0;
+}
+
+.name {
   min-width: 0;
-  margin: 0;
-  padding: 10px;
-  border: 1px solid var(--arc-rule);
-  background-color: var(--arc-card);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-size: var(--display-m);
+  color: var(--arc-amber);
 }
 
-.legend {
-  margin-left: -2px;
-  padding: 3px 6px;
-  background-color: var(--arc-one);
-  font-family: var(--font-arcade);
-  font-size: 8px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--arc-ground);
+.theme {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: var(--text-s);
+  color: var(--arc-text-2);
 }
 
-/* Head portraits, the smallest cut, four to a row. Fixed rather than fitted so
-   a group's fighters land in the same columns on every phone and the grid can
-   be talked about out loud across the room. */
+/* four to a row, fixed rather than fitted, so a theme's fighters land in the
+   same columns on every phone and can be talked about across the room */
 .grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
+  gap: var(--gap-3);
+  padding: var(--gap-4) 24px 0;
+
+  &[hidden] {
+    display: none;
+  }
 }
 
 .tile {
@@ -87,190 +148,42 @@
   aspect-ratio: 1;
   padding: 0;
   border: none;
-  background-color: var(--arc-tile);
-  box-shadow: inset 0 0 0 1px var(--arc-rule);
+  background-color: var(--arc-surface-hover);
+  box-shadow: var(--well);
   cursor: pointer;
 
   &:focus-visible {
     outline: var(--focus-outline);
-    outline-offset: -4px;
-  }
-
-  &:disabled {
-    cursor: default;
+    outline-offset: 2px;
   }
 }
 
 .tileOn {
-  background-color: var(--arc-rule);
-  box-shadow: inset 0 0 0 2px var(--arc-mine);
+  --pixel-border-color: var(--arc-yellow);
+
+  z-index: 1;
+  box-shadow: var(--pixel-border-3);
 }
 
-/* An unpicked fighter is present but not lit, so the pick is the only face at
-   full strength and reads in one glance. */
 .portrait {
-  display: block;
-  width: 100%;
-  height: 100%;
-  image-rendering: pixelated;
-  opacity: 0.72;
-}
-
-.tileOn .portrait {
-  opacity: 1;
-}
-
-/* Spoken for by the other side. Still legible as a face, plainly not
-   available. */
-/* The third reading of the selection, and the one that survives a phone held
-   at arm's length in a dark room: a cursor sitting on the tile, blinking on a
-   step so it never looks like a fade. */
-.cursor {
   position: absolute;
   inset: 0;
-  pointer-events: none;
-  animation: battle-select-cursor 620ms steps(1) infinite;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-/* One corner drawn, then reflected into the other three. The bars are the
-   corner span's own two pseudo-elements anchored to its top left, so a flip
-   about either axis lands them on the matching corner — eight elements and
-   eight sets of offsets is the version that goes wrong when the bar size
-   changes. */
-.cornerTL,
-.cornerTR,
-.cornerBL,
-.cornerBR {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-
-  &::before,
-  &::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    background-color: var(--arc-mine);
-  }
-
-  &::before {
-    width: 10px;
-    height: 3px;
-  }
-
-  &::after {
-    width: 3px;
-    height: 10px;
-  }
-}
-
-.cornerTL {
-  left: 0;
-  top: 0;
-}
-
-.cornerTR {
-  right: 0;
-  top: 0;
-  transform: scaleX(-1);
-}
-
-.cornerBL {
-  left: 0;
-  bottom: 0;
-  transform: scaleY(-1);
-}
-
-.cornerBR {
-  right: 0;
-  bottom: 0;
-  transform: scale(-1);
-}
-
-/* LAST or TAKEN. Both are facts about the tile rather than states of it, so
-   both are the same stamp in the same corner — two shapes here would read as
-   two different kinds of thing. */
-.tag {
-  position: absolute;
-  left: 0;
-  top: 0;
-  padding: 3px 4px;
-  background-color: var(--arc-one);
-  font-family: var(--font-arcade);
-  font-size: 7px;
-  letter-spacing: 0.04em;
-  color: var(--arc-ground);
+.spacer {
+  flex: 1 0 0;
 }
 
 .footer {
-  flex: none;
-  padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
-  background-color: var(--arc-panel);
-  border-top: 1px solid var(--arc-rule);
+  padding: 0 24px calc(28px + env(safe-area-inset-bottom));
 }
 
-.chipRow {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-}
-
-/* The pick, carried down here out of the grid. It is the same object that flew
-   in, and it is what takes off again on the next step — see the flyer in
-   BattleSetup. */
-.chip {
-  position: relative;
-  flex: none;
-  width: 46px;
-  height: 46px;
-  overflow: hidden;
-  background-color: var(--arc-ground);
-  box-shadow: inset 0 0 0 2px var(--arc-mine);
-}
-
-/* The same head crop the grid draws, so the chip is plainly the tile that was
-   picked rather than a second portrait of them. */
-.chipPortrait {
-  display: block;
-  width: 100%;
-  height: 100%;
-  image-rendering: pixelated;
-}
-
-.chipText {
-  flex: 1;
-  min-width: 0;
-}
-
-.chipLegend {
-  font-family: var(--font-arcade);
-  font-size: 8px;
-  letter-spacing: 0.16em;
-  color: var(--arc-muted);
-}
-
-.chipName {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  margin-top: 5px;
-  font-family: var(--font-display);
-  font-size: 15px;
-  color: var(--arc-mine);
-}
-
-.next {
-  margin-top: 12px;
-}
-
-@keyframes battle-select-slam {
-  0% { transform: scale(1.9); opacity: 0; }
-  40% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-@keyframes battle-select-cursor {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.45; }
+/* the big framed key: amber sides as well as the top and bottom lips */
+.footer .select {
+  padding: 16px 0;
+  font-size: 20px;
+  box-shadow: var(--bevel-vu-framed);
 }

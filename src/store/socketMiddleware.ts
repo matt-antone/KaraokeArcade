@@ -1,6 +1,6 @@
 import { Action, Middleware, UnknownAction } from '@reduxjs/toolkit'
 import { BEGIN, COMMIT, REVERT } from 'redux-optimistic-ui'
-import { SOCKET_AUTH_ERROR } from 'shared/actionTypes'
+import { PLAYER_EMIT_STATUS, SOCKET_AUTH_ERROR } from 'shared/actionTypes'
 import { Socket } from 'socket.io-client'
 import type { OptimisticAction } from './store'
 
@@ -29,7 +29,14 @@ export default function createSocketMiddleware (socket: Socket, prefix: string):
       // rolled back.
       const txId = isOptimistic ? ++transactionID : undefined
 
-      socket.emit('action', action, (cbAction: UnknownAction) => {
+      // The TV's status carries its lead-in's end by its own clock (12e0).
+      // Stamped here, as it actually leaves (after the throttle, which can
+      // hold it a second), so the server can rebase it onto its own clock.
+      const sent = action.type === PLAYER_EMIT_STATUS
+        ? { ...action, payload: { ...(action as { payload?: object }).payload, sentAt: Date.now() } }
+        : action
+
+      socket.emit('action', sent, (cbAction: UnknownAction) => {
         // make sure callback response is an action
         if (typeof cbAction !== 'object' || typeof cbAction.type !== 'string') {
           return

@@ -1,43 +1,35 @@
-/* The app's chrome: a solid brushed faceplate with a seam under it. No blur —
-   a deck's faceplate is opaque.
-
-   The handoff has the wordmark row scrolling away above a sticky YourTurn.
-   The page does not own the scroll — every route is its own full-viewport
-   scroller under this fixed chrome — so `position: sticky` is not available.
-   Instead the whole faceplate is translated up by --chrome-shift, which
-   Header.tsx tracks 1:1 against the active scroller and caps so that whatever
-   sits below the wordmark stays pinned. Content is padded by the header, so its top
-   and faceplate bottom both sit at headerHeight - scrollTop and stay flush
-   until the cap; past it, content scrolls under the pinned remainder. Being a
-   transform, this never changes the measured header height. */
+/* The app's chrome, fixed and static: only the route below it scrolls. It sits
+   on the screen ground with no panel, seam or edge of its own — the design
+   draws the brand row and the HUD straight onto the ground. Fixed, so it still
+   needs the opaque fill for the route to pass under. */
 
 .container {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  background: var(--brush);
-  border-bottom: var(--seam-rule);
-  box-shadow: var(--edge-top);
+  background: var(--arc-ground);
   z-index: 1;
-  transform: translateY(calc(var(--chrome-shift, 0px) * -1));
 
   &:empty {
     display: none;
   }
 }
 
-/* wordmark left, the room you are in silkscreened right */
-.wordmarkRow {
+/* logo left at 30px, the venue right */
+.brand {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: var(--gap-3);
-  padding: var(--gap-3) var(--gutter);
+  gap: 12px;
+  padding: 16px 20px 0;
 }
 
-.room {
-  margin-left: auto;
-  flex-shrink: 0;
+.venue {
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: 12px;
+  color: var(--arc-text-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

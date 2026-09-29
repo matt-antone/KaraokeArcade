@@ -23,9 +23,8 @@ interface UserAvatarProps {
   className?: string
   /** A roster id: a legacy `p1`–`p8`, or `group/slug`. */
   avatarId: string | null | undefined
-  /** Which cut of the head crop to draw. 34 for a row or a grid tile, 80 for a
-   *  hero slot or a versus plate; asking for the small one where the big one
-   *  belongs is a blurry fighter, not a broken one. */
+  /** Which cut of the head crop to draw. The design draws portrait-80
+   *  everywhere, smoothed; 34 is kept only for callers not yet moved over. */
   size?: 34 | 80
 }
 
@@ -44,7 +43,7 @@ const UserAvatarContent = ({ avatarId, size }: { avatarId: string | null | undef
   )
 }
 
-const UserAvatar = ({ className, avatarId, size = 34 }: UserAvatarProps) => (
+const UserAvatar = ({ className, avatarId, size = 80 }: UserAvatarProps) => (
   <div className={clsx(styles.container, className)}>
     {/* keyed so a changed avatar re-tries a portrait the last one 404'd on */}
     <UserAvatarContent key={avatarId ?? ''} avatarId={avatarId} size={size} />

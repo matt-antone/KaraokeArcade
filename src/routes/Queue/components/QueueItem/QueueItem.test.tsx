@@ -13,24 +13,15 @@ afterEach(cleanup)
 
 const base = {
   artist: 'Cheap Trick',
-  errorMessage: '',
-  isCurrent: false,
-  isErrored: false,
   isMovable: true,
   isOwner: false,
   isPaused: false,
   isPlayed: false,
-  isPlaying: true,
   isRemovable: true,
-  isReplayable: true,
-  isSkippable: true,
-  isStarred: false,
   isTunable: false,
-  isUpcoming: false,
-  pctPlayed: 0,
+  points: 0,
   queueId: 1,
   songId: 2,
-  starCount: 0,
   title: 'Surrender',
   userDateUpdated: 0,
   userDisplayName: 'Robin',
@@ -45,7 +36,7 @@ const renderItem = (props: Partial<typeof base> & Record<string, unknown> = {}) 
   return {
     container,
     /** the row face — the only opaque layer over the action keys */
-    face: container.querySelector('[style*="--progress"]') as HTMLElement,
+    face: container.querySelector('.slider > div') as HTMLElement,
     slider: container.querySelector('.slider') as HTMLElement,
     chip: container.querySelector('.wait'),
   }
@@ -59,14 +50,32 @@ describe('QueueItem', () => {
     const { container } = renderItem({ userAvatarId: 'halloween/hex' })
 
     expect(container.querySelector('img')?.getAttribute('src'))
-      .toBe('assets/battle/fighters/halloween/hex/views/portrait-34.png')
+      .toBe('assets/battle/fighters/halloween/hex/views/portrait-80.png')
   })
 
   it('draws the first playable fighter for an account that has not picked', () => {
     const { container } = renderItem({ userAvatarId: null })
 
     expect(container.querySelector('img')?.getAttribute('src'))
-      .toBe('assets/battle/fighters/default/belter/views/portrait-34.png')
+      .toBe('assets/battle/fighters/default/belter/views/portrait-80.png')
+  })
+})
+
+describe('QueueItem face (07)', () => {
+  it('names the singer with their points tonight', () => {
+    renderItem({ userDisplayName: 'jumpinjammer', points: 2150 })
+
+    expect(screen.getByText('jumpinjammer · 2150')).toBeTruthy()
+  })
+
+  it('carries nothing but place, face, words and wait: no star, no key, no handle', () => {
+    const { face } = renderItem({ isUpcoming: true, position: 1, wait: '3m', keyChange: 3 })
+
+    expect(screen.queryByLabelText('star')).toBeNull()
+    expect(screen.queryByText('key +3')).toBeNull()
+    // the swipe keys under the row have icons; the face has none
+    expect(face.querySelector('svg')).toBeNull()
+    expect(face.textContent).toBe('1SurrenderCheap TrickRobin · 03m')
   })
 })
 
@@ -74,7 +83,7 @@ describe('QueueItem actions', () => {
   it('offers every permitted action on a live row', () => {
     renderItem()
 
-    for (const label of ['Top', 'Replay', 'Skip', 'Remove']) {
+    for (const label of ['Top', 'Remove']) {
       expect(screen.getByLabelText(label)).toBeTruthy()
     }
   })
@@ -85,13 +94,13 @@ describe('QueueItem actions', () => {
 
     expect(container.querySelector('.actions')).toBeNull()
     expect(slider.style.transform).toBe(`translateX(${0}px)`)
-    for (const label of ['Top', 'Replay', 'Skip', 'Remove']) {
+    for (const label of ['Top', 'Remove']) {
       expect(screen.queryByLabelText(label)).toBeNull()
     }
   })
 
   it('sizes the reveal to the permissions actually granted', () => {
-    const { container } = renderItem({ isMovable: false, isReplayable: false, isSkippable: false })
+    const { container } = renderItem({ isMovable: false })
 
     expect(container.querySelectorAll('.action')).toHaveLength(1)
     expect(container.querySelector<HTMLElement>('.actions')?.style
@@ -100,47 +109,43 @@ describe('QueueItem actions', () => {
 })
 
 describe('QueueItem wait chip', () => {
-  it('reads NOW on the row that is playing', () => {
-    const { chip } = renderItem({ isCurrent: true, pctPlayed: 40 })
-
-    expect(chip?.textContent).toBe('NOW')
-    expect(chip?.className).toContain('waitIsCurrent')
-  })
-
   it('reads the wait on an upcoming row', () => {
     const { chip } = renderItem({ isUpcoming: true, wait: '4 min' })
 
     expect(chip?.textContent).toBe('4 min')
-    expect(chip?.className).not.toContain('waitIsCurrent')
+    expect(chip?.className).not.toContain('held')
   })
 
-  it('shows no chip on a row that is neither current nor waiting', () => {
+  it('reads Hold, in the held colour, on a paused singer\'s row (07c)', () => {
+    const { chip, face } = renderItem({ isUpcoming: true, isPaused: true })
+
+    expect(chip?.textContent).toBe('Hold')
+    expect(chip?.className).toContain('held')
+    // held rows keep their place and their colour; only the wait changes
+    expect(face.className).not.toContain('spent')
+  })
+
+  it('shows no chip on a row that is not waiting', () => {
     expect(renderItem({ isUpcoming: true }).chip).toBeNull()
-    expect(renderItem().chip).toBeNull()
+    expect(renderItem({ isPlayed: true }).chip).toBeNull()
   })
 })
 
-describe('QueueItem star', () => {
-  it('shows the star by default', () => {
-    renderItem()
-    expect(screen.getByLabelText('star')).toBeTruthy()
+describe('QueueItem position', () => {
+  it('prints its place in line when given one', () => {
+    const { container } = renderItem({ isUpcoming: true, position: 3 })
+
+    expect(container.querySelector('.position')?.textContent).toBe('3')
   })
 
-  it('hides the star on the Me tab, where every row is already yours', () => {
-    renderItem({ showStar: false })
-    expect(screen.queryByLabelText('star')).toBeNull()
-    expect(screen.queryByLabelText('unstar')).toBeNull()
-  })
-
-  it('keeps the star on a played row — the one control a locked row keeps', () => {
-    renderItem({ isPlayed: true, isStarred: true })
-    expect(screen.getByLabelText('unstar')).toBeTruthy()
+  it('prints nothing on a row with no place in line', () => {
+    expect(renderItem({ isPlayed: true }).container.querySelector('.position')).toBeNull()
   })
 })
 
 describe('QueueItem spent state', () => {
   it('dims a spent row by class, never by inline opacity', () => {
-    for (const spent of [{ isPlayed: true }, { isPaused: true }]) {
+    for (const spent of [{ isPlayed: true }]) {
       const { face } = renderItem(spent)
 
       expect(face.className).toContain('spent')

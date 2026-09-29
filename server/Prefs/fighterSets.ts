@@ -43,17 +43,42 @@ export const setSpec = (raw: unknown): SetSpec => {
   }
 }
 
-/** A fighter's four sets. A missing or unparseable manifest is the defaults,
- *  not an error: the folder has already been accepted on its key art, and a
- *  fighter drawn on the old grid beats a gap where a fighter should be. */
-const fighterSets = async (dir: string): Promise<Record<BattleSet, SetSpec>> => {
+/** A manifest's display name: text, trimmed, 1-24 characters. It is drawn as
+ *  text (never put in a url()), so length is the only thing to guard. */
+const nameOf = (v: unknown): string | undefined => {
+  const name = typeof v === 'string' ? v.trim() : ''
+
+  return name && name.length <= 24 ? name : undefined
+}
+
+/** `5' 10"` and the like; anything else is left off rather than drawn. */
+const heightOf = (v: unknown): string | undefined =>
+  (typeof v === 'string' && /^\d+' ?\d+"$/.test(v) ? v : undefined)
+
+/** What the listing says about one fighter: their four sets, and the name and
+ *  height their manifest gives (D4). */
+export interface FighterListing {
+  sets: Record<BattleSet, SetSpec>
+  name?: string
+  height?: string
+}
+
+/** A fighter's four sets, name and height. A missing or unparseable manifest
+ *  is the default sets and no name, not an error: the folder has already been
+ *  accepted on its key art, and a fighter drawn on the old grid beats a gap
+ *  where a fighter should be. */
+const fighterSets = async (dir: string): Promise<FighterListing> => {
   const raw = await fs.promises.readFile(path.join(dir, 'manifest.json'), 'utf8')
-    .then(text => JSON.parse(text) as { sets?: Record<string, unknown> })
+    .then(text => JSON.parse(text) as Record<string, unknown> & { sets?: Record<string, unknown> })
     .catch(() => null)
 
-  return Object.fromEntries(
-    BATTLE_SETS.map(set => [set, setSpec(raw?.sets?.[set])]),
-  ) as Record<BattleSet, SetSpec>
+  return {
+    sets: Object.fromEntries(
+      BATTLE_SETS.map(set => [set, setSpec(raw?.sets?.[set])]),
+    ) as Record<BattleSet, SetSpec>,
+    name: nameOf(raw?.name),
+    height: heightOf(raw?.height),
+  }
 }
 
 export default fighterSets

@@ -1,7 +1,9 @@
 .container {
-  background: var(--brush);
+  background: var(--faceplate);
   border-radius: var(--radius-panel);
-  box-shadow: var(--bevel);
+  /* the design's panel: a surface framed in a hard 3px line-coloured border */
+  --pixel-border-color: var(--arc-line);
+  box-shadow: var(--pixel-border-3);
   overflow: hidden;
 }
 
@@ -10,17 +12,17 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--gap-3);
-  min-height: var(--header-bar);
-  padding: 0 var(--gap-4);
-  border-bottom: var(--hair-rule);
+  padding: 12px 14px;
+  /* a lit title bar, not a rule: 09 Admin's panel heads */
+  background: var(--arc-surface-hover);
 
-  /* A panel title steps up one ink level from the .silkscreen utility's
-     --ink-3. The utility is right for meta, counts and placeholders; a title
-     is a heading and has to hold at a glance. Scoped here (and so outranking
-     the global utility) rather than changing .silkscreen itself. */
+  /* A panel title is a heading, not meta: yellow Silkscreen rather than the
+     .silkscreen utility's --ink-3. Scoped here (and so outranking the global
+     utility) rather than changing .silkscreen itself. */
   h1 {
     margin: 0;
-    color: var(--ink-2);
+    font-size: var(--text-m);
+    color: var(--arc-yellow);
   }
 }
 

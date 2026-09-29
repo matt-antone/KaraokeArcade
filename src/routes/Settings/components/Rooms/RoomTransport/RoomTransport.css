@@ -1,24 +1,40 @@
 /* Square keys in a fixed order, like the player's transport — the strip has to
    read as one control rather than two buttons that happen to sit together.
-   Smaller than the player's: this one lives in a table row, one per room.
+   09 draws them 40×36 with their glyphs set in Silkscreen: a lit key is amber
+   on the thin amber bevel, an unlit one violet on the plain bevel.
 
    Two keys, and the first one swaps between play and pause, so the strip is
    the same width whatever the room is doing and the stop key never moves. */
 
 .container {
   display: flex;
-  gap: var(--gap-1);
+  gap: 10px;
 }
 
-.key {
+.container .key {
   flex-shrink: 0;
-  width: var(--target);
-  min-height: var(--target);
+  width: 40px;
+  height: 36px;
   padding: 0;
+  font-size: var(--text-s);
+  color: var(--arc-text);
+  background: var(--arc-surface-hover);
+  box-shadow: var(--bevel);
+}
 
-  svg {
-    height: var(--icon-m);
-  }
+.container .lit {
+  color: var(--arc-on-amber);
+  background: var(--arc-amber);
+  box-shadow: var(--bevel-vu-2);
+}
+
+/* play, drawn as a border triangle in the key's own ink */
+.play {
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 5px 0 5px 9px;
+  border-color: transparent transparent transparent currentColor;
 }
 
 /* Stop lights when the room is stopped, and pressing it again is a no-op, so

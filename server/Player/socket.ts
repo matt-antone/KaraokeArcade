@@ -82,15 +82,26 @@ const ACTION_HANDLERS = {
     })
   },
   [PLAYER_EMIT_STATUS]: (sock, { payload }) => {
+    const wasPlayer = !!sock._lastPlayerStatus
     const wasPlaying = !!sock._lastPlayerStatus?.isPlaying
+
+    // The lead-in's end is by the TV's clock, which on a box with no NTP can be
+    // minutes out. Rebased onto ours by the TV's own send stamp, and restamped
+    // on the way out, the phones read it through serverNow (12e0).
+    if (typeof payload.leadInEndsAt === 'number' && typeof payload.sentAt === 'number') {
+      payload.leadInEndsAt = Date.now() + (payload.leadInEndsAt - payload.sentAt)
+    }
 
     // so we can tell the room when players leave and
     // relay last known player status on client join
     sock._lastPlayerStatus = payload
 
+    // this socket is the TV, not a singer: take it out of the room's count
+    if (!wasPlayer) Rooms.pushSingers(sock.server, sock.user.roomId)
+
     sock.server.to(Rooms.prefix(sock.user.roomId)).emit('action', {
       type: PLAYER_STATUS,
-      payload,
+      payload: { ...payload, sentAt: Date.now() },
     })
 
     // A round is only put in the queue while something is on stage, so an idle
@@ -114,6 +125,9 @@ const ACTION_HANDLERS = {
   },
   [PLAYER_EMIT_LEAVE]: (sock) => {
     sock._lastPlayerStatus = null
+
+    // left the player view but still connected: a singer again
+    Rooms.pushSingers(sock.server, sock.user.roomId)
 
     // any players left in room?
     if (!Rooms.isPlayerPresent(sock.server, sock.user.roomId)) {

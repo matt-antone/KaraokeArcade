@@ -3,25 +3,21 @@ import clsx from 'clsx'
 import styles from './BattleKey.css'
 
 /**
- * Every key on both negotiating phones.
+ * Every key on a battle phone, drawn to Arcade Flow v2 2d.
  *
- * Three shapes and no others: the 54px filled key that commits to something,
- * the 44px ringed key that backs out of it, and the underlined micro-label for
- * the things that are edits rather than decisions. A dozen hand-rolled buttons
- * across two screens is how a 54px CONFIRM ends up beside a 48px one, and on a
- * phone in a dark bar that difference is the whole design.
+ * A filled key is a flat face with a lighter lip above and a darker one below,
+ * in one of the battle's three colours: gold is the product's own key (Next,
+ * Pick someone else, Back to songs, Rematch), green is the opponent's Accept
+ * and the P2 vote, red is the P1 vote. The ghost key is a ring and quieter
+ * type: Decline, Cancel challenge, Back to songs.
  *
- * A filled key is lit in the local player's colour by default, which is what
- * makes the challenger's flow gold and the opponent's green without either
- * screen naming a colour. The two exceptions are deliberate and say something:
- * `one` is the challenger's red, worn by the key that throws the challenge,
- * and `gold` is the product's own, worn by the handoff into song picking on a
- * phone whose colour is otherwise green.
+ * `vote` is 13h's pair: a size down, with 3px lips instead of 4.
  */
 
 interface BattleKeyProps {
-  variant?: 'primary' | 'ghost' | 'link'
-  tone?: 'mine' | 'one' | 'gold'
+  variant?: 'primary' | 'ghost'
+  tone?: 'gold' | 'green' | 'red'
+  size?: 'cta' | 'vote'
   disabled?: boolean
   className?: string
   onClick: (e: React.MouseEvent<HTMLButtonElement>) => void
@@ -29,7 +25,7 @@ interface BattleKeyProps {
 }
 
 const BattleKey = ({
-  variant = 'primary', tone = 'mine', disabled, className, onClick, children,
+  variant = 'primary', tone = 'gold', size = 'cta', disabled, className, onClick, children,
 }: BattleKeyProps) => (
   <button
     type='button'
@@ -38,7 +34,7 @@ const BattleKey = ({
     className={clsx(
       styles.key,
       styles[variant],
-      variant === 'primary' && styles[tone],
+      variant === 'primary' && [styles[tone], size === 'vote' && styles.vote],
       className,
     )}
   >

@@ -1,0 +1,12 @@
+/* The sign-in gate's full-screen shell. See AvatarGate in AvatarPicker.tsx. */
+
+/* over everything else fixed on the page: the bottom chrome at 99, battle
+   screens at 100 */
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--arc-ground);
+}

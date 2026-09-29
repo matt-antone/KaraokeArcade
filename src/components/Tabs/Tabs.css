@@ -1,28 +1,23 @@
-/* A segmented switch: keys sitting in a recessed track. The selected key is
-   raised with an amber label; the unselected ones have no key face at all.
+/* A segmented switch: flat keys 4px apart, no track. The selected key is
+   filled amber with dark type; the others are surface with secondary ink.
+   The design's tab is ~36px tall, below --target, and takes its drawn size.
    Two or three tabs — a fourth destination belongs in the bottom nav. */
 
 .track {
   display: flex;
-  gap: var(--gap-1);
-  padding: 3px;
-  border-radius: var(--radius-panel);
-  background: var(--key-well);
-  box-shadow: var(--well);
+  gap: 4px;
+  padding: 0;
 }
 
 .tab {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--gap-2);
   flex: 1;
-  min-height: var(--target);
-  font-family: var(--font-body);
-  font-size: var(--text-s);
-  font-weight: var(--weight-bold);
-  color: var(--ink-3);
-  background: transparent;
+  padding: 10px 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: var(--weight-regular);
+  color: var(--arc-text-2);
+  background: var(--arc-surface);
   border: none;
   border-radius: var(--radius-tab);
   box-shadow: none;
@@ -35,15 +30,12 @@
 }
 
 .active {
-  color: var(--vu);
-  background: var(--key-face);
-  box-shadow: var(--bevel);
+  color: var(--on-vu);
+  background: var(--vu);
 }
 
-/* counts ride inline in mono, never in a coloured badge */
+/* the count is part of the label's run: "Songs 19268", same size and ink */
 .count {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: var(--weight-regular);
-  opacity: .75;
+  font: inherit;
+  color: inherit;
 }

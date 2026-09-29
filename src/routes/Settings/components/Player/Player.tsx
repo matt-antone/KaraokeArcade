@@ -5,23 +5,25 @@ import { useAppDispatch, useAppSelector } from 'store/hooks'
 import { setPref } from 'store/modules/prefs'
 import { requestOptions } from 'store/modules/status'
 import Panel from 'components/Panel/Panel'
-import Icon from 'components/Icon/Icon'
 import Button from 'components/Button/Button'
 import InputCheckbox from 'components/InputCheckbox/InputCheckbox'
 import PlaybackCtrl from './PlaybackCtrl/PlaybackCtrl'
 import DisplayCtrl from './DisplayCtrl/DisplayCtrl'
 import JoinCode from './JoinCode/JoinCode'
+import { HeadKey } from '../PanelHead/PanelHead'
 import styles from './Player.css'
 import { PlaybackOptions } from 'shared/types'
 
 /**
  * Everything about the player lives here and nowhere else: its status, the key
- * that opens it, its display options and the room transport. It is a room
+ * that opens it, and — behind Manage — its display options and the room
+ * transport. It is a room
  * fixture the host sets up once on the machine driving the audio, not a place
  * anyone navigates to — so there is no Player tab, no player entry in the
  * bottom nav, and no transport in the app header.
  */
 const Player = () => {
+  const [isManaging, setManaging] = useState(false)
   const [isDisplayCtrlVisible, setDisplayCtrlVisible] = useState(false)
   const [isJoinCodeVisible, setJoinCodeVisible] = useState(false)
 
@@ -42,11 +44,15 @@ const Player = () => {
   const toggleJoinCode = () => setJoinCodeVisible(!isJoinCodeVisible)
 
   return (
-    <Panel title='Player' contentClassName={styles.content}>
+    <Panel
+      title='Player'
+      titleComponent={<HeadKey isOn={isManaging} onClick={() => setManaging(!isManaging)} />}
+      contentClassName={styles.content}
+    >
       <>
         <div className={styles.status}>
           <span className={clsx(styles.lamp, isPlayerPresent && styles.lit)} />
-          <span className='silkscreen' translate='no'>
+          <span className={styles.statusText} translate='no'>
             {isPlayerPresent ? 'connected' : 'no player in room'}
             {roomName && ` · ${roomName}`}
           </span>
@@ -57,19 +63,15 @@ const Player = () => {
           scan the join code it shows.
         </p>
 
-        {/* the room transport: admin-only, and this is its only home. With no
-            player connected there is nothing to drive, so the prompt to open
-            one stands in its place rather than a disabled transport. */}
-        {isPlayerPresent && <PlaybackCtrl />}
+        <div className={styles.keys}>
+          <Link to='/player' target='_blank' className={styles.openKey}>
+            Open player here
+          </Link>
 
-        <Link to='/player' target='_blank' className={styles.openKey}>
-          <Icon icon='TELEVISION_PLAY' />
-          Open Player Here
-        </Link>
-
-        <Button variant='default' icon='QR_CODE' onClick={toggleJoinCode}>
-          Show Join Code
-        </Button>
+          <Button className={styles.joinKey} variant='default' onClick={toggleJoinCode}>
+            Show join code
+          </Button>
+        </div>
 
         {isJoinCodeVisible && roomId !== null && (
           <JoinCode
@@ -80,18 +82,25 @@ const Player = () => {
           />
         )}
 
-        <InputCheckbox
-          label='ReplayGain (clip-safe)'
-          name='isReplayGainEnabled'
-          checked={isReplayGainEnabled}
-          onChange={handleReplayGain}
-        />
+        {/* The admin extras the design leaves out, behind Manage: the room
+            transport (only with a player to drive), ReplayGain, and the
+            display options, which stay reachable with no player connected. */}
+        {isManaging && (
+          <>
+            {isPlayerPresent && <PlaybackCtrl />}
 
-        {/* Display options live here, independent of the transport, so they stay
-            reachable with no player connected. */}
-        <Button variant='default' icon='TUNE' onClick={toggleDisplayCtrl}>
-          Display
-        </Button>
+            <InputCheckbox
+              label='ReplayGain (clip-safe)'
+              name='isReplayGainEnabled'
+              checked={isReplayGainEnabled}
+              onChange={handleReplayGain}
+            />
+
+            <Button variant='default' icon='TUNE' onClick={toggleDisplayCtrl}>
+              Display
+            </Button>
+          </>
+        )}
 
         {isDisplayCtrlVisible && (
           <DisplayCtrl

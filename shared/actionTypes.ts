@@ -72,6 +72,8 @@ export const ROOM_EDITOR_CLOSE = 'rooms/EDITOR_CLOSE'
 export const ROOM_FILTER_STATUS = 'rooms/TOGGLE_SHOW_ALL'
 export const ROOM_PREFS_PUSH = 'rooms/ROOM_PREFS_PUSH'
 export const ROOM_STATUS_PUSH = 'rooms/ROOM_STATUS_PUSH'
+// how many singers (phones, not the TV) are in the room right now
+export const ROOM_SINGERS_PUSH = 'rooms/ROOM_SINGERS_PUSH'
 export const ROOM_PREFS_PUSH_REQUEST = 'server/ROOM_PREFS_PUSH_REQUEST'
 
 // Trivia

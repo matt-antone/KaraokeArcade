@@ -21,8 +21,9 @@ interface BattleFighter {
 }
 
 interface QueueBattleItemProps {
-  isCurrent: boolean
   isPlayed: boolean
+  /** 1-based place in the turns still to come. Absent on played rows. */
+  position?: number
   challenger: BattleFighter
   opponent: BattleFighter
 }
@@ -48,39 +49,41 @@ interface QueueBattleItemProps {
  * than as coloured text: both measure under 3:1 as ink on this faceplate, and
  * this row is read across a dark bar.
  */
-const QueueBattleItem = ({ isCurrent, isPlayed, challenger, opponent }: QueueBattleItemProps) => {
+const QueueBattleItem = ({ isPlayed, position, challenger, opponent }: QueueBattleItemProps) => {
   const sides = [
     { ...challenger, sideClass: styles.challenger },
     { ...opponent, sideClass: styles.opponent },
   ]
 
   return (
-    <div className={clsx(styles.shell, isCurrent && styles.current)}>
+    <div className={styles.shell}>
       <div className={clsx(styles.container, isPlayed && styles.spent)}>
-        <div className={styles.header}>
-          <span className={clsx('silkscreen', styles.legend)}>
-            {isCurrent ? 'singer battle · on stage' : isPlayed ? 'singer battle · fought' : 'singer battle · one turn, two songs'}
-          </span>
-          {isCurrent && <span className={styles.now}>NOW</span>}
-        </div>
+        {position !== undefined && <div className={styles.position}>{position}</div>}
 
-        {sides.map(side => (
-          <div key={side.userId} className={clsx(styles.fighter, side.sideClass)}>
-            <UserAvatar
-              className={styles.avatar}
-              avatarId={side.singerId || side.avatarId}
-            />
-
-            <div className={styles.primary}>
-              <div className={styles.name} translate='no'>{side.name}</div>
-              {/* titles always show in full: they wrap, and the row grows */}
-              <div className={styles.title} translate='no'>{side.title}</div>
-              {side.artist && (
-                <div className={clsx('silkscreen', styles.artist)} translate='no'>{side.artist}</div>
-              )}
-            </div>
+        <div className={styles.body}>
+          <div className={styles.header}>
+            <span className={clsx('silkscreen', styles.legend)}>
+              {isPlayed ? 'Singer battle · fought' : 'Singer battle · one turn, two songs'}
+            </span>
           </div>
-        ))}
+
+          {sides.map(side => (
+            <div key={side.userId} className={clsx(styles.fighter, side.sideClass)}>
+              <UserAvatar
+                className={styles.avatar}
+                avatarId={side.singerId || side.avatarId}
+              />
+
+              <div className={styles.primary}>
+                <div className={styles.name} translate='no'>{side.name}</div>
+                <div className={styles.title} translate='no'>{side.title}</div>
+                {side.artist && (
+                  <div className={clsx('silkscreen', styles.artist)} translate='no'>{side.artist}</div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

@@ -1,203 +1,93 @@
-/* Wordmark on the left, where-we-are and the clock on the right. */
+/* 12b/12c: the round's ladder on the left, where-we-are centred over the
+   whole width, the clock (or "Answer") on the right. 64px tall. */
 .header {
+  position: relative;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  width: 100%;
+  height: 64px;
+  padding: 20px 28px 0;
+  font-family: var(--font-display);
 }
 
-.spacer {
-  flex: 1;
+/* ---- the ladder ------------------------------------------------------ */
+
+.pips {
+  display: flex;
+  gap: 4px;
 }
 
-.wordmark {
-  font-family: var(--font-trivia);
-  text-transform: uppercase;
-  line-height: 1;
+/* still to come: dark, ringed */
+.pip {
+  padding: 5px 7px;
+  font-family: var(--font-display);
+  font-size: 11px;
+  background: var(--arc-surface);
+  color: var(--arc-disabled);
+  box-shadow: var(--well);
+}
+
+.asked {
+  background: var(--arc-surface-hover);
+  color: var(--arc-muted);
+  box-shadow: none;
+}
+
+.now {
+  background: var(--arc-yellow);
+  color: var(--arc-on-amber);
+  box-shadow: var(--glow-pip);
+}
+
+/* ---- where we are ---------------------------------------------------- */
+
+.where {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 10px;
+  pointer-events: none;
 }
 
 .meta {
-  font-family: var(--font-mono);
-  letter-spacing: .2em;
-  text-transform: uppercase;
-  color: var(--arc-mint);
+  font-size: 12px;
+  color: var(--arc-text-2);
 }
 
-.yellow {
+/* The question's worth, bursting in yellow to pink and settling on a hard
+   magenta drop — the design's valueburst. */
+.value {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 34px;
+  line-height: 1;
   color: var(--arc-yellow);
-  text-shadow: 0 0 14px rgba(255, 214, 0, .8), 3px 3px 0 var(--arc-magenta);
-}
-
-.mint {
-  color: var(--arc-mint);
-  text-shadow: 0 0 16px rgba(126, 249, 208, .8), 3px 3px 0 rgba(124, 58, 237, .6);
-}
-
-.timeBar {
-  display: flex;
-  width: 100%;
-}
-
-.segment {
-  flex: 1;
-  background: rgba(255, 214, 0, .13);
-}
-
-.lit {
-  background: var(--arc-yellow);
-  box-shadow: 0 0 10px var(--arc-yellow);
-}
-
-/* the leading segment snaps on and off — never fades */
-.lead {
-  animation: blink .5s steps(1, end) infinite;
-}
-
-/* ---- the room -------------------------------------------------------- */
-
-.player {
-  gap: 20px;
-
-  .wordmark {
-    font-size: 11px;
-  }
-
-  .meta {
-    font-size: 7px;
-  }
-
-  &.timeBar {
-    gap: 4px;
-  }
-
-  .segment {
-    height: 8px;
-  }
+  --text-shadow-color: var(--arc-magenta);
+  text-shadow: var(--text-shadow-hard);
+  animation: valueburst .9s ease-out 300ms both;
 }
 
 .clock {
-  display: flex;
-  gap: 6px;
-}
-
-.cell {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 76px;
-  border-radius: 5px;
-  background: var(--arc-well);
-  box-shadow: inset 0 0 16px rgba(0, 0, 0, .9);
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 52px;
-  line-height: 1;
-}
-
-.ghost {
-  position: absolute;
-  color: rgba(255, 46, 136, .12);
-}
-
-.digit {
-  position: relative;
+  font-size: 14px;
   color: var(--arc-magenta);
-  text-shadow: 0 0 12px rgba(255, 46, 136, .95);
+  font-variant-numeric: tabular-nums;
 }
 
-/* The last five seconds: the wordmark becomes a blinking LOCK IT IN, the clock
-   swells to one cell, and the bar goes magenta. */
-.urgent {
-  .wordmark {
-    color: var(--arc-magenta);
-    text-shadow: 0 0 16px rgba(255, 46, 136, .9);
-    animation: blink .5s steps(1, end) infinite;
-  }
-
-  .meta {
-    color: #ffb0d4;
-  }
-
-  .cell {
-    width: 80px;
-    height: 96px;
-    background: #1b0a1c;
-    font-size: 74px;
-  }
-
-  .digit {
-    text-shadow: 0 0 18px rgba(255, 46, 136, 1);
-    animation: throb .95s ease-in-out infinite;
-  }
-
-  .segment {
-    background: rgba(255, 46, 136, .13);
-  }
-
-  .lit {
-    background: var(--arc-magenta);
-    box-shadow: 0 0 12px var(--arc-magenta);
-  }
-
-  .lead {
-    animation-duration: .4s;
-  }
+.answer {
+  font-size: 14px;
+  color: var(--arc-mint);
 }
 
-/* ---- the hand -------------------------------------------------------- */
-
-.pad {
-  gap: 10px;
-
-  .wordmark {
-    font-size: 14px;
-    text-shadow: 0 0 10px rgba(255, 214, 0, .8), 2px 2px 0 var(--arc-magenta);
-  }
-
-  .mint {
-    text-shadow: 0 0 10px rgba(126, 249, 208, .8);
-  }
-
-  .meta {
-    font-size: 11px;
-    letter-spacing: .14em;
-  }
-
-  &.timeBar {
-    gap: 3px;
-  }
-
-  .segment {
-    height: 6px;
-  }
-
-  .lit {
-    box-shadow: 0 0 8px var(--arc-yellow);
-  }
+@keyframes valueburst {
+  0% { transform: scale(.3); opacity: 0; text-shadow: 0 0 0 var(--arc-yellow); }
+  35% { transform: scale(1.4); opacity: 1; color: var(--arc-ring); text-shadow: var(--glow-burst); }
+  100% { transform: scale(1); opacity: 1; color: var(--arc-yellow); text-shadow: 3px 3px 0 var(--arc-magenta); }
 }
 
-.padClock {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: 24px;
-  line-height: 1;
-  color: var(--arc-magenta);
-  text-shadow: 0 0 12px rgba(255, 46, 136, .9);
-}
-
-@keyframes blink {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: .14; }
-}
-
-@keyframes throb {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.035); }
-}
-
-/* The time bar's blink carries information and stays; the rest is decoration. */
 @media (prefers-reduced-motion: reduce) {
-  .urgent .digit,
-  .urgent .wordmark { animation: none; }
+  .value { animation: none; }
 }

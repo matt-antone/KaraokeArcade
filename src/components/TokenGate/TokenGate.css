@@ -1,0 +1,154 @@
+/* Insert token. See TokenGate.tsx. Lifted from Arcade Flow v2, 01. */
+
+/* The cabinet's own full-screen shell, over the header and the nav: the slot
+   is the whole screen until the token is in. */
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  background-color: var(--arc-ground);
+}
+
+.screen > :first-child {
+  align-self: stretch;
+}
+
+.logo {
+  display: block;
+  width: 300px;
+  margin-top: 72px;
+}
+
+/* where the token and the slot live; the token starts bottom left and the
+   slot sits right, so the drag is a diagonal across the thumb's reach */
+.table {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  max-width: 430px;
+  min-height: 260px;
+}
+
+.slot {
+  position: absolute;
+  right: 52px;
+  top: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gap-4);
+}
+
+.plate {
+  display: block;
+  width: 136px;
+  user-select: none;
+}
+
+/* the mouth lights while a token is over it. The glow is a blur, and blur
+   lives only in keyframes: a one-frame loop holds it steady. */
+.plateHot {
+  animation: token-slot-glow 1s linear infinite;
+}
+
+.caption {
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  color: var(--arc-amber);
+}
+
+.token {
+  position: absolute;
+  left: 44px;
+  bottom: 36px;
+  z-index: 1;
+  width: 116px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  filter: drop-shadow(0 8px 0 rgba(0, 0, 0, .45));
+  transform: translate(var(--dx), var(--dy));
+  /* the spring home: overshoots and settles */
+  transition: transform 350ms cubic-bezier(.3, 1.4, .5, 1);
+
+  img {
+    display: block;
+    width: 100%;
+    pointer-events: none;
+  }
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: 4px;
+  }
+}
+
+.dragging {
+  cursor: grabbing;
+  transform: translate(var(--dx), var(--dy)) scale(1.08) rotate(-6deg);
+  transition: none;
+}
+
+/* into the slot: squashed edge-on and gone */
+.inserted {
+  opacity: 0;
+  transform: translate(var(--dx), var(--dy)) scale(.12, .62);
+  transition: transform 320ms cubic-bezier(.5, 0, .8, .4), opacity 120ms 280ms;
+}
+
+.prompt {
+  flex: none;
+  height: 170px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gap-5);
+  padding: 0 var(--gutter);
+  text-align: center;
+}
+
+.insert {
+  font-family: var(--font-display);
+  font-size: var(--display-m);
+  color: var(--arc-yellow);
+  animation: token-blink 1.1s steps(1) infinite;
+}
+
+.helper {
+  font-size: 15px;
+  color: var(--arc-text-2);
+}
+
+.accepted {
+  font-family: var(--font-display);
+  font-size: 22px;
+  color: var(--arc-mint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .token,
+  .inserted {
+    transition: none;
+  }
+
+  .insert {
+    animation: none;
+  }
+}
+
+@keyframes token-slot-glow {
+  0%, 100% { filter: drop-shadow(0 0 14px var(--arc-yellow)); }
+}
+
+@keyframes token-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}

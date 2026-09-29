@@ -1,7 +1,110 @@
-/* The tab row is components/Tabs — its CSS used to be duplicated here and in
-   LibraryHeader. What is left is the gutter around it. */
+/* The stage banner (or the hold notice) over the tab row. The tab row is
+   components/Tabs; what is here is the banner and the gutter around both. */
 .container {
   display: flex;
   flex-direction: column;
-  padding: 0 var(--gutter) var(--gap-3);
+}
+
+.tabs {
+  padding: 22px var(--gutter) 0;
+}
+
+/* Fixed at 150 so the header never changes height as songs come and go. */
+.banner {
+  position: relative;
+  flex: none;
+  height: 150px;
+  margin: 16px var(--gutter) 0;
+  overflow: hidden;
+  background: var(--arc-surface);
+  --pixel-border-color: var(--arc-mint);
+  box-shadow: var(--pixel-border);
+}
+
+.bannerEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap-2);
+  box-shadow: var(--well);
+}
+
+.emptyLegend {
+  font-family: var(--font-display);
+  font-size: var(--text-s);
+  color: var(--arc-muted);
+}
+
+.stageOpen {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  color: var(--arc-disabled);
+}
+
+/* the singer's own location, pinned low so their stage floor shows */
+.location {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 80%;
+}
+
+/* holds the words legible over the art: ground at the left, clear at the right */
+.scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--arc-ground) 94%, transparent) 0 42%, transparent 72%);
+}
+
+/* the singer's sing sheet, 168px, hanging off the right and bottom edges */
+.figure {
+  right: -20px;
+  bottom: -4px;
+}
+
+.now {
+  position: absolute;
+  top: 12px;
+  left: var(--gap-4);
+  right: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nowLegend {
+  font-family: var(--font-display);
+  font-size: var(--text-s);
+  color: var(--arc-mint);
+}
+
+.nowName {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  color: var(--arc-text);
+}
+
+.nowTitle {
+  font-size: var(--text-l);
+  font-weight: var(--weight-semibold);
+  color: var(--arc-text);
+}
+
+.nowArtist {
+  font-size: 13px;
+  color: var(--arc-text-2);
+}
+
+/* 07c: the viewer has paused. In the banner's place, and the same gutter. */
+.hold {
+  margin: 16px var(--gutter) 0;
+  padding: 12px var(--gap-4);
+  background: var(--arc-ink-yellow);
+  box-shadow: inset 0 0 0 2px var(--arc-yellow);
+  font-size: 15px;
+  color: var(--arc-hold-ink);
+  text-wrap: pretty;
 }

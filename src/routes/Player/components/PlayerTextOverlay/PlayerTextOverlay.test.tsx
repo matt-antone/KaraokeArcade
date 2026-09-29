@@ -24,6 +24,7 @@ const nextQueueItem = {
 const comingUpQueueItems = [
   { queueId: 3, userId: 43, userDisplayName: 'Barf' },
   { queueId: 4, userId: 44, userDisplayName: 'Lone Starr' },
+  { queueId: 5, userId: 45, userDisplayName: 'Vespa' },
 ] as QueueItem[]
 
 const render = (props = {}) => renderToStaticMarkup(
@@ -46,38 +47,46 @@ const render = (props = {}) => renderToStaticMarkup(
 )
 
 describe('PlayerTextOverlay intermission', () => {
-  it('draws the next singer as their own fighter', () => {
+  it('draws the next singer as their own fighter, dancing on their own stage', () => {
     // the live account id, not a snapshot and not an upload: the overlay names
     // whoever is up next, and who they are is an account-level fact
-    expect(render()).toContain('assets/battle/fighters/halloween/hex/views/portrait-80.png')
+    const html = render()
+    expect(html).toContain('assets/battle/fighters/halloween/hex/dance-sheet.png')
+    expect(html).toContain('assets/battle/fighters/halloween/hex/location.png')
   })
 
-  it('shows the next singer\'s name without an "up next" prefix', () => {
+  it('bills the next singer under "On stage next", with nothing before the name', () => {
     const text = render().replace(/<[^>]+>/g, '')
-    expect(text).toContain('Dot Matrix')
-    expect(text).not.toContain('up next')
+    expect(text).toContain('On stage nextDot Matrix')
   })
 
-  it('names the next song and artist above the singer', () => {
+  it('bills the singer, then their song and artist', () => {
+    // 11a · on stage next: the name is the headline, the song sits under it
     const text = render().replace(/<[^>]+>/g, '')
-    expect(text.indexOf('Spaceballs the Song')).toBeLessThan(text.indexOf('Dot Matrix'))
+    expect(text.indexOf('Dot Matrix')).toBeLessThan(text.indexOf('Spaceballs the Song'))
     expect(text).toContain('Winnebago')
   })
 
-  it('lists the two singers and their songs after the next one under "Coming Up"', () => {
+  it('lists the three singers and their songs after the next one under "Up next"', () => {
     const text = render({
-      comingUpSongTitles: ['Ludicrous Speed', 'Combing the Desert'],
+      comingUpSongTitles: ['Ludicrous Speed', 'Combing the Desert', 'Schwartz'],
     }).replace(/<[^>]+>/g, '')
 
-    expect(text).toContain('coming up')
-    expect(text).toContain('Barf — Ludicrous Speed')
-    expect(text).toContain('Lone Starr — Combing the Desert')
+    // one card each: the singer, then their song
+    expect(text).toContain('Up next')
+    expect(text).toContain('BarfLudicrous Speed')
+    expect(text).toContain('Lone StarrCombing the Desert')
+    expect(text).toContain('VespaSchwartz')
   })
 
-  // The mark is drawn behind this overlay and already says a round is coming,
-  // so the page stands down and leaves the clock. It is one handover, and it
-  // used to be two screens.
-  it('keeps only the clock when a trivia round is next', () => {
+  it('draws the idle meter under the billing', () => {
+    expect(render()).toContain('role="meter"')
+  })
+
+  // The splash is drawn behind this overlay and already says a round is
+  // coming, with its own clock. It is one handover, and it used to be two
+  // screens.
+  it('draws nothing when a trivia round is next', () => {
     const html = render({
       nextQueueItem: { queueId: 2, userId: 0, userDisplayName: 'Trivia', type: 'trivia' } as QueueItem,
       nextSongTitle: undefined,
@@ -86,11 +95,9 @@ describe('PlayerTextOverlay intermission', () => {
     })
     const text = html.replace(/<[^>]+>/g, '')
 
-    expect(text).toMatch(/^\d+$/)
-    expect(text).not.toContain('Trivia')
-    expect(text).not.toContain('coming up')
-    // no face: a trivia row is user 0, and asking for its avatar is a 404
-    expect(html).not.toContain('api/user/')
+    expect(text).toBe('')
+    // no face: a trivia row is nobody's
+    expect(html).not.toContain('portrait')
   })
 
   // Same reasoning, stronger: the battle's own `versus` beat names both
@@ -110,83 +117,85 @@ describe('PlayerTextOverlay intermission', () => {
     expect(text).toMatch(/^\d+$/)
     expect(text).not.toContain('Dot Matrix')
     expect(text).not.toContain('Barracuda')
-    expect(text).not.toContain('coming up')
+    expect(text).not.toContain('Up next')
   })
 })
 
-describe('PlayerTextOverlay up next', () => {
-  const playing = { intermissionEndsAt: null as number | null }
+describe('PlayerTextOverlay playing bar', () => {
+  const playing = {
+    queueItem: { queueId: 1, userDisplayName: 'Lone Starr', userAvatarId: 'p1' } as QueueItem,
+    intermissionEndsAt: null as number | null,
+    songTitle: 'Ludicrous Speed',
+    songArtist: 'Winnebago',
+    position: 72,
+    duration: 189,
+  }
+  const text = (props = {}) => render({ ...playing, ...props }).replace(/<[^>]+>/g, '')
 
-  // The corner panel names one singer. A battle is two of them, and the stage
-  // is about to draw the pair properly.
-  it('never teases a battle', () => {
-    const html = render({
-      ...playing,
-      isSongEnding: true,
+  // 11b: up for the whole song, not only its first and last seconds
+  it('names the singer, the song and the next singer for the whole song', () => {
+    for (const position of [0, 72, 180]) {
+      const bar = text({ position })
+
+      expect(bar).toContain('Lone Starr')
+      expect(bar).toContain('Ludicrous Speed · Winnebago')
+      expect(bar).toContain('NextDot Matrix')
+    }
+  })
+
+  it('reads the elapsed and total time', () => {
+    expect(text()).toContain('1:12 / 3:09')
+  })
+
+  it('draws the level meter and the singer singing', () => {
+    const html = render(playing)
+
+    expect(html).toContain('role="meter"')
+    expect(html).toContain('assets/battle/fighters/default/belter/sing-sheet.png')
+  })
+
+  // The bar names one singer next. A battle is two of them, and the stage is
+  // about to draw the pair properly.
+  it('never names a battle as next', () => {
+    const bar = text({
       nextQueueItem: {
         queueId: 2, userId: 42, userDisplayName: 'Dot Matrix', type: 'battle',
       } as QueueItem,
     })
 
-    expect(html).not.toContain('up next')
-    expect(html).not.toContain('Dot Matrix')
-  })
-
-  it('teases the next singer only when the song is ending', () => {
-    expect(render({ ...playing, isSongEnding: false })).not.toContain('up next')
-    expect(render({ ...playing, isSongEnding: true })).toContain('up next')
-  })
-
-  it('names the next singer and their song', () => {
-    const text = render({ ...playing, isSongEnding: true }).replace(/<[^>]+>/g, '')
-    expect(text).toContain('Dot Matrix')
-    expect(text).toContain('Spaceballs the Song')
+    expect(bar).not.toContain('Next')
+    expect(bar).not.toContain('Dot Matrix')
   })
 })
 
-describe('PlayerTextOverlay queue depth', () => {
-  const playing = { intermissionEndsAt: null as number | null }
-
-  it('hides the meter when nothing is queued', () => {
-    expect(render({ ...playing, queueDepth: 0 })).not.toContain('role="meter"')
-  })
-
-  it('shows the meter and the zero-padded count when songs are still to come', () => {
-    const markup = render({ ...playing, queueDepth: 8 })
-    expect(markup).toContain('role="meter"')
-    expect(markup.replace(/<[^>]+>/g, '')).toContain('queue 08')
-  })
-
+describe('PlayerTextOverlay fault', () => {
   it('reports a fault instead of joking about it', () => {
     // "The player states what happened." Where the old brand said OOPS...,
-    // DECK reports: a silkscreen FAULT over what broke and where to look.
+    // the TV reports: a Fault over what broke and where to look.
     const html = render({ isErrored: true })
 
-    expect(html).toContain('fault')
+    expect(html).toContain('Fault')
     expect(html).toContain('Media failed')
-    expect(html).toContain('see the queue for details')
+    expect(html).toContain('See the queue for details.')
   })
 
-  it('shows the fault alone — the six states are mutually exclusive', () => {
-    // errored outranks intermission, upNextTease and upNow. Before the rebuild
-    // an if/else chain let upNow and upNextTease render together.
+  it('shows the fault alone — the five states are mutually exclusive', () => {
+    // errored outranks the intermission and the playing bar
     const html = render({
       isErrored: true,
       intermissionEndsAt: Date.now() + 10000,
-      isSongEnding: true,
     })
 
     expect(html).toContain('Media failed')
-    expect(html).not.toContain('coming up')
-    expect(html).not.toContain('up next')
-    expect(html).not.toContain('on stage')
+    expect(html).not.toContain('Up next')
+    expect(html).not.toContain('On stage next')
+    expect(html).not.toContain('role="meter"')
   })
 
   it('yields to an empty queue, which is not a fault', () => {
     // a queue that ran out is not broken media, and must not read as one
     const html = render({ isErrored: true, isQueueEmpty: true })
 
-    expect(html).toContain('queue empty')
     expect(html).not.toContain('Media failed')
   })
 })

@@ -6,19 +6,17 @@ import styles from './ButtonStar.css'
 interface ButtonStarProps {
   className?: string
   onClick: (e: React.MouseEvent) => void
-  count: number
+  /** Accepted and ignored: the design prints no star count. Callers drop it. */
+  count?: number
   isStarred: boolean
 }
 
 /**
- * Star a song. In every library row, every queue row, and the song-history
- * list — and the only control a played row keeps.
- *
- * A text star, never an emoji. Off is --ink-5 and reads as unlit; on is amber
- * and reads as lit, the same as every other indicator in the product. The
- * bounce it used to do on toggle is gone with the rest of the springy motion.
+ * Star a song: the design's row tag, a Silkscreen 11px text star. Off is
+ * --arc-line and reads as unlit; on is yellow and reads as lit. A text star,
+ * never an emoji, and no count beside it.
  */
-const ButtonStar = ({ className, onClick, count, isStarred }: ButtonStarProps) => (
+const ButtonStar = ({ className, onClick, isStarred }: ButtonStarProps) => (
   <Button
     onClick={onClick}
     aria-label={isStarred ? 'unstar' : 'star'}
@@ -26,7 +24,6 @@ const ButtonStar = ({ className, onClick, count, isStarred }: ButtonStarProps) =
     className={clsx(styles.container, isStarred && styles.starred, className)}
   >
     <span className={styles.star}>★</span>
-    {count > 0 && <span className={styles.starCount}>{count}</span>}
   </Button>
 )
 

@@ -1,18 +1,15 @@
-import React, { useCallback, useRef } from 'react'
-import { ensureState } from 'redux-optimistic-ui'
+import React, { useCallback } from 'react'
 import type { RootState } from 'store/store'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
 import { toggleArtistResultExpanded } from '../../modules/library'
 import getSearchResults from '../../selectors/getSearchResults'
-import getSongsStatus from '../../selectors/getSongsStatus'
 import PaddedList from 'components/PaddedList/PaddedList'
 import ArtistItem from '../ArtistItem/ArtistItem'
-import type { ListImperativeAPI, RowComponentProps } from 'react-window'
+import type { RowComponentProps } from 'react-window'
 
-// estimates only: rows are measured once rendered (see PaddedList), because a
-// song title always shows in full and a wrapped title makes the row taller
-const ROW_HEIGHT_ARTIST = 47 // --row-artist + seam rule
-const ROW_HEIGHT_SONG = 59 // --row-song + 3px margin
+// estimates only: rows are measured once rendered (see PaddedList)
+const ROW_HEIGHT_ARTIST = 48 // see ArtistList
+const ROW_HEIGHT_SONG = 67 // see SongResults
 
 interface SearchResultsProps {
   ui: RootState['ui']
@@ -21,7 +18,6 @@ interface SearchResultsProps {
 interface CustomRowProps {
   artists: RootState['artists']
   dispatch: ReturnType<typeof useAppDispatch>
-  filterKeywords: string[]
   artistsResult: number[]
   expandedArtistResults: number[]
 }
@@ -34,27 +30,20 @@ const RowComponent = ({
   // below are also used in SearchResults and passed via rowProps to avoid duplicate effort
   dispatch,
   artists,
-  filterKeywords,
   artistsResult,
   expandedArtistResults,
 }: RowComponentProps<CustomRowProps>) => {
-  const { starredSongs } = useAppSelector(state => ensureState(state.userStars))
-  const { upcoming } = useAppSelector(getSongsStatus)
-
   const artistId = artistsResult[index]
   const artist = artists.entities[artistId]
 
+  // ranked by match rather than by name, so no letter groups here
   return (
     <ArtistItem
       artistSongIds={artist.songIds}
-      filterKeywords={filterKeywords}
       isExpanded={expandedArtistResults.includes(artistId)}
       key={artistId}
       name={artist.name}
-      numStars={0}
       onArtistClick={() => dispatch(toggleArtistResultExpanded(artistId))}
-      upcomingSongs={upcoming}
-      starredSongs={starredSongs}
       style={style}
     />
   )
@@ -66,9 +55,6 @@ const SearchResults = ({ ui }: SearchResultsProps) => {
   const expandedArtistResults = useAppSelector(state => state.library.expandedArtistResults)
   const filterStr = useAppSelector(state => state.library.filterStr)
   const { artistsResult } = useAppSelector(getSearchResults)
-
-  const listRef = useRef<ListImperativeAPI | null>(null)
-  const filterKeywords = filterStr.trim() ? filterStr.trim().toLowerCase().split(' ') : []
 
   // stable identity: PaddedList keys its measurement cache off this function
   const rowHeight = useCallback((index: number) => {
@@ -82,29 +68,23 @@ const SearchResults = ({ ui }: SearchResultsProps) => {
     return height
   }, [artists, artistsResult, expandedArtistResults])
 
-  const handleRef = (ref: ListImperativeAPI) => {
-    if (ref) listRef.current = ref
-  }
-
   return (
     <PaddedList
       rowComponent={RowComponent}
       rowProps={{
         dispatch,
         artists,
-        filterKeywords,
         artistsResult,
         expandedArtistResults,
       }}
       rowHeight={rowHeight}
       cacheKey={filterStr}
       numRows={artistsResult.length}
-      paddingTop={ui.headerHeight + 14}
-      paddingRight={4}
+      paddingTop={ui.headerHeight}
+      paddingRight={0}
       paddingBottom={ui.footerHeight + 20}
-      paddingLeft={14}
+      paddingLeft={0}
       height={ui.innerHeight}
-      onRef={handleRef}
     />
   )
 }

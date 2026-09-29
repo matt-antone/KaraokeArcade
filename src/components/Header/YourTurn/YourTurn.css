@@ -1,128 +1,186 @@
-/* Your Turn — the singer's own channel strip, and the app's header.
-
-   Every state is the same object: a recessed, tinted well with an accent
-   headline — the treatment the library already gives a queued song row. Only
-   the tint changes, and it is the state:
-
-     on stage  --vu-well       amber, the channel that is live
-     standby   --standby-well  teal, armed but not running
-     paused    --key-well      neutral, a dead channel
-
-   No new colour enters the palette to do this; each well already exists as the
-   panel-value form of its signal. The strip is recessed rather than raised
-   because it reports status — it is not a key you press. The one key it
-   carries stays raised, because that one you do press.
-
-   One row, not a stack: this sits above every screen on a phone, so the four
-   stacked blocks it used to be spent ~130px of the viewport saying two things.
-   Wait and meter read side by side; the pause key is icon-only and names
-   itself through aria-label. */
+/* The HUD block (04/07/08/09): an identity row — portrait, name, tonight's
+   points and place, then the VS and pause keys — over the Your-turn card.
+   Every value is the design's, drawn at its drawn size: the keys are 40px,
+   under --target, because the design draws them at 40. */
 
 .container {
+  margin: 14px 20px 0;
   display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.identity {
+  display: flex;
+  gap: 12px;
   align-items: center;
-  gap: var(--gap-3);
-  padding: var(--gap-2) var(--gap-4);
-  background-color: var(--key-well);
-  border-radius: var(--radius-panel);
-  box-shadow: var(--well);
-  overflow: hidden;
 }
 
-/* machined into the chrome: no radius of its own, seamed above and ruled below */
-.inHeader {
-  border-radius: 0;
-  border-top: var(--seam-rule);
-  border-bottom: var(--hair-rule);
+.identity .avatar {
+  --pixel-border-color: var(--arc-amber);
+
+  position: relative;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  margin: 0;
+  box-shadow: var(--pixel-border-3);
 }
 
-/* on stage: the live channel, amber */
-.onStage {
-  background-color: var(--vu-well);
-}
-
-/* queued but not yet up: armed, not running */
-.standby {
-  background-color: var(--standby-well);
-}
-
-.standby .wait {
-  color: var(--standby);
-}
-
-/* the meter reads in the state's own colour: re-point the two tokens its
-   segments are painted from rather than teaching VuMeter about channels.
-   Peaking is already off here (peakFrom > 1), so no red enters the strip. */
-.standby .meter {
-  --vu-dim: var(--standby-dim);
-  --vu: var(--standby);
-}
-
-/* paused is a visibly dead channel: the meter empties and the wait goes cold */
-.paused .wait {
-  color: var(--ink-3);
-}
-
-.headline {
+.who {
+  flex: 1;
   min-width: 0;
-  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tonight {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-family: var(--font-display);
+}
+
+.tonightLabel {
+  font-size: 11px;
+  color: var(--arc-magenta);
+}
+
+.points {
+  font-size: 18px;
+  color: var(--arc-yellow);
+}
+
+.rank {
+  font-size: 11px;
+  color: var(--arc-mint);
+}
+
+.keys {
+  display: flex;
+  gap: 8px;
+}
+
+/* two classes, so the yellow Button's own padding and width give way */
+.keys .key {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  font-family: var(--font-display);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* VS and II: the plain violet key, raised by --bevel */
+.plain {
+  background: var(--arc-surface-hover);
+  color: var(--arc-text);
+  box-shadow: var(--bevel);
+}
+
+.vs {
+  color: var(--arc-magenta);
+}
+
+/* the play glyph as a CSS triangle, the 12px glyph's size, in the key's ink */
+.play {
+  display: block;
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 9px solid currentcolor;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--arc-surface);
+  box-shadow: var(--well);
+}
+
+/* 07b and 07c: the card collapses to one centred row */
+.card.row {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.card.paused {
+  box-shadow: inset 0 0 0 2px var(--arc-yellow);
+}
+
+.line {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
 }
 
 .legend {
-  margin-bottom: 3px;
-}
-
-/* the one number in the app set in Michroma: it has to be readable at arm's
-   length, in a dark room, by someone holding a drink */
-.wait {
+  flex: none;
   font-family: var(--font-display);
-  font-size: 1.15rem;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  line-height: 1;
-  color: var(--vu);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 11px;
+  color: var(--arc-mint);
 }
 
-/* the meter takes the slack so the strip reflows instead of wrapping */
-.meter {
+.legendIdle {
+  color: var(--arc-muted);
+}
+
+.legendPaused {
+  color: var(--arc-yellow);
+}
+
+/* The next song's title. Ellipsised where the design ellipsises it (U-8). */
+.title {
   flex: 1;
   min-width: 0;
-}
-
-/* The label names the singer's next song. This ellipsises it, which is a
-   knowing exception to "song titles are never truncated, site-wide": the strip
-   sits above every screen, and letting a long title wrap costs a whole row of
-   viewport on the one surface that is always on screen. The untruncated title
-   is one tap away on the Queue's Me tab.
-   ponytail: exception taken deliberately for the header strip only — if this
-   spreads to a second surface, fix the rule instead of repeating the escape. */
-.label {
-  margin-top: 5px;
+  font-size: 15px;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.songCount {
-  flex-shrink: 0;
-  white-space: nowrap;
+.wait {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--arc-amber);
 }
 
-/* Button is width:100% by default, which would eat the row */
-.pauseKey,
-.battleKey {
-  flex: 0 0 auto;
-  width: var(--target);
-  min-height: var(--target);
+.empty {
+  flex: 1;
+  font-size: 15px;
+  color: var(--arc-muted);
 }
 
-/* Switched off at the room level. Button has no disabled treatment of its own
-   — it is bare by default and its variants are all live keys — so the dim is
-   here, at the one sanctioned opacity, and the cursor stops promising a press. */
-.battleKey:disabled {
-  opacity: .45;
-  cursor: default;
+.hold {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.resume {
+  padding: 8px 10px;
+  border: 0;
+  background: var(--arc-yellow);
+  color: var(--arc-on-amber);
+  font-family: var(--font-display);
+  font-size: 12px;
+  cursor: pointer;
 }

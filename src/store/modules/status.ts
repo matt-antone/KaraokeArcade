@@ -10,7 +10,7 @@ import {
   PLAYER_STATUS,
   PLAYER_LEAVE,
 } from 'shared/actionTypes'
-import { MediaType, PlaybackOptions } from 'shared/types'
+import { MediaType, PlaybackOptions, type PlayerLeadIn } from 'shared/types'
 
 // ------------------------------------
 // Actions
@@ -48,7 +48,9 @@ export const requestOptions = createAction(PLAYER_REQ_OPTIONS, (opts: PlaybackOp
 // ------------------------------------
 // Reducer
 // ------------------------------------
-export interface StatusState {
+/** The TV's status as the phones hold it. The lead-in fields arrive while a
+ *  song counts in (12e0) and are absent otherwise. */
+export interface StatusState extends PlayerLeadIn {
   cdgAlpha: number
   cdgSize: number
   errorMessage: string
@@ -64,6 +66,8 @@ export interface StatusState {
   nextUserId: number | null
   position: number
   queueId: number
+  /** When the server sent this status, by its clock (for lib/serverNow). */
+  sentAt?: number
   visualizer: PlayerVisualizerState | Record<string, never>
   volume: number
 }
@@ -96,6 +100,10 @@ const statusReducer = createReducer(initialState, (builder) => {
     .addCase(playerStatus, (state, { payload }) => ({
       ...state,
       ...payload,
+      // replaced, never merged: a lead-in that ended arrives as absent keys
+      // (JSON drops undefined), which a merge would read as still running
+      leadInEndsAt: (payload as PlayerLeadIn).leadInEndsAt,
+      leadInQueueId: (payload as PlayerLeadIn).leadInQueueId,
       isPlayerPresent: true,
     }))
 })

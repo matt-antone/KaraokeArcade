@@ -3,32 +3,33 @@ import clsx from 'clsx'
 import styles from './AnswerKey.css'
 
 /**
- * Six states, in the order a key passes through them:
+ * The states a key passes through:
  *
  *   open     lit, still takeable
- *   chosen   lit and held down — the one you pressed, answering still open
- *   closed   dark — a key you did not press, and can no longer press
- *   correct  lit and ringed — the answer
- *   wrong    dark — not the answer, and not yours either
- *   missed   its own colour turned down, still held down — not the answer, and yours
+ *   chosen   lit and ringed white — the one you pressed, answering still open
+ *   closed   lit but dimmed — one you did not press, and can no longer press
+ *   correct  the answer: ringed and glowing on the TV, ringed mint on a card
+ *   wrong    dark — not the answer (the TV's reveal)
+ *   right    lit and ringed yellow — yours, and the answer (a phone's card)
+ *   missed   dark and ringed magenta — yours, and not the answer (a card)
  *
  * `closed` and `missed` exist so a phone can always answer "which one did I
- * press?" without the guest holding it in their head: the moment you commit,
- * the other three go dark, and if you got it wrong yours stays down through
- * the reveal, still in its own colour, instead of vanishing into three
- * identical dark keys.
+ * press?" without the guest holding it in their head.
  */
-export type AnswerKeyState = 'open' | 'chosen' | 'closed' | 'correct' | 'wrong' | 'missed'
+export type AnswerKeyState = 'open' | 'chosen' | 'closed' | 'correct' | 'wrong' | 'right' | 'missed'
 
 interface AnswerKeyProps {
-  /** 0-3. Fixes the colour and the position, on every surface. */
+  /** 0-3. Fixes the colour, the letter and the position, on every surface. */
   index: number
-  /** The answer itself, on both surfaces now: a guest reads what they are
+  /** The answer itself, on every surface: a guest reads what they are
    *  choosing rather than looking up to find out. */
   label: string
-  /** 'player' is sized for a room, 'pad' for a hand. */
-  variant: 'player' | 'pad'
+  /** 'player' is the TV's row of four (12b/12c), 'pad' a phone's key (12e),
+   *  'card' a phone's result card (12f*). */
+  variant: 'player' | 'pad' | 'card'
   state?: AnswerKeyState
+  /** A word at the key's far end — "Your pick", "Answer". */
+  tag?: string
   disabled?: boolean
   onClick?: () => void
 }
@@ -38,23 +39,19 @@ interface AnswerKeyProps {
  * decided — the player screen and every phone render this same component, so
  * key 3 cannot come out yellow in one place and violet in the other.
  *
- * An arcade keycap: a solid palette fill with a bevel along its bottom edge.
- * The TV prints the key's letter beside the answer, because across a room the
- * letter is what people shout; the phone is thumbed at and carries the answer
- * alone. Position and colour still separate the four, and neither carries the
- * meaning alone — roughly one in twelve men cannot separate red from green,
- * and a phone in landscape moves the grid.
+ * A flat keycap in its answer's colour with its letter in Silkscreen. Letter
+ * and colour both separate the four, and neither carries the meaning alone.
  */
-const AnswerKey = ({ index, label, variant, state = 'open', disabled, onClick }: AnswerKeyProps) => (
+const AnswerKey = ({ index, label, variant, state = 'open', tag, disabled, onClick }: AnswerKeyProps) => (
   <button
     type='button'
     className={clsx(styles.key, styles[`k${index}`], styles[state], styles[variant])}
     disabled={disabled}
     onClick={onClick}
   >
-    {variant === 'player' && <span className={styles.letter} aria-hidden='true'>{'ABCD'[index]}</span>}
+    <span className={styles.letter} aria-hidden='true'>{'ABCD'[index]}</span>
     <span className={styles.label}>{label}</span>
-    {variant === 'player' && state === 'correct' && <span className={styles.tag}>correct</span>}
+    {tag && <span className={styles.tag}>{tag}</span>}
   </button>
 )
 

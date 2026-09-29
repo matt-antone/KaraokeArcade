@@ -1,15 +1,17 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router'
 import { useAppSelector } from 'store/hooks'
-import { Link } from 'react-router'
 import ArtistList from '../components/ArtistList/ArtistList'
 import SearchResults from '../components/SearchResults/SearchResults'
 import SongResults from '../components/SongResults/SongResults'
 import getSearchResults from '../selectors/getSearchResults'
+import Button from 'components/Button/Button'
 import TextOverlay from 'components/TextOverlay/TextOverlay'
 import Spinner from 'components/Spinner/Spinner'
 import styles from './LibraryView.css'
 
 const LibraryView = () => {
+  const navigate = useNavigate()
   const { isAdmin } = useAppSelector(state => state.user)
   const { isLoading, filterStr, filterStarred, tab } = useAppSelector(state => state.library)
   const songsResult = useAppSelector(state => state.songs.result)
@@ -39,27 +41,35 @@ const LibraryView = () => {
 
       {tab === 'artists' && isSearching && <SearchResults ui={ui} />}
 
-      {isLoading && <Spinner />}
+      {/* centred in the space between the tabs and the nav (04c) */}
+      <div className={styles.overlay}>
+        {isLoading && <Spinner />}
 
-      {!isLoading && songsResult.length === 0 && (
-        <TextOverlay className={styles.empty}>
-          <h1>Library Empty</h1>
-          {isAdmin && (
+        {!isLoading && songsResult.length === 0 && (
+          <TextOverlay className={styles.empty}>
+            <h1>Library empty</h1>
+            {isAdmin && (
+              <>
+                <p>Add media folders to get started.</p>
+                <Button variant='primary' cta onClick={() => navigate('/settings')}>
+                  Add media folders
+                </Button>
+              </>
+            )}
+          </TextOverlay>
+        )}
+
+        {!isLoading && hasNoMatches && (
+          <TextOverlay className={styles.empty}>
+            <h1>No match</h1>
             <p>
-              <Link to='/settings'>Add media folders</Link>
-              {' '}
-              to get started.
+              {filterStr.trim()
+                ? `Nothing matches “${filterStr.trim()}”. Check the spelling, or try the artist’s name.`
+                : 'No starred songs yet. Tap a ★ to keep one here.'}
             </p>
-          )}
-        </TextOverlay>
-      )}
-
-      {!isLoading && hasNoMatches && (
-        <TextOverlay className={styles.empty}>
-          <h1>No matches</h1>
-          <p>Try a different search, or clear the filters.</p>
-        </TextOverlay>
-      )}
+          </TextOverlay>
+        )}
+      </div>
     </>
   )
 }

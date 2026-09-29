@@ -3,7 +3,7 @@
   height: 100%;
   text-align: center;
   align-items: center;
-  padding: var(--gap-6) var(--gap-4);
+  padding: 0 32px;
 }
 
 .text {
@@ -12,18 +12,18 @@
 
   h1 {
     margin: 0 0 var(--gap-3);
-    font-family: var(--font-mono);
-    font-size: var(--text-s);
+    font-family: var(--font-display);
+    font-size: var(--display-m);
     font-weight: var(--weight-regular);
-    letter-spacing: var(--silkscreen-tracking);
-    text-transform: uppercase;
-    color: var(--ink-2);
+    color: var(--arc-yellow);
+    text-shadow: var(--text-shadow-hard);
+    --text-shadow-color: var(--arc-magenta);
   }
 
   p {
     margin: 0;
     font-size: var(--text-m);
-    color: var(--ink-3);
+    color: var(--ink-2);
     line-height: 1.6;
   }
 }

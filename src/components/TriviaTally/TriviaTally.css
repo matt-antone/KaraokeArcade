@@ -1,41 +1,54 @@
-/* The number, then what it counts, in one glance from the back of the room. */
+/* The number, then what it counts, in one glance from the back of the room.
+   The number bursts in yellow to pink and settles on its hard magenta drop. */
 .tally {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  font-family: var(--font-trivia);
-  text-transform: uppercase;
+  gap: 10px;
+  font-family: var(--font-display);
   line-height: 1;
 }
 
 .count {
+  font-weight: 700;
   color: var(--arc-yellow);
+  animation: valueburst .9s ease-out both;
 }
 
 .label {
   color: var(--arc-mint);
-  text-shadow: 0 0 16px rgba(126, 249, 208, .7);
 }
 
 .player {
   .count {
     font-size: 150px;
-    text-shadow: 0 0 30px rgba(255, 214, 0, .9), 8px 8px 0 var(--arc-magenta), 16px 16px 0 rgba(124, 58, 237, .6);
+    --text-shadow-color: var(--arc-magenta);
+    text-shadow: 8px 8px 0 var(--text-shadow-color);
   }
 
   .label {
-    font-size: 30px;
+    font-size: 28px;
   }
 }
 
 .pad {
   .count {
     font-size: 96px;
-    text-shadow: 0 0 22px rgba(255, 214, 0, .9), 5px 5px 0 var(--arc-magenta);
+    --text-shadow-color: var(--arc-magenta);
+    text-shadow: 5px 5px 0 var(--text-shadow-color);
   }
 
   .label {
     font-size: 18px;
   }
+}
+
+@keyframes valueburst {
+  0% { transform: scale(.3); opacity: 0; }
+  35% { transform: scale(1.4); opacity: 1; color: var(--arc-ring); text-shadow: var(--glow-burst); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .count { animation: none; }
 }

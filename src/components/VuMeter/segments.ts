@@ -1,25 +1,22 @@
-/** Fraction of the scale above which a lit segment reads as amber, not dim. */
-const HOT_FROM = 0.55
-
-type SegmentState = 'off' | 'dim' | 'hot' | 'peak'
+type SegmentState = 'off' | 'lit' | 'peak'
 
 /** Values arrive from live sources, so clamp rather than trusting the range. */
 export const clampValue = (value: number) =>
   Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0
 
 /**
- * Which state segment `i` takes. Colour is positional: where a segment sits on
- * the scale decides it, not the value — so the strip reads as a calibrated
- * register that fills, rather than a bar that changes colour as it grows.
+ * Which state segment `i` takes: the design's meter(n, lit, hot). The first
+ * round(value × segments) cells are lit; a lit cell at or past
+ * round(peakFrom × segments) is the peak. Colour is positional, so the strip
+ * reads as a calibrated register that fills. No peakFrom, no peak.
  */
 export function segmentState (
   i: number,
   segments: number,
   value: number,
-  peakFrom: number,
+  peakFrom?: number,
 ): SegmentState {
   if (i >= Math.round(clampValue(value) * segments)) return 'off'
-  const at = i / segments
-  if (at >= peakFrom) return 'peak'
-  return at >= HOT_FROM ? 'hot' : 'dim'
+  if (peakFrom !== undefined && i >= Math.round(peakFrom * segments)) return 'peak'
+  return 'lit'
 }

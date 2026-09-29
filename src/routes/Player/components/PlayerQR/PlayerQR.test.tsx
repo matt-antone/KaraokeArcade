@@ -3,7 +3,7 @@ import React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Provider } from 'react-redux'
 import { cleanup, render, screen } from '@testing-library/react'
-import type { QueueItem, IRoomPrefs } from 'shared/types'
+import type { IRoomPrefs } from 'shared/types'
 import PlayerQR from './PlayerQR'
 
 // react-qrcode-logo renders to a canvas, so the encoded value isn't readable
@@ -15,7 +15,6 @@ vi.mock('react-qrcode-logo', () => ({
 afterEach(cleanup)
 
 const prefs = { isEnabled: true, opacity: 1, password: '', size: 0.5 } as IRoomPrefs['qr']
-const queueItem = { queueId: 1 } as QueueItem
 
 // just enough store for the connected component's hooks. useSelector reads
 // via getState() on every render to check for changes, so it must keep
@@ -23,7 +22,6 @@ const queueItem = { queueId: 1 } as QueueItem
 // and loops forever.
 const makeStore = (serverUrl: string | undefined) => {
   const state = {
-    player: { isPlaying: false },
     user: { roomId: 7 },
     prefs: { serverUrl },
   }
@@ -38,7 +36,7 @@ const makeStore = (serverUrl: string | undefined) => {
 const renderQR = (serverUrl: string | undefined) => {
   render(
     <Provider store={makeStore(serverUrl)}>
-      <PlayerQR height={720} prefs={prefs} queueItem={queueItem} />
+      <PlayerQR height={720} prefs={prefs} />
     </Provider>,
   )
 

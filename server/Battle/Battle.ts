@@ -9,7 +9,6 @@ import {
   BATTLE_INVITE_MS,
   BATTLE_JUDGE_BALLOT_MS,
   BATTLE_JUDGE_MS,
-  BATTLE_LOGO_MS,
   BATTLE_JUDGING_DEFAULT,
   BATTLE_METER_MS,
   POINTS_BATTLE_TAKE_PART,
@@ -42,7 +41,7 @@ const log = getLogger('Battle')
  *  ceilings rather than durations: the song running out ends them early. And
  *  one of them, `judge`, is only the crowd path's length; see beatMs. */
 const BEAT_MS: Record<BattlePhase, number> = {
-  logo: BATTLE_LOGO_MS,
+  logo: 0, // never in BEATS any more; the union still names it
   versus: BATTLE_VERSUS_MS,
   intro1: BATTLE_INTRO_MS,
   sing1: BATTLE_SING_MS,
@@ -73,7 +72,7 @@ const beatMs = (phase: BattlePhase, judging: BattleJudging): number => (
 
 /** The beats a battle always runs, in order. The judging beats are spliced in
  *  before the last one — see JUDGING_BEATS. */
-const BEATS: BattlePhase[] = ['logo', 'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'winner']
+const BEATS: BattlePhase[] = ['versus', 'intro1', 'sing1', 'intro2', 'sing2', 'winner']
 
 /** What each way of deciding a fight costs in beats.
  *
@@ -100,7 +99,8 @@ const JUDGING_BEATS: Record<BattleJudging, BattlePhase[]> = {
  *  change during it. The per-beat payload is built by spreading this, which is
  *  what keeps every emit a fresh object — see the comment on advance. */
 type BattleFighters = Omit<BattleTurn,
-  'phase' | 'endsAt' | 'sentAt' | 'challengerScore' | 'opponentScore' | 'ballotsIn' | 'ballotsOf'>
+  'phase' | 'endsAt' | 'sentAt' | 'challengerScore' | 'opponentScore'
+  | 'challengerVotes' | 'opponentVotes' | 'ballotsIn' | 'ballotsOf'>
 
 interface ActiveBattle {
   queueId: number
@@ -125,19 +125,41 @@ interface ActiveBattle {
    *  part-way through and for matching an early end to the right beat. */
   turn: BattleTurn | null
   timer: ReturnType<typeof setTimeout> | null
+  /** The crowd path's last grade (meter2's) is in. It routinely lands a tick
+   *  after the verdict beat has started, and pay waits for it. */
+  isGraded: boolean
+  isPaid: boolean
 }
 
-/** Pay both fighters for a fight that reached its verdict: the winner the
- *  win, the loser for taking part, and both for taking part on a draw. Read
- *  at the end rather than when the verdict goes up, because the last grade can
- *  land after the verdict beat has started (see score). */
+/** Pay both fighters, once, for a fight that reached its verdict: the winner
+ *  the win, the loser for taking part, and both for taking part on a draw.
+ *
+ *  Paid as the verdict goes up, so the room's new totals land with it (13i,
+ *  13j). The one exception is the crowd path's last grade, which can arrive a
+ *  tick after the verdict beat has started: then pay waits for score() to
+ *  bring it, and the end of the beat pays regardless if it never comes. */
 function payFighters (io, roomId: number, active: ActiveBattle): void {
+  if (active.isPaid) return
+  active.isPaid = true
+
   const { challengerUserId, opponentUserId } = active.fighters
   const { challengerScore: one, opponentScore: two } = active
+  const pay = (userId: number, won: boolean) => (won
+    ? Points.add(roomId, userId, POINTS_BATTLE_WIN, 'battleWin')
+    : Points.add(roomId, userId, POINTS_BATTLE_TAKE_PART, 'battlePlay'))
 
-  Points.add(roomId, challengerUserId, one > two ? POINTS_BATTLE_WIN : POINTS_BATTLE_TAKE_PART)
-  Points.add(roomId, opponentUserId, two > one ? POINTS_BATTLE_WIN : POINTS_BATTLE_TAKE_PART)
+  pay(challengerUserId, one > two)
+  pay(opponentUserId, two > one)
   Points.push(io, roomId)
+}
+
+/** The ballot so far: votes each way, and how many are in. */
+const tally = (votes: Map<number, BattleSide>) => {
+  let challengerVotes = 0
+
+  for (const side of votes.values()) if (side === 1) challengerVotes++
+
+  return { challengerVotes, opponentVotes: votes.size - challengerVotes, ballotsIn: votes.size }
 }
 
 /** roomId to the battle it is running. The server owns every beat boundary:
@@ -503,7 +525,7 @@ class Battle {
    * picking a fighter is part of accepting on the opponent's phone, so it
    * arrives here rather than needing a round trip of its own.
    *
-   * Accepting stops the clock. The forty-five seconds is on the question, and
+   * Accepting stops the clock. The thirty seconds is on the question, and
    * the question has been answered — leaving it armed would take the fight
    * away from somebody thirty seconds into choosing the challenger's song,
    * with the library open in front of them and nothing on screen having warned
@@ -661,7 +683,7 @@ class Battle {
    * the caller before it gets here, so nothing awaits in the middle. It only
    * matters to a room set to crowd scoring, and a no there drops both metering
    * beats rather than running them against silence — along with the question
-   * they answer. A room on the default silent ballot never asks the player for
+   * they answer. A room on the default ballot never asks the player for
    * anything.
    *
    * Idempotent: a second call while a battle is running is a no-op, so two
@@ -699,6 +721,8 @@ class Battle {
       ballotsOf: Math.max(0, roomSize - 2),
       turn: null,
       timer: null,
+      isGraded: judging !== 'crowd',
+      isPaid: false,
     })
 
     return this.advance(io, roomId)
@@ -728,6 +752,7 @@ class Battle {
     const phase = active.beats[active.index]
 
     if (!phase) {
+      // a no-op unless the crowd's last grade never came
       payFighters(io, roomId, active)
       this.stopRoom(roomId)
 
@@ -744,7 +769,7 @@ class Battle {
       sentAt: Date.now(),
       challengerScore: active.challengerScore,
       opponentScore: active.opponentScore,
-      ballotsIn: active.votes.size,
+      ...tally(active.votes),
       ballotsOf: active.fighters.judging === 'ballot' ? active.ballotsOf : 0,
     }
     active.timer = setTimeout(() => this.advance(io, roomId), ms)
@@ -753,6 +778,9 @@ class Battle {
       type: BATTLE_TURN,
       payload: active.turn,
     })
+
+    // the verdict and the new totals land together
+    if (phase === 'winner' && active.isGraded) payFighters(io, roomId, active)
 
     return active.turn
   }
@@ -781,15 +809,10 @@ class Battle {
    * crowd-judged fight opens its metering with, where a phone tapping a name
    * would overwrite a grade the microphone is in the middle of measuring.
    *
-   * The count goes out, the split does not. Those are different facts and the
-   * design turns on the difference: the room has to see the ballot filling or
-   * it decides the feature is broken and stops voting, but a room that can see
-   * who is ahead stops judging who sang — the fighter three votes up collects
-   * the undecided, and the late half of the room votes with the crowd. So the
-   * beat is re-sent carrying ballotsIn and two scores still reading zero, and
-   * every cell it lights is identical to every other.
-   *
-   * The tally itself rides out on the verdict beat like any other grade.
+   * Every vote re-sends the beat with the live split (challengerVotes,
+   * opponentVotes) and the count, which the TV and the phones draw as the
+   * ballot fills (13h). The two scores stay 0 until the verdict beat carries
+   * the tally like any other grade.
    *
    * Silent on a refusal for the same reason score is: this is a tap on a phone
    * in a dark room, and a red banner for a vote that landed a half-second
@@ -801,30 +824,23 @@ class Battle {
     if (active.turn?.phase !== 'judge' || active.fighters.judging !== 'ballot') return
 
     // Neither fighter votes. They are in the room holding phones like everyone
-    // else, and a ballot nobody can see is exactly where voting for yourself
-    // would never be caught.
+    // else, and a ballot counts who sang, not who is in the fight.
     const { challengerUserId, opponentUserId } = active.fighters
     if (userId === challengerUserId || userId === opponentUserId) return
 
     active.votes.set(userId, side)
 
-    let challenger = 0
-    let opponent = 0
+    const votes = tally(active.votes)
 
-    for (const v of active.votes.values()) {
-      if (v === 1) challenger++
-      else opponent++
-    }
-
-    active.challengerScore = clampBattleScore(challenger)
-    active.opponentScore = clampBattleScore(opponent)
+    active.challengerScore = clampBattleScore(votes.challengerVotes)
+    active.opponentScore = clampBattleScore(votes.opponentVotes)
 
     // A fresh object rather than an edit of the one on stage, for the reason
     // advance() spells out: clients cache a clock-drift offset in a WeakMap
     // keyed on the payload, and a reused object is drawn against an offset
     // measured minutes ago. sentAt moves with it; endsAt deliberately does
     // not, because nothing about the deadline has changed.
-    active.turn = { ...active.turn, sentAt: Date.now(), ballotsIn: active.votes.size }
+    active.turn = { ...active.turn, sentAt: Date.now(), ...votes }
 
     io.to(Rooms.prefix(roomId)).emit('action', {
       type: BATTLE_TURN,
@@ -849,6 +865,9 @@ class Battle {
     if (side === 1) active.challengerScore = clampBattleScore(score)
     else active.opponentScore = clampBattleScore(score)
 
+    // meter2's grade is the crowd path's last
+    if (side === 2) active.isGraded = true
+
     active.turn = {
       ...active.turn,
       sentAt: Date.now(),
@@ -860,6 +879,9 @@ class Battle {
       type: BATTLE_TURN,
       payload: active.turn,
     })
+
+    // the grade the verdict was waiting on
+    if (active.turn.phase === 'winner' && active.isGraded) payFighters(io, roomId, active)
   }
 
   /**
@@ -883,7 +905,8 @@ class Battle {
     battles.delete(roomId)
 
     // skipped once the verdict is already on screen is a fight that finished:
-    // the room saw who won, so the fighters are paid for it
+    // the room saw who won, so the fighters are paid for it (a no-op unless
+    // the crowd's last grade never came)
     if (active.turn?.phase === 'winner') payFighters(io, roomId, active)
 
     io.to(Rooms.prefix(roomId)).emit('action', { type: BATTLE_TURN_CLEAR })

@@ -177,3 +177,41 @@ describe('validating a room', () => {
       .resolves.toBe(true)
   })
 })
+
+/**
+ * The TV's crowd and the trivia lobby draw how many people are in the room.
+ * The player display holds a socket like any phone, so it is left out, and one
+ * person on two devices is one singer.
+ */
+describe('counting the room', () => {
+  const sockets = [
+    { id: 'a', user: { userId: 1, roomId: 1 } },
+    { id: 'b', user: { userId: 2, roomId: 1 } },
+    { id: 'b2', user: { userId: 2, roomId: 1 } },
+    { id: 'tv', user: { userId: 1, roomId: 1 }, _lastPlayerStatus: { isPlaying: false } },
+    { id: 'elsewhere', user: { userId: 3, roomId: 2 } },
+    { id: 'signedOut', user: null },
+  ]
+  const fakeIo = () => {
+    const emitted: { target: string, type: string, payload: unknown }[] = []
+
+    return {
+      emitted,
+      of: () => ({ sockets: new Map(sockets.map(s => [s.id, s])) }),
+      to: (target: string) => ({ emit: (_e: string, a: { type: string, payload: unknown }) => emitted.push({ target, ...a }) }),
+    }
+  }
+
+  it('counts people, not sockets, and never the TV', () => {
+    expect(Rooms.countSingers(fakeIo(), 1)).toBe(2)
+    expect(Rooms.countSingers(fakeIo(), 2)).toBe(1)
+    expect(Rooms.countSingers(fakeIo(), 3)).toBe(0)
+  })
+
+  it('tells the room its count', () => {
+    const io = fakeIo()
+    Rooms.pushSingers(io, 1)
+
+    expect(io.emitted).toEqual([{ target: 'ROOM_ID_1', type: 'rooms/ROOM_SINGERS_PUSH', payload: { roomId: 1, count: 2 } }])
+  })
+})

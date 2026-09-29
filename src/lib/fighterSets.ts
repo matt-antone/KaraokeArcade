@@ -24,8 +24,16 @@ import {
  */
 type FighterSets = Partial<Record<BattleSingerLoop, SetSpec>>
 
+/** One fighter as listed: their sets, and the name and height their manifest
+ *  gives (server/Prefs/fighterSets.ts validates both). */
+interface FighterListing {
+  sets?: FighterSets
+  name?: string
+  height?: string
+}
+
 /** What the endpoint hands back, once per page load. */
-type Listing = Record<string, Record<string, FighterSets>>
+type Listing = Record<string, Record<string, FighterListing>>
 
 const api = new HttpApi('prefs')
 
@@ -77,7 +85,7 @@ const subscribe = (notify: () => void) => {
   }
 }
 
-/** Every fighter's sets. Empty until the listing lands. */
+/** Every fighter's sets, name and height. Empty until the listing lands. */
 export const useFighterListing = (): Listing =>
   useSyncExternalStore(subscribe, () => listing, () => NONE)
 
@@ -92,4 +100,4 @@ export const useFighterSet = (
   slug: string,
   loop: BattleSingerLoop,
   fallback: SetSpec = DEFAULT_SET,
-): SetSpec => useFighterListing()[group]?.[slug]?.[loop] ?? fallback
+): SetSpec => useFighterListing()[group]?.[slug]?.sets?.[loop] ?? fallback

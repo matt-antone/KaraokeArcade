@@ -38,7 +38,6 @@ describe('QueueBattleItem', () => {
   it('draws the fight as it was fought, not as the account now stands', () => {
     const { container } = render(
       <QueueBattleItem
-        isCurrent={false}
         isPlayed={false}
         challenger={fighter({ singerId: 'p1', avatarId: 'halloween/hex' })}
         opponent={fighter({ userId: 2, name: 'Barf', singerId: 'p2', avatarId: 'p8' })}
@@ -46,15 +45,14 @@ describe('QueueBattleItem', () => {
     )
 
     expect(srcs(container)).toEqual([
-      'assets/battle/fighters/default/belter/views/portrait-34.png',
-      'assets/battle/fighters/default/crooner/views/portrait-34.png',
+      'assets/battle/fighters/default/belter/views/portrait-80.png',
+      'assets/battle/fighters/default/crooner/views/portrait-80.png',
     ])
   })
 
   it('falls back to the account for a battle queued before the snapshot existed', () => {
     const { container } = render(
       <QueueBattleItem
-        isCurrent={false}
         isPlayed={false}
         challenger={fighter({ singerId: null, avatarId: 'halloween/hex' })}
         opponent={fighter({ userId: 2, name: 'Barf', singerId: '', avatarId: null })}
@@ -62,9 +60,9 @@ describe('QueueBattleItem', () => {
     )
 
     expect(srcs(container)).toEqual([
-      'assets/battle/fighters/halloween/hex/views/portrait-34.png',
+      'assets/battle/fighters/halloween/hex/views/portrait-80.png',
       // nothing to go on at all, which is the first playable fighter
-      'assets/battle/fighters/default/belter/views/portrait-34.png',
+      'assets/battle/fighters/default/belter/views/portrait-80.png',
     ])
   })
 })

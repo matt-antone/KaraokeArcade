@@ -1,50 +1,26 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import VuMeter from 'components/VuMeter/VuMeter'
 import styles from './Spinner.css'
 
 /**
- * The only loading indicator: a VU meter drifting at low level. Deliberately
- * close to the real meter, because on this panel "working" and "level" look
- * alike. It never reaches peak and never lights red — it is idle signal, not
- * activity. No spinner rings, no skeletons, no loading copy.
+ * The only loading indicator: the arcade "91 Loading" readout, the word in
+ * yellow Silkscreen over a 12-cell strip. The design draws the strip still,
+ * 7 of 12 lit, all amber (no peak): a register part-filled, not a spinner.
+ * No rings, no skeletons, no motion.
  */
-const LOW = 0.12
-const HIGH = 0.62
-const STEP = 0.08
-const TICK = 110
+const LIT = 7 / 12
 
-const Spinner = () => {
-  const [value, setValue] = useState(LOW)
-
-  useEffect(() => {
-    // A meter that drifts forever is exactly the kind of motion people set this
-    // preference to stop; hold it at a steady low reading instead.
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
-
-    let dir = 1
-    const id = setInterval(() => {
-      setValue((prev) => {
-        const next = prev + dir * STEP
-        if (next > HIGH || next < LOW) dir *= -1
-        return Math.max(LOW, Math.min(HIGH, next))
-      })
-    }, TICK)
-
-    return () => clearInterval(id)
-  }, [])
-
-  return (
-    <div className={styles.container} role='status'>
-      <span className={styles.label}>Loading</span>
-      <VuMeter
-        className={styles.meter}
-        value={value}
-        segments={16}
-        peakFrom={2}
-        height={14}
-      />
-    </div>
-  )
-}
+const Spinner = () => (
+  <div className={styles.container} role='status'>
+    <span className={styles.label}>Loading</span>
+    <VuMeter
+      className={styles.meter}
+      value={LIT}
+      segments={12}
+      height={14}
+      gap={3}
+    />
+  </div>
+)
 
 export default Spinner

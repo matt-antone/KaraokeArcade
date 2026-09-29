@@ -1,11 +1,119 @@
-/* Same shape as My Account above it: a silkscreen status line printed on the
-   faceplate, the control under it, and the key that acts last. */
+/* 08 My room: one baseline row, label left and the room with its Leave key
+   right. 08c is its own screen. */
 
-.rooms {
-  margin: var(--gap-3) 0;
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-size: var(--text-m);
+  color: var(--arc-magenta);
+}
+
+.current {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.roomName {
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.leave {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--radius-key);
+  font-family: var(--font-display);
+  font-size: var(--text-s);
+  color: var(--arc-magenta);
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--arc-magenta);
+  cursor: pointer;
 }
 
 .empty {
-  margin: var(--gap-3) 0 0;
-  color: var(--ink-2);
+  margin: 0;
+  font-size: var(--text-xl);
+  line-height: 1.4;
+  color: var(--arc-text-2);
+}
+
+/* 08c Leave room: the singer's stage dimmed behind a deep wash, and one
+   magenta card centred on it */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  /* a dialog sits in the top layer, over the global scanlines */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 9;
+    pointer-events: none;
+    background: var(--scanlines);
+  }
+}
+
+.location {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: .35; /* design-dim */
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--arc-deep) 70%, transparent);
+}
+
+.centre {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 24px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 20px;
+  background: var(--arc-surface);
+  --pixel-border-color: var(--arc-magenta);
+  box-shadow: var(--pixel-border);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  font-size: 32px;
+  line-height: 1.05;
+  color: var(--arc-magenta);
+  --text-shadow-color: var(--arc-deep);
+  text-shadow: var(--text-shadow-hard-4);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.body {
+  font-size: var(--text-xl);
+  line-height: 1.4;
+  color: var(--arc-text-2);
+  text-wrap: pretty;
 }

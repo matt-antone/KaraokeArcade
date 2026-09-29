@@ -38,8 +38,10 @@ export const battleTurn = (over: Partial<BattleTurn> = {}): BattleTurn => ({
   // 0 until the judging beat has finished
   challengerScore: 0,
   opponentScore: 0,
-  // Both 0 on every path but `ballot`, and the default here is a crowd-judged
-  // fight — a ballot test sets its own room size along with `judging`.
+  // All 0 on every path but `ballot`, and the default here is a crowd-judged
+  // fight — a ballot test sets its own votes and room size with `judging`.
+  challengerVotes: 0,
+  opponentVotes: 0,
   ballotsIn: 0,
   ballotsOf: 0,
   ...over,

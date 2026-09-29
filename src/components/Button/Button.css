@@ -28,12 +28,15 @@
   }
 }
 
-/* A key is raised: light top edge, dark bottom edge, cast shadow. The face is a
-   vertical gradient from its -hi to its -lo. Pressing travels the face 1px down
-   over --dur-key; that travel is the feedback, nothing flashes or scales. */
+/* Arcade keys: square, flat-filled, Silkscreen. A filled key is raised by a
+   hard light top edge and dark bottom edge; the default key is an outline on
+   the ground. Pressing travels the face 1px over --dur-key; that travel is
+   the feedback, nothing flashes or scales. Written in the design's case,
+   untracked. */
 .default,
 .primary,
-.danger {
+.danger,
+.yellow {
   /* a labelled key sets its glyph and label on one line, centred together.
      .container makes svg a block for bare icon keys, which would otherwise
      push the label onto a second line. */
@@ -43,9 +46,9 @@
   gap: var(--gap-2);
   padding: var(--gap-3);
   width: 100%;
+  font-family: var(--font-display);
   font-size: var(--text-m);
-  font-weight: var(--weight-bold);
-  box-shadow: var(--bevel);
+  font-weight: var(--weight-regular);
   border-radius: var(--radius-key);
   transition: transform var(--dur-key) var(--ease-key);
 
@@ -54,21 +57,41 @@
   }
 }
 
+/* secondary: an outlined key, no fill */
 .default {
-  color: var(--ink);
-  background-color: var(--key);
-  background-image: var(--key-face);
+  color: var(--ink-2);
+  background: transparent;
+  box-shadow: var(--well-deep);
 }
 
-/* on amber, text is near-black — ink on --vu is 1.85:1 and fails AA */
+/* on amber, text is near-black */
 .primary {
   color: var(--on-vu);
-  background-color: var(--vu);
-  background-image: var(--key-face-vu);
+  background: var(--vu);
+  box-shadow: var(--bevel-vu);
 }
 
 .danger {
-  color: var(--ink);
-  background-color: var(--alert-key-hi);
-  background-image: var(--key-face-alert);
+  color: var(--on-alert);
+  background: var(--alert);
+  box-shadow: var(--bevel-alert);
+}
+
+.yellow {
+  color: var(--arc-on-amber);
+  background: var(--arc-yellow);
+  box-shadow: var(--bevel-yellow);
+}
+
+/* the design's big full-width key (07d, 90, 07b, 02b, 08c, 12g) */
+.cta.primary,
+.cta.danger,
+.cta.yellow {
+  font-size: var(--text-2xl);
+  padding: 17px 0;
+}
+
+.cta.default {
+  font-size: var(--text-m);
+  padding: 15px 0;
 }

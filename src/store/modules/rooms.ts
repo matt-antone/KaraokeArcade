@@ -13,6 +13,7 @@ import {
   ROOM_SET_STATUS,
   ROOM_PREFS_PUSH,
   ROOM_STATUS_PUSH,
+  ROOM_SINGERS_PUSH,
   ROOM_PREFS_PUSH_REQUEST,
   TRIVIA_SCORES_RESET,
   LOGOUT,
@@ -89,6 +90,7 @@ export const closeRoomEditor = createAction(ROOM_EDITOR_CLOSE)
 export const filterByStatus = createAction<boolean | string>(ROOM_FILTER_STATUS)
 const roomPrefsPush = createAction<{ roomId: number, prefs: IRoomPrefs }>(ROOM_PREFS_PUSH)
 const roomStatusPush = createAction<{ roomId: number, status: RoomStatus }>(ROOM_STATUS_PUSH)
+const roomSingersPush = createAction<{ roomId: number, count: number }>(ROOM_SINGERS_PUSH)
 
 export function requestPrefsPush (roomId: number, prefs: IRoomPrefs): AppThunk {
   return (dispatch) => {
@@ -151,6 +153,9 @@ export interface RoomsState {
    * library on missing data.
    */
   myRoomStatus: RoomStatus | null
+  /** How many singers (phones, not the TV) are in this device's room right
+   *  now, as the server last counted them. */
+  singerCount: number
 }
 
 const initialState: RoomsState = {
@@ -164,6 +169,7 @@ const initialState: RoomsState = {
   filterStatus: false,
   isEditorOpen: false,
   myRoomStatus: null,
+  singerCount: 0,
 }
 
 const roomsReducer = createReducer(initialState, (builder) => {
@@ -201,6 +207,9 @@ const roomsReducer = createReducer(initialState, (builder) => {
       if (state.entities[payload.roomId]) {
         state.entities[payload.roomId].status = payload.status
       }
+    })
+    .addCase(roomSingersPush, (state, { payload }) => {
+      state.singerCount = payload.count
     })
     .addCase(LOGOUT, () => ({
       ...initialState,

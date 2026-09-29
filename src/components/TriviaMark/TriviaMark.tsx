@@ -31,10 +31,10 @@ const TriviaMark = ({ variant, isDim, className }: TriviaMarkProps) => {
     const isGlyph = variant === 'glyph'
     const sting = createTriviaSting(ref.current, { glyph: isGlyph, isDim })
 
-    // Michroma has to be resident before the nameplate is drawn, or the word
+    // Silkscreen has to be resident before the nameplate is drawn, or the word
     // comes out in the fallback and re-lays out when the face lands.
     if (!isGlyph) {
-      document.fonts.load('400 40px Michroma')
+      document.fonts.load('400 40px Silkscreen')
         .then(() => sting.play())
         .catch(() => sting.play())
     }

@@ -2,37 +2,33 @@ import React from 'react'
 import clsx from 'clsx'
 import styles from './Logo.css'
 
+/** Served by koa-static off the assets dir, relative so it follows <base href>. */
+const LOCKUP = 'assets/arcade/logo.svg'
+
 interface LogoProps {
-  /** Show the knob mark beside the wordmark. */
+  /** Show the full lockup: the token-in-slot mark beside the wordmark. */
   withMark?: boolean
-  /** Mark diameter in px. Below 28 it stops being legible. */
+  /** Lockup height in px. */
   markSize?: number
   className?: string
 }
 
 /**
- * Wordmark: KARAOKE in ink over ARCADE in amber, stacked, Michroma, tracked
- * .13em — two channel labels silkscreened on a faceplate. Never on a light
- * background, never on one line, never re-tracked.
- *
- * Both marks are CSS geometry. There is no logo image and none should be drawn.
+ * The KaraokeArcade logo. With the mark it is the approved lockup art
+ * (assets/arcade/logo.svg), which is trimmed tight — give it room, never edit
+ * it. Without, it is the wordmark set in Silkscreen: KARAOKE in ink, ARCADE in
+ * amber.
  */
-const Logo = ({ withMark, markSize = 36, className }: LogoProps) => (
+const Logo = ({ withMark, markSize = 30, className }: LogoProps) => (
   <div className={clsx(styles.container, className)} role='img' aria-label='KaraokeArcade'>
-    {withMark && (
-      <div
-        className={styles.mark}
-        aria-hidden='true'
-        style={{ '--mark-size': `${markSize}px` } as React.CSSProperties}
-      >
-        <div className={styles.markCap} />
-        <div className={styles.markIndex} />
-      </div>
-    )}
-    <span className={styles.title} aria-hidden='true'>
-      Karaoke
-      <span className={styles.subtitle}>Arcade</span>
-    </span>
+    {withMark
+      ? <img className={styles.lockup} src={LOCKUP} alt='' style={{ height: markSize }} />
+      : (
+          <span className={styles.title} aria-hidden='true'>
+            Karaoke
+            <span className={styles.subtitle}>Arcade</span>
+          </span>
+        )}
   </div>
 )
 

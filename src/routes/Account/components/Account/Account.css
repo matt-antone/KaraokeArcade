@@ -1,16 +1,164 @@
-/* the panel's status line: a label printed on the faceplate, so silkscreen */
-.signedInAs {
-  margin: 0 0 var(--gap-3);
+/* 08 My account: the hero card, then points tonight, then Profile. */
 
-  strong {
-    font-weight: var(--weight-regular);
-    color: var(--ink-2);
+/* A fixed card framed in amber: the singer's own stage, faded to the ground on
+   the left under the text, and their key pose standing off the right edge. */
+.hero {
+  position: relative;
+  flex: none;
+  height: 230px;
+  overflow: hidden;
+  background: var(--arc-surface);
+  --pixel-border-color: var(--arc-amber);
+  box-shadow: var(--pixel-border);
+}
+
+.location {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 80%;
+}
+
+.fade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--arc-ground) 94%, transparent) 0 40%,
+    color-mix(in srgb, var(--arc-ground) 0%, transparent) 70%
+  );
+}
+
+.keyArt {
+  position: absolute;
+  right: -50px;
+  bottom: -6px;
+  width: 264px;
+}
+
+.who {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-display);
+}
+
+.label {
+  font-size: var(--text-xs);
+  color: var(--arc-muted);
+}
+
+.name {
+  font-size: 20px;
+  color: var(--arc-text);
+  overflow-wrap: anywhere;
+}
+
+.singer {
+  font-size: var(--text-xs);
+  color: var(--arc-mint);
+}
+
+/* the yellow key, sized to its label */
+.change {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: var(--radius-key);
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--arc-on-amber);
+  background: var(--arc-yellow);
+  box-shadow: 0 -3px 0 var(--arc-ring), 0 3px 0 var(--arc-yellow-lo);
+  cursor: pointer;
+}
+
+/* 03 over everything: the screen the sign-in gate draws */
+.picker {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--arc-ground);
+
+  /* a dialog sits in the top layer, over the global scanlines */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    background: var(--scanlines);
   }
 }
 
-.btnContainer {
+/* the magenta section labels: Points tonight, Profile */
+.heading {
+  font-family: var(--font-display);
+  font-size: var(--text-m);
+  color: var(--arc-magenta);
+}
+
+.points {
   display: flex;
   flex-direction: column;
-  gap: var(--gap-2);
-  margin-top: var(--gap-3);
+  gap: 8px;
+}
+
+.pointsHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.pointsTotal {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  color: var(--arc-yellow);
+}
+
+.ledgerRow {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 2px solid var(--arc-surface);
+}
+
+.ledgerLabel {
+  flex: 1;
+  font-size: 15px;
+}
+
+.ledgerDetail {
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  color: var(--arc-muted);
+}
+
+.ledgerPts {
+  width: 56px;
+  text-align: right;
+  font-family: var(--font-display);
+  font-size: var(--text-m);
+  color: var(--arc-text);
+}
+
+.profile {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  /* the wells sit at the design's 10px, like the label above them */
+  & > form {
+    gap: 10px;
+  }
 }

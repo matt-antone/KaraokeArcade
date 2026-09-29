@@ -44,6 +44,8 @@ interface State {
 class Player extends React.Component<PlayerProps> {
   audioCtx: AudioContext | null = null
   audioGainNode: GainNode | null = null
+  /** Taps the gain node, so the 11b bar's meter reads what the room hears. */
+  analyser: AnalyserNode | null = null
   audioSourceNode: MediaElementAudioSourceNode | null = null
   isFetching = false // internal
 
@@ -65,6 +67,8 @@ class Player extends React.Component<PlayerProps> {
       this.audioCtx = new (window.AudioContext || window.webkitAudioContext)()
       this.audioGainNode = this.audioCtx.createGain()
       this.audioGainNode.connect(this.audioCtx.destination)
+      this.analyser = this.audioCtx.createAnalyser()
+      this.audioGainNode.connect(this.analyser)
     }
 
     this.updateVolume()

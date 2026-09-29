@@ -10,7 +10,9 @@ type ButtonBaseProps = {
   className?: string
   icon?: React.ComponentProps<typeof Icon>['icon']
   size?: number
-  variant?: 'primary' | 'danger' | 'default'
+  variant?: 'primary' | 'danger' | 'default' | 'yellow'
+  /** The design's big full-width key: 18px (14px on a default key). */
+  cta?: boolean
   as?: ButtonElementType
 }
 
@@ -28,6 +30,7 @@ const Button = <E extends ButtonElementType = 'button'>({
   onClick,
   size,
   variant,
+  cta,
   as,
   ...rest
 }: ButtonProps<E>) => {
@@ -40,7 +43,7 @@ const Button = <E extends ButtonElementType = 'button'>({
 
   const commonProps = {
     onClick: onClick as React.MouseEventHandler<HTMLElement>,
-    className: clsx(styles.container, styles[variant], className),
+    className: clsx(styles.container, styles[variant], cta && styles.cta, className),
     ...rest,
   }
 

@@ -1,0 +1,314 @@
+/* The fighters' phones and the shared verdict: Arcade Flow v2 13e, 13e2,
+   13j, 13j2 and 13j3. Challenger red, opponent green. */
+
+.one {
+  --side: var(--arc-red);
+  color: var(--side);
+}
+
+.two {
+  --side: var(--arc-green);
+  color: var(--side);
+}
+
+.location {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 80%;
+}
+
+/* --- 13e / 13e2 · singing now ------------------------------------------ */
+
+.onHead {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px 24px 0;
+}
+
+.chip {
+  padding: 4px 8px;
+  font-family: var(--font-display);
+  font-size: var(--text-m);
+}
+
+.chip.one {
+  background: var(--arc-red);
+  color: var(--arc-on-amber);
+}
+
+.chip.two {
+  background: var(--arc-green);
+  color: var(--arc-ink-mint);
+}
+
+.youreOn {
+  --text-shadow-color: var(--arc-magenta);
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: var(--weight-bold);
+  line-height: 1.1;
+  color: var(--arc-gold);
+  text-align: center;
+  text-shadow: var(--text-shadow-hard-4);
+}
+
+.youreOnTwo {
+  line-height: 1.05;
+}
+
+.songTitle {
+  font-size: 20px;
+  font-weight: var(--weight-semibold);
+}
+
+.songArtist {
+  font-size: 15px;
+  color: var(--arc-muted);
+}
+
+.stage {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  margin-top: 16px;
+}
+
+.groundOne {
+  background: var(--arc-stage-p1);
+}
+
+.groundTwo {
+  background: var(--arc-stage-p2);
+}
+
+.dimHalf {
+  opacity: .5; /* design-dim */
+}
+
+/* the sing sheet at 560, standing on the stage's foot, centred */
+.bigSprite {
+  left: 50%;
+  bottom: -8px;
+  margin-left: -280px;
+}
+
+.singFoot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 24px 32px;
+}
+
+.singRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.singCue {
+  font-family: var(--font-display);
+  font-size: var(--text-s);
+  color: var(--arc-muted);
+}
+
+.singClock {
+  font-family: var(--font-display);
+  font-size: var(--text-l);
+}
+
+.hp {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 3px;
+}
+
+.hpCell {
+  height: 14px;
+  background: var(--arc-surface-hover);
+}
+
+.hpOne {
+  background: var(--arc-red);
+}
+
+.hpTwo {
+  background: var(--arc-green);
+}
+
+/* --- 13j / 13j2 / 13j3 · the verdict ------------------------------------ */
+
+.resultStage {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  margin-top: 16px;
+}
+
+.dimResult {
+  opacity: .55; /* design-dim */
+}
+
+.keyArt {
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  height: 560px;
+  transform: translateX(-50%);
+}
+
+.resultHead {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.headline {
+  font-family: var(--font-display);
+  font-weight: var(--weight-bold);
+  text-align: center;
+  text-shadow: var(--text-shadow-hard-4);
+}
+
+.youWin {
+  --text-shadow-color: var(--arc-magenta);
+  font-size: 52px;
+  line-height: 1;
+  color: var(--arc-yellow);
+}
+
+.ko {
+  --text-shadow-color: var(--arc-deep);
+  font-size: 64px;
+  line-height: 1.05;
+  color: var(--arc-magenta);
+}
+
+/* {NAME}<br>WINS, the name set in capitals as the design draws it */
+.wins {
+  --text-shadow-color: var(--arc-magenta);
+  font-size: 32px;
+  line-height: 1.05;
+  color: var(--arc-yellow);
+  text-transform: uppercase;
+}
+
+.versus {
+  font-family: var(--font-display);
+  font-size: var(--display-s);
+  color: var(--arc-text);
+}
+
+/* undesigned: a draw has no winner to name */
+.drawLine {
+  padding: 0 32px;
+  font-size: var(--text-xl);
+  line-height: 1.4;
+  color: var(--arc-text-2);
+  text-align: center;
+}
+
+.stats {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 24px 0;
+}
+
+.statRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.statName {
+  flex: none;
+  width: 92px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-size: var(--text-s);
+}
+
+.statNameNarrow {
+  width: 64px;
+}
+
+.statBar {
+  flex: 1;
+  height: 14px;
+  background: var(--arc-surface-hover);
+}
+
+.statFill {
+  height: 100%;
+  background: var(--side);
+}
+
+.statCount {
+  flex: none;
+  width: 24px;
+  font-family: var(--font-display);
+  font-size: var(--text-m);
+  text-align: right;
+}
+
+.statCountWide {
+  width: 28px;
+}
+
+.line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.lineGap {
+  margin-top: 6px;
+}
+
+.lineLabel {
+  font-family: var(--font-display);
+  font-size: var(--text-s);
+  color: var(--arc-muted);
+}
+
+.award {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  color: var(--arc-mint);
+}
+
+.tonight {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  color: var(--arc-yellow);
+}
+
+.yourVote {
+  font-family: var(--font-display);
+  font-size: var(--text-m);
+  color: var(--arc-mint);
+}
+
+.yourVoteMissed {
+  color: var(--arc-text-2);
+}
+
+.resultFoot {
+  flex: none;
+  padding: 20px 24px 32px;
+}

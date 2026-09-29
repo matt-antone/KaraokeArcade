@@ -453,9 +453,20 @@ describe('trivia answers and scores', () => {
       { userId: BOB, name: 'Bob', score: 0, numAnswered: 1, avatarId: null },
     ])
 
-    // and onto the night's board, where a wrong answer is not a row at all
+    // and onto the night's board as trivia, where a wrong answer is not a row
+    // at all
     expect(Points.get(ROOM_ID)).toEqual([
-      { userId: ALICE, name: 'Alice', points: 100, avatarId: null },
+      {
+        userId: ALICE,
+        name: 'Alice',
+        points: 100,
+        avatarId: null,
+        sings: 0,
+        battleWins: 0,
+        battlePlays: 0,
+        triviaPoints: 100,
+        triviaRounds: 0,
+      },
     ])
   })
 
@@ -693,6 +704,79 @@ describe('a round of several questions', () => {
     expect(lastResult.isFinal).toBe(true)
     expect(lastResult.endsAt - lastResult.scoresFrom)
       .toBeGreaterThan(midResult.endsAt - midResult.scoresFrom)
+  })
+
+  /** Answer the question on stage: right for the given users, wrong for the rest. */
+  const answerAll = (round: { roundId: number, answers: string[] }, right: number[], wrong: number[] = []) => {
+    const correct = round.answers.indexOf('right')
+
+    for (const userId of right) Trivia.answer({ roomId: ROOM_ID, userId, roundId: round.roundId, answerIdx: correct })
+    for (const userId of wrong) Trivia.answer({ roomId: ROOM_ID, userId, roundId: round.roundId, answerIdx: (correct + 1) % 4 })
+  }
+
+  it('puts the round\'s standings on the final result, and only there', async () => {
+    db.run('UPDATE users SET avatarId = ? WHERE userId = ?', ['halloween/hex', CAROL])
+    let round = await start()
+
+    // Q1-Q4: Bob gets them all, Carol two, Alice none but plays
+    for (let i = 1; i < TRIVIA_QUESTIONS_PER_ROUND; i++) {
+      answerAll(round, i <= 2 ? [BOB, CAROL] : [BOB], i <= 2 ? [ALICE] : [ALICE, CAROL])
+
+      const mid = io()
+      Trivia.closeQuestion(mid, ROOM_ID)
+
+      // per question the room hears how many got it, never a standings board
+      expect((mid.emitted[0].payload as TriviaResult).standings).toEqual([])
+      round = Trivia.askQuestion(io(), ROOM_ID)!
+    }
+
+    answerAll(round, [BOB])
+    const last = io()
+    Trivia.closeQuestion(last, ROOM_ID)
+    const result = last.emitted[0].payload as TriviaResult
+
+    // every question here is 'easy' (100): this round's points, x of 5, and
+    // the one who answered nothing right still has a row
+    expect(result.isFinal).toBe(true)
+    expect(result.standings).toEqual([
+      { userId: BOB, name: 'Bob', avatarId: null, points: 500, numCorrect: 5 },
+      { userId: CAROL, name: 'Carol', avatarId: 'halloween/hex', points: 200, numCorrect: 2 },
+      { userId: ALICE, name: 'Alice', avatarId: null, points: 0, numCorrect: 0 },
+    ])
+
+    // and the round is on each player's ledger, pushed with the result
+    expect(Points.get(ROOM_ID).map(e => [e.name, e.triviaRounds, e.triviaPoints]))
+      .toEqual([['Bob', 1, 500], ['Carol', 1, 200], ['Alice', 1, 0]])
+    expect(last.emitted.map(e => e.type)).toContain(POINTS_PUSH)
+  })
+
+  it('ties on points by name, and starts every round from nothing', async () => {
+    const first = await start()
+    answerAll(first, [CAROL, ALICE])
+    Trivia.closeRound(io(), ROOM_ID)
+
+    for (const q of ['q7', 'q8']) addQuestion(q)
+    const second = await Trivia.startRound(fakeIo(), ROOM_ID, Queue.getPendingTriviaId(ROOM_ID)!)!
+    answerAll(second, [CAROL, BOB])
+
+    const last = io()
+    Trivia.closeRound(last, ROOM_ID)
+
+    // Alice sat the second round out, so she is not in its standings; Carol's
+    // first-round points do not carry into it, so she ties Bob and sorts after
+    expect((last.emitted[0].payload as TriviaResult).standings.map(s => [s.name, s.points]))
+      .toEqual([['Bob', 100], ['Carol', 100]])
+  })
+
+  it('counts a round skipped mid-reveal as played', async () => {
+    const first = await start()
+    answerAll(first, [ALICE])
+    Trivia.closeQuestion(io(), ROOM_ID)
+
+    // the KJ skips while the answer is on screen: no final result goes up
+    Trivia.closeRound(io(), ROOM_ID)
+
+    expect(Points.get(ROOM_ID).find(e => e.userId === ALICE)).toMatchObject({ triviaRounds: 1, triviaPoints: 100 })
   })
 
   it('ends the whole round when the room stops caring', async () => {

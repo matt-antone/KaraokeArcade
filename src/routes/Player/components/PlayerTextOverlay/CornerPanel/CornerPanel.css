@@ -1,63 +1,85 @@
-/* Solid, never transparent: a deck's faceplate is opaque, and the video behind
-   it would eat the type otherwise. Top-right, so lyrics keep the lower two-thirds. */
+/* 11b · the playing bar, up for the whole song. The video sits inset below it,
+   so it is deep at 85% rather than solid. Sized in vh from the design's
+   540px-tall TV: 1px there is 0.1852vh here. */
 .panel {
   position: absolute;
-  /* set by PlayerTextOverlay: steps down while the fullscreen key is up */
-  top: var(--corner-panel-top, 2vh);
-  right: 2vh;
-  transition: top var(--dur-ui) var(--ease-key);
-  max-width: 46vw;
-  padding: 1.4vh 2vh;
-  background: var(--brush);
-  border: var(--hair-rule);
-  border-radius: var(--radius-panel);
-  box-shadow: var(--bevel);
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 2.96vh;
+  height: 11.11vh;
+  padding: 0 5.19vh;
+  background: color-mix(in srgb, var(--arc-deep) 85%, transparent);
+  color: var(--arc-text);
 }
 
-/* one ink level up from the .silkscreen utility's --ink-3: this is read from
-   across the room, not from a phone in your hand. Nested so it outranks the
-   global utility without changing it. */
-.panel .label {
-  font-size: 1.1vh;
-  margin-bottom: 0.5vh;
-  color: var(--ink-2);
+.logo {
+  display: block;
+  flex: none;
+  height: 2.96vh;
+}
+
+.rule {
+  flex: none;
+  width: 0.37vh;
+  height: 4.07vh;
+  background: var(--arc-line);
+}
+
+.singer,
+.time,
+.nextLabel,
+.nextName {
+  flex: none;
+  font-family: var(--font-display);
 }
 
 .singer {
-  font-family: var(--font-body);
-  font-size: 2vh;
-  font-weight: var(--weight-semibold);
-  color: var(--ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.vu {
-  color: var(--vu);
+  font-size: 2.59vh;
+  color: var(--arc-amber);
 }
 
 .song {
-  margin-top: 0.6vh;
-  padding-top: 0.6vh;
-  border-top: var(--hair-rule);
-}
-
-/* a song title always shows in full: it wraps, it never ellipsises */
-.title {
+  flex: 1;
+  min-width: 0;
   font-family: var(--font-body);
-  font-size: 1.6vh;
-  font-weight: var(--weight-medium);
-  line-height: 1.25;
-  text-wrap: pretty;
-  color: var(--ink);
-}
-
-.artist {
-  font-family: var(--font-body);
-  font-size: 1.4vh;
-  color: var(--ink-2);
+  font-size: 2.78vh;
+  font-weight: var(--weight-semibold);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.artist {
+  font-weight: var(--weight-regular);
+  color: var(--arc-text-2);
+}
+
+.meter {
+  flex: none;
+  width: 22.22vh;
+}
+
+.time {
+  font-size: 2.22vh;
+  color: var(--arc-text-2);
+}
+
+.nextLabel {
+  font-size: 2.04vh;
+  color: var(--arc-muted);
+}
+
+.nextAvatar {
+  flex: none;
+  width: 4.44vh;
+  height: 4.44vh;
+  margin: 0;
+}
+
+.nextName {
+  font-size: 2.04vh;
+  color: var(--arc-mint);
 }

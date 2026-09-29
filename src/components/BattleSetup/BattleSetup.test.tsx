@@ -6,23 +6,19 @@ import { MemoryRouter } from 'react-router'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { UnknownAction } from '@reduxjs/toolkit'
 import { battleInvite, battleSinger } from 'lib/battleFixtures'
-import { BATTLE_PICK_MODE_EXIT } from 'shared/actionTypes'
-import type { BattleInvite, BattleSinger } from 'shared/types'
+import { BATTLE_CANCEL, BATTLE_PICK_MODE_EXIT } from 'shared/actionTypes'
+import { BATTLE_INVITE_MS } from 'shared/types'
+import type { BattleInvite, BattleSinger, LeaderboardEntry } from 'shared/types'
 import BattleSetup from './BattleSetup'
 
 /**
- * The challenger's four steps, and the two ways out of them.
+ * The challenger's phone: 13a (pick your opponent), 13a2 (challenge sent) and
+ * 13a3 (no contest).
  *
- * What is asserted here is the negotiation, not the arcade: that the selection
- * is never empty (a dead NEXT is a dead end), that the room is the whole
- * population and search cannot reach past it, that nothing leaves this device
- * before CONFIRM, and that confirming carries BOTH halves of what was chosen —
- * the opponent and the singer. The singer is the half that is easy to drop,
- * because it was picked three steps earlier and nothing on the confirm screen
- * would look wrong without it.
- *
- * Every step change runs under an iris that lands its patch 170ms in, so the
- * clock is driven by hand throughout.
+ * What is asserted is the negotiation, not the arcade: that nothing leaves
+ * this device before a song is picked, that picking carries BOTH halves of the
+ * choice — the opponent and the singer — and that the room is the whole
+ * population.
  */
 
 afterEach(cleanup)
@@ -30,50 +26,54 @@ afterEach(cleanup)
 const ME = 1
 const THEM = 2
 
-/** Past the iris cover and the burst, so a step change has fully landed. */
-const settle = () => act(() => {
-  vi.advanceTimersByTime(500)
-})
-
 interface FakeState {
   isOpen?: boolean
   outcome?: 'accepted' | 'declined' | 'timeout' | null
   singers?: BattleSinger[]
   invite?: BattleInvite | null
+  leaderboard?: Partial<LeaderboardEntry>[]
 }
 
-const open = ({ isOpen = true, outcome = null, singers = [], invite = null }: FakeState) => {
+const open = ({ isOpen = true, outcome = null, singers = [], invite = null, leaderboard = [] }: FakeState) => {
   const dispatched: UnknownAction[] = []
   const closed: true[] = []
 
+  let state = {
+    battle: { singers, pending: null as BattleSinger | null, invite },
+    user: { userId: ME, name: 'MIRA_K', roomId: 5 as number | null, avatarId: 'p1' },
+    rooms: { entities: { 5: { name: 'Loveshack' } } },
+    points: { leaderboard },
+  }
+  const listeners = new Set<() => void>()
   const store = {
-    getState: () => ({
-      battle: { singers, pending: null as BattleSinger | null, invite },
-      user: { userId: ME, name: 'MIRA_K', roomId: null as number | null, avatarId: 'p1' },
-      rooms: { entities: {} },
-    }),
-    subscribe: () => () => {},
+    getState: () => state,
+    subscribe: (listener: () => void) => {
+      listeners.add(listener)
+      return () => listeners.delete(listener)
+    },
     dispatch: (action: UnknownAction) => {
       dispatched.push(action)
       return action
     },
   }
 
-  render(
+  const tree = (props: { outcome: FakeState['outcome'] }) => (
     <Provider store={store as never}>
       <MemoryRouter>
-        <BattleSetup isOpen={isOpen} outcome={outcome} onClose={() => closed.push(true)} />
+        <BattleSetup isOpen={isOpen} outcome={props.outcome} onClose={() => closed.push(true)} />
       </MemoryRouter>
-    </Provider>,
+    </Provider>
   )
+  const { rerender } = render(tree({ outcome }))
 
-  return { dispatched, closed }
-}
+  /** The server answering: the invite goes, and CoreLayout reports why. */
+  const answer = (next: FakeState['outcome']) => act(() => {
+    state = { ...state, battle: { ...state.battle, invite: null } }
+    listeners.forEach(listener => listener())
+    rerender(tree({ outcome: next }))
+  })
 
-/** Step one to the opponent list, which is where most of this lives. */
-const toOpponents = () => {
-  fireEvent.click(screen.getByRole('button', { name: 'PICK OPPONENT' }))
-  settle()
+  return { dispatched, closed, answer }
 }
 
 describe('BattleSetup', () => {
@@ -83,141 +83,160 @@ describe('BattleSetup', () => {
 
   afterEach(() => vi.useRealTimers())
 
-  it('opens on the account\'s own fighter, with nothing to pick first', () => {
-    open({})
+  it('opens on 13a: the room, with tonight\'s points beside each face', () => {
+    open({
+      singers: [battleSinger({ userId: THEM, name: 'D_TEES' }), battleSinger({ userId: 3, name: 'SAL' })],
+      leaderboard: [{ userId: THEM, points: 2800 }],
+    })
 
-    // The flow is one step shorter than it was: who you sing as is settled at
-    // sign-in, so a challenge starts by stating it rather than asking for it.
-    expect(screen.getByText('YOU SING AS')).toBeTruthy()
-    expect(screen.getByText('BELTER')).toBeTruthy()
-    expect(screen.queryByText(/PICK A\s*SINGER/)).toBeNull()
-  })
-
-  it('offers the room, and nothing outside it', () => {
-    open({ singers: [battleSinger({ userId: THEM, name: 'D_TEES' }), battleSinger({ userId: 3, name: 'SAL' })] })
-    toOpponents()
-
+    expect(screen.getByText('BATTLE')).toBeTruthy()
+    expect(screen.getByText('Singer battle')).toBeTruthy()
+    expect(screen.getByText('Pick your opponent')).toBeTruthy()
+    expect(screen.getByText('You pick the song they sing. They pick yours.')).toBeTruthy()
+    expect(screen.getByText('Here now')).toBeTruthy()
+    expect(screen.getByText('2')).toBeTruthy()
     expect(screen.getByRole('button', { name: /D_TEES/ })).toBeTruthy()
-    expect(screen.getByText('2 OF 2')).toBeTruthy()
-
-    // search filters that list; an empty result is a fact about the room
-    fireEvent.change(screen.getByPlaceholderText('SEARCH THE ROOM'), { target: { value: 'zz' } })
-    expect(screen.getByText(/NOBODY HERE BY THAT NAME/)).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /D_TEES/ })).toBeNull()
+    expect(screen.getByText('Tonight 2800')).toBeTruthy()
+    // somebody not on the board yet has earned nothing tonight
+    expect(screen.getByText('Tonight 0')).toBeTruthy()
   })
 
-  it('shows the room as faces, and carries the opponent\'s onto the versus plate', () => {
+  it('shows the room as faces', () => {
     // Picking somebody out of a dark room by reading a list of handles is the
-    // thing the avatar is for -- and the plate on the next step has to be the
-    // same person, or the confirm screen is describing a different fight.
+    // thing the avatar is for.
     open({
       singers: [
         battleSinger({ userId: THEM, name: 'D_TEES', avatarId: 'halloween/hex' }),
         battleSinger({ userId: 3, name: 'SAL', avatarId: 'p4' }),
       ],
     })
-    toOpponents()
 
-    const rowArt = () => Array.from(document.querySelectorAll('img'))
-      .map(img => img.getAttribute('src'))
+    const art = Array.from(document.querySelectorAll('img')).map(img => img.getAttribute('src'))
 
-    expect(rowArt()).toContain('assets/battle/fighters/halloween/hex/views/portrait-34.png')
-    expect(rowArt()).toContain('assets/battle/fighters/default/diva/views/portrait-34.png')
-
-    fireEvent.click(screen.getByRole('button', { name: /D_TEES/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'BATTLE D_TEES' }))
-    settle()
-
-    expect(rowArt()).toContain('assets/battle/fighters/halloween/hex/views/portrait-80.png')
+    expect(art).toContain('assets/battle/fighters/halloween/hex/views/portrait-80.png')
+    expect(art).toContain('assets/battle/fighters/default/diva/views/portrait-80.png')
   })
 
-  it('will not send a challenge to nobody', () => {
+  it('will not send a challenge to nobody, and marks the one picked', () => {
     open({ singers: [battleSinger({ userId: THEM, name: 'D_TEES' })] })
-    toOpponents()
 
-    const key = screen.getByRole('button', { name: 'PICK SOMEONE IN THE ROOM' })
-    expect((key as HTMLButtonElement).disabled).toBe(true)
+    const next = screen.getByRole('button', { name: 'Next · pick their song' }) as HTMLButtonElement
+    expect(next.disabled).toBe(true)
 
     fireEvent.click(screen.getByRole('button', { name: /D_TEES/ }))
-    expect(screen.getByRole('button', { name: 'BATTLE D_TEES' })).toBeTruthy()
+
+    expect(next.disabled).toBe(false)
+    expect(screen.getByRole('button', { name: /D_TEES/ }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByText('✓')).toBeTruthy()
   })
 
   it('carries both halves of the choice into the library', () => {
     const { dispatched, closed } = open({ singers: [battleSinger({ userId: THEM, name: 'D_TEES' })] })
 
-    toOpponents()
     fireEvent.click(screen.getByRole('button', { name: /D_TEES/ }))
-    fireEvent.click(screen.getByRole('button', { name: 'BATTLE D_TEES' }))
-    settle()
-
-    expect(screen.getByText('YOUR SINGER')).toBeTruthy()
-    expect(screen.getByText('BELTER')).toBeTruthy()
 
     // nothing has left the device yet: a half-formed challenge is nobody's
     expect(dispatched).toEqual([])
 
-    fireEvent.click(screen.getByRole('button', { name: 'CONFIRM' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Next · pick their song' }))
 
-    // the opponent and the singer, together — see the note at the top. Both
-    // ride into pick mode because the challenge is not thrown here: the song
-    // is chosen in the library, and by then this screen is gone. The singer
-    // comes off the account rather than off a grid shown three steps ago.
+    // the opponent and the singer, together. Both ride into pick mode because
+    // the challenge is not thrown here: the song is chosen in the library.
     expect(dispatched).toHaveLength(1)
     expect(dispatched[0].payload).toMatchObject({ singer: { userId: THEM }, singerId: 'p1' })
-
-    // and the screen gets out of the way of the song picking it just started
-    act(() => {
-      vi.advanceTimersByTime(1200)
-    })
     expect(closed).toEqual([true])
   })
 
-  it('sends nothing when it is called off', () => {
-    const { dispatched, closed } = open({ singers: [battleSinger()] })
+  it('draws one key under the list, as 13a does', () => {
+    open({ singers: [battleSinger()] })
 
-    fireEvent.click(screen.getByRole('button', { name: 'CANCEL' }))
-    act(() => {
-      vi.advanceTimersByTime(1200)
-    })
+    expect(screen.getByRole('button', { name: 'Next · pick their song' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Back to songs' })).toBeNull()
+  })
 
-    expect(screen.queryByText(/NOTHING SENT/)).toBeTruthy()
+  it('says so when there is nobody to fight, and its one key backs out sending nothing', () => {
+    const { dispatched, closed } = open({ singers: [] })
+
+    expect(screen.getByText(/Nobody else is here yet/)).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Next · pick their song' })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to songs' }))
+
     expect(dispatched).toEqual([])
     expect(closed).toEqual([true])
   })
 
-  it('offers another go when the answer is no', () => {
-    open({ isOpen: false, outcome: 'declined', singers: [battleSinger({ userId: THEM, name: 'D_TEES' })], invite: battleInvite({ opponentName: 'D_TEES' }) })
+  it('waits on 13a2 once the challenge is out, and can call it off', () => {
+    const { dispatched } = open({
+      isOpen: false,
+      invite: battleInvite({ challengerUserId: ME, opponentName: 'loudlucy', expiresAt: Date.now() + 24_000 }),
+    })
 
-    expect(screen.getByText('D_TEES PASSED')).toBeTruthy()
+    expect(screen.getByText('Loveshack')).toBeTruthy()
+    expect(screen.getByText('Sent')).toBeTruthy()
+    expect(screen.getByText(/CHALLENGE/)).toBeTruthy()
+    expect(screen.getByText('Waiting for loudlucy')).toBeTruthy()
+    expect(screen.getByText('0:24')).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('button', { name: 'PICK SOMEONE ELSE' }))
-    settle()
+    act(() => {
+      vi.advanceTimersByTime(4_000)
+    })
+    expect(screen.getByText('0:20')).toBeTruthy()
 
-    // back into the room rather than back to the start: the singer was never
-    // the thing that was turned down
-    expect(screen.getByText('HERE TONIGHT')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel challenge' }))
+    expect(dispatched.map(a => a.type)).toEqual([BATTLE_CANCEL])
   })
 
-  it('tells a no-answer apart from a no', () => {
-    open({ isOpen: false, outcome: 'timeout', invite: battleInvite() })
+  it('is not the waiting screen on the phone being asked', () => {
+    open({ isOpen: false, invite: battleInvite({ challengerUserId: THEM, opponentUserId: ME }) })
 
-    expect(screen.getByText(/THE INVITE RAN OUT/)).toBeTruthy()
+    expect(screen.queryByText('Waiting for Barf')).toBeNull()
+  })
+
+  it('offers another go when the answer is no', () => {
+    const { answer } = open({
+      isOpen: false,
+      singers: [battleSinger({ userId: THEM, name: 'D_TEES' })],
+      invite: battleInvite({ challengerUserId: ME, opponentName: 'D_TEES', expiresAt: Date.now() + BATTLE_INVITE_MS }),
+    })
+
+    expect(screen.getByText('Waiting for D_TEES')).toBeTruthy()
+    answer('declined')
+
+    // the invite is gone by now, and 13a3 still names who passed
+    expect(screen.getByText(/CONTEST/)).toBeTruthy()
+    expect(screen.getByText('Declined')).toBeTruthy()
+    expect(screen.getByText('D_TEES')).toBeTruthy()
+    expect(screen.getByText(/passed on this one\. Challenges expire after 30 seconds without an answer\./)).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pick someone else' }))
+
+    // back into the room: the singer was never the thing that was turned down
+    expect(screen.getByText('Pick your opponent')).toBeTruthy()
+  })
+
+  it('says the same thing when nobody answered', () => {
+    const { answer } = open({ isOpen: false, invite: battleInvite({ challengerUserId: ME }) })
+    answer('timeout')
+
+    expect(screen.getByText(/CONTEST/)).toBeTruthy()
+    expect(screen.getByText(/Challenges expire after 30 seconds/)).toBeTruthy()
   })
 
   it('stays shut when nothing is happening', () => {
     open({ isOpen: false })
-    expect(screen.queryByRole('button', { name: 'NEXT' })).toBeNull()
+    expect(screen.queryByRole('button')).toBeNull()
   })
 
-  it('is not the surface once the answer has been read', () => {
-    // BATTLE_PICK_MODE_EXIT is the library's way out, not this screen's — the
-    // assertion here is only that dismissing an outcome closes rather than
-    // sending anything
-    const { dispatched, closed } = open({ isOpen: false, outcome: 'accepted', invite: battleInvite({ isAccepted: true }) })
+  it('draws nothing once the challenge is accepted', () => {
+    // BATTLE_PICK_MODE_EXIT is the library's way out, not this screen's
+    const { dispatched } = open({
+      isOpen: false,
+      outcome: 'accepted',
+      invite: battleInvite({ challengerUserId: ME, isAccepted: true }),
+    })
 
-    fireEvent.click(screen.getByRole('button', { name: 'DONE' }))
-
-    expect(closed).toEqual([true])
+    expect(screen.queryByRole('button')).toBeNull()
     expect(dispatched.map(a => a.type)).not.toContain(BATTLE_PICK_MODE_EXIT)
   })
 })

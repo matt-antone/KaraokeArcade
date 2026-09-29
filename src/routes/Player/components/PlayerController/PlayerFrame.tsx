@@ -34,13 +34,16 @@ import type { BattleVideoRect } from '../PlayerBattle/battleVideoRect'
  * a singing beat, the whole display the rest of the time. Nothing about Player
  * or the video element is torn down between them.
  */
-const PlayerFrame = ({ rect, width, height, children }: {
+const PlayerFrame = ({ rect, width, height, className, children }: {
   rect: BattleVideoRect | null
   width: number
   height: number
+  /** 11b's amber frame (styles.framed) around an ordinary song. */
+  className?: string
   children: React.ReactNode
 }) => (
   <div
+    className={className}
     style={{
       position: 'absolute',
       left: rect ? rect.left : 0,

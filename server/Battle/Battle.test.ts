@@ -39,18 +39,19 @@ import {
   BATTLE_INVITE_MS,
   BATTLE_JUDGE_BALLOT_MS,
   BATTLE_JUDGE_MS,
-  BATTLE_LOGO_MS,
   BATTLE_METER_MS,
   BATTLE_SING_MS,
   BATTLE_VERSUS_MS,
+  BATTLE_WINNER_MS,
 } from '../../shared/types.js'
+import { POINTS_PUSH } from '../../shared/actionTypes.js'
 import type { BattlePhase, BattleTurn } from '../../shared/types.js'
 
 /** How far into a battle each beat starts, summed from the beat lengths rather
  *  than written as the round number they currently add up to. The round numbers
  *  were wrong the first time a beat changed length, and a test that walks to the
  *  wrong beat fails somewhere far from the thing that moved. */
-const TO_SING1 = BATTLE_LOGO_MS + BATTLE_VERSUS_MS + BATTLE_INTRO_MS
+const TO_SING1 = BATTLE_VERSUS_MS + BATTLE_INTRO_MS
 const TO_JUDGE = TO_SING1 + BATTLE_SING_MS + BATTLE_INTRO_MS + BATTLE_SING_MS
 
 const ROOM_ID = 1
@@ -279,7 +280,7 @@ describe('the challenge', () => {
       })
       await Battle.accept(io, ROOM_ID, BOB, 'p2')
 
-      // the forty-five seconds is on the question, and Bob answered it. He is
+      // the thirty seconds is on the question, and Bob answered it. He is
       // now in the library choosing what Alice sings, with nothing on screen
       // that ever warned him he was against a clock.
       await vi.advanceTimersByTimeAsync(BATTLE_INVITE_MS * 2)
@@ -473,21 +474,24 @@ describe('the beats', () => {
     return (winner.sentAt - judge.sentAt) / 1000
   }
 
-  it('runs eight beats by default, with no metering beat', async () => {
+  it('runs seven beats by default, with no metering beat', async () => {
     const io = fakeIo()
 
     // The room pref is absent, which is every room made before there was a
     // choice — and the answer has to be the one that works on a player opened
     // anywhere, not the one that needs the host's own microphone.
     //
-    // Eight, not nine: asking the room and counting the room are one screen,
-    // so `judge` is the whole judging section here and there is no separate
-    // ballot beat behind it.
+    // Seven: the title card is the opening of the versus scene rather than a
+    // beat of its own, and asking the room and counting the room are one
+    // screen, so `judge` is the whole judging section here.
     const turns = await runBattle(io, true)
 
     expect(phases(turns)).toEqual([
-      'logo', 'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'judge', 'winner',
+      'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'judge', 'winner',
     ])
+
+    // one ~9s scene: lockup out, VS, "Get ready" 05-01, BEGIN
+    expect(turns[0].endsAt - turns[0].sentAt).toBe(9000)
 
     // and that one beat is exactly the two metering beats it replaces, which
     // is what lets an operator flip the setting without re-planning the night.
@@ -495,14 +499,14 @@ describe('the beats', () => {
     expect(judgingSecs(turns)).toBe(30)
   })
 
-  it('runs all ten beats when the room asked for crowd noise and the player can hear it', async () => {
+  it('runs all nine beats when the room asked for crowd noise and the player can hear it', async () => {
     const io = fakeIo()
     setJudging('crowd')
 
     const turns = await runBattle(io, true)
 
     expect(phases(turns)).toEqual([
-      'logo', 'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'judge', 'meter1', 'meter2', 'winner',
+      'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'judge', 'meter1', 'meter2', 'winner',
     ])
 
     // thirty seconds of metering, the same as the ballot path's one beat, plus
@@ -525,7 +529,7 @@ describe('the beats', () => {
     // question they answer, which on its own is five seconds of asking who
     // wins immediately before announcing a nil-all draw
     expect(phases(await runBattle(io, false))).toEqual([
-      'logo', 'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'winner',
+      'versus', 'intro1', 'sing1', 'intro2', 'sing2', 'winner',
     ])
   })
 
@@ -542,6 +546,74 @@ describe('the beats', () => {
 
     expect(pointsOf(BOB)).toBe(1000)
     expect(pointsOf(ALICE)).toBe(250)
+
+    // and onto the ledger: a win is a win, not also a battle played
+    const board = Points.get(ROOM_ID)
+    expect(board.find(e => e.userId === BOB)).toMatchObject({ battleWins: 1, battlePlays: 0 })
+    expect(board.find(e => e.userId === ALICE)).toMatchObject({ battleWins: 0, battlePlays: 1 })
+  })
+
+  it('pays as the verdict goes up, so the new totals land with it', async () => {
+    const io = fakeIo()
+    queueSong(ALICE)
+    await negotiate(io, { queueId: 1 })
+
+    Battle.startTurn(io, ROOM_ID, 1, false)
+    Battle.score(io, ROOM_ID, 1, 1, 3)
+    io.emitted.length = 0
+
+    // up to the verdict: nothing paid yet
+    await vi.advanceTimersByTimeAsync(TO_JUDGE + BATTLE_JUDGE_BALLOT_MS - 1)
+    expect(Battle.getTurn(ROOM_ID)?.phase).toBe('judge')
+    expect(pointsOf(ALICE)).toBeUndefined()
+
+    await vi.advanceTimersByTimeAsync(1)
+    expect(Battle.getTurn(ROOM_ID)?.phase).toBe('winner')
+    expect(pointsOf(ALICE)).toBe(1000)
+    expect(pointsOf(BOB)).toBe(250)
+
+    // the verdict beat, then the board it changed
+    expect(io.emitted.slice(-2).map(e => e.type)).toEqual([BATTLE_TURN, POINTS_PUSH])
+
+    // and never paid twice, however the fight ends
+    await vi.advanceTimersByTimeAsync(BATTLE_WINNER_MS)
+    expect(pointsOf(ALICE)).toBe(1000)
+    expect(io.emitted.filter(e => e.type === POINTS_PUSH)).toHaveLength(1)
+  })
+
+  it('waits for the crowd\'s last grade when it lands after the verdict', async () => {
+    const io = fakeIo()
+    setJudging('crowd')
+    queueSong(ALICE)
+    await negotiate(io, { queueId: 1 })
+
+    Battle.startTurn(io, ROOM_ID, 1, true)
+    await vi.advanceTimersByTimeAsync(TO_JUDGE + BATTLE_JUDGE_MS + 1000) // into meter1
+    Battle.score(io, ROOM_ID, 1, 1, 40)
+
+    // meter2's grade is reported as its beat finishes, which is the instant
+    // the verdict goes up here: paying on the verdict alone would pay Alice
+    // the win on a 40-0 that was really 40-90
+    await vi.advanceTimersByTimeAsync(BATTLE_METER_MS * 2)
+    expect(Battle.getTurn(ROOM_ID)?.phase).toBe('winner')
+    expect(pointsOf(ALICE)).toBeUndefined()
+
+    Battle.score(io, ROOM_ID, 1, 2, 90)
+    expect(pointsOf(BOB)).toBe(1000)
+    expect(pointsOf(ALICE)).toBe(250)
+  })
+
+  it('pays at the end of the verdict if the crowd\'s last grade never comes', async () => {
+    const io = fakeIo()
+    setJudging('crowd')
+    queueSong(ALICE)
+    await negotiate(io, { queueId: 1 })
+
+    Battle.startTurn(io, ROOM_ID, 1, true)
+    await vi.advanceTimersByTimeAsync(600000)
+
+    expect(pointsOf(ALICE)).toBe(250)
+    expect(pointsOf(BOB)).toBe(250)
   })
 
   it('pays both for taking part on a draw, and nobody for a fight skipped before its verdict', async () => {
@@ -640,7 +712,7 @@ describe('the beats', () => {
     expect(Battle.getTurn(ROOM_ID)?.phase).toBe('intro2')
   })
 
-  it('counts the ballot silently and hands the tally to the verdict', async () => {
+  it('shows the room the split as the ballot fills, and hands the tally to the verdict', async () => {
     const io = fakeIo()
     queueSong(ALICE)
     await negotiate(io, { queueId: 1 })
@@ -656,17 +728,14 @@ describe('the beats', () => {
     Battle.vote(io, ROOM_ID, 1, ALICE, 1) // a fighter voting for herself: ignored
     Battle.vote(io, ROOM_ID, 1, BOB, 2) // and the other one
 
-    // The count goes out and the split does not — the two facts the whole
-    // design turns on. A room that cannot see the ballot filling decides the
-    // feature is broken; a room that can see who is ahead stops judging who
-    // sang. So every re-send carries a rising ballotsIn and two scores still
-    // reading zero.
+    // Every re-send carries the live split per side (13h draws it on the TV
+    // and the phones) and the count; the scores stay 0 until the verdict.
     const open = io.emitted.map(e => e.payload as BattleTurn)
 
     // Two re-sends, not four: the two fighters were turned away before they
-    // reached the count, and Carol changing her mind replaced her vote rather
-    // than adding one — so the room is told "one in" twice and never "two".
-    expect(open.map(p => p.ballotsIn)).toEqual([1, 1])
+    // reached the count, and Carol changing her mind moved her vote rather
+    // than adding one.
+    expect(open.map(p => [p.challengerVotes, p.opponentVotes, p.ballotsIn])).toEqual([[0, 1, 1], [1, 0, 1]])
     expect(open.every(p => p.phase === 'judge')).toBe(true)
     expect(open.every(p => p.challengerScore === 0 && p.opponentScore === 0)).toBe(true)
 
@@ -677,6 +746,7 @@ describe('the beats', () => {
     expect(turn?.phase).toBe('winner')
     expect(turn?.challengerScore).toBe(1)
     expect(turn?.opponentScore).toBe(0)
+    expect(turn?.challengerVotes).toBe(1)
 
     // and a vote after the beat has closed is not a vote
     Battle.vote(io, ROOM_ID, 1, CAROL, 2)

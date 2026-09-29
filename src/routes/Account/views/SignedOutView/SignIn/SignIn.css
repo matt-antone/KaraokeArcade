@@ -1,9 +1,85 @@
-.container {
+/* The sign-in and reset forms. Lifted from Arcade Flow v2, 02 and 02b: tall
+   dark wells in a column 28px in from each edge, a flex spacer, and the keys
+   pinned to the bottom of the screen. */
+
+/* 02's fields, then the start button at the foot */
+.form {
+  flex: 1 0 auto;
   display: flex;
   flex-direction: column;
-  gap: var(--gap-2);
+  gap: 12px;
+  margin: 22px 28px 0;
+}
 
-  button {
-    margin-top: var(--gap-2);
-  }
+.form input,
+.fields input {
+  height: 52px;
+  padding: 0 16px;
+  font-size: var(--text-xl);
+  box-shadow: var(--well-deep);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.cta {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 32px;
+}
+
+/* a quiet way out, read as a sentence rather than pressed as a key */
+.link {
+  align-self: center;
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--arc-text-2);
+  cursor: pointer;
+}
+
+/* 02b: its own screen, no logo */
+.reset {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.heading {
+  margin: 40px 0 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: var(--weight-regular);
+  color: var(--arc-text);
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 28px 28px 0;
+}
+
+.label {
+  margin-top: 10px;
+  font-family: var(--font-display);
+  font-size: var(--text-s);
+  color: var(--arc-magenta);
+}
+
+.question {
+  margin: 0;
+  font-size: var(--text-xl);
+}
+
+.keys {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 24px 32px;
 }

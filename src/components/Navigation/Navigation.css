@@ -1,35 +1,38 @@
-/* The bottom nav: a brushed panel seamed to the chassis, at the base of the
-   footer stack that CoreLayout pins there. A selected tab is marked by a 2px
-   amber edge rule along its top, not by a glow — on is amber, off is dim
-   graphite. */
+/* The bottom tab bar: a surface panel ruled off from the screen, at the base of
+   the footer stack that CoreLayout pins there. One glyph per tab, painted
+   through a mask so the colour is the state — amber when on, disabled
+   violet when off. */
 
 .container {
   display: flex;
   width: 100%;
-  background: var(--brush);
-  box-shadow: var(--edge-bottom);
+  background: var(--arc-surface);
+  border-top: 2px solid var(--arc-surface-hover);
 
   a {
     flex: 1;
     display: grid;
     place-items: center;
-    min-height: var(--nav-bar);
-    color: var(--ink-5);
-    border-top: 2px solid transparent;
+    /* the design's 64px cell is content-box: +6px bottom pad = 70px (72px bar) */
+    min-height: calc(var(--nav-bar) + var(--gap-2));
+    padding-bottom: var(--gap-2);
+    color: var(--arc-disabled);
   }
 
-  span {
-    display: flex;
-    justify-content: center;
-
-    svg {
-      height: var(--icon-l);
-    }
-  }
-
-  /* on is amber, and the edge rule lights with it */
   a.active {
-    color: var(--vu);
-    border-top-color: var(--vu);
+    color: var(--arc-amber);
   }
+}
+
+.icon {
+  display: block;
+  width: var(--icon-l);
+  height: var(--icon-l);
+  background: currentcolor;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
 }

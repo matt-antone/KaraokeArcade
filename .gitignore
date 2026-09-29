@@ -61,3 +61,6 @@ work/
 # design handoff bundle: the art it needs is lifted into assets/arcade/
 KaraokeArcadeRedesign/
 Karaoke Arcade Redesign.zip
+
+# local overrides for npm run dev (e.g. KES_PATH_DATA for a test clone)
+.env

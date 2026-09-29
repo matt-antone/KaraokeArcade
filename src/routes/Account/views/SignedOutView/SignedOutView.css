@@ -1,16 +1,31 @@
-/* Join as. Lifted from Arcade Flow v2, 02. The HUD and the logo above are
-   the header's; this is the column under them. The gutter comes from
-   AccountView's column. Width in CSS, not JS: two thirds of the reading
-   column, never narrower than a form field's 340px. */
-.container {
-  max-width: max(340px, min(66vw, calc(var(--content-max) * 0.66)));
-  margin: 0 auto;
-  padding: 0 var(--gap-2) 4px;
-  overflow: hidden;
+/* Join as. Lifted from Arcade Flow v2, 02 (and the 02b shell). */
+
+/* The cabinet's own full-screen shell, like the token gate in front of it:
+   HUD, logo, the column, then the start button pinned to the foot. It
+   scrolls rather than squeezes when a New user's fields outgrow a short
+   phone. Nothing in it shrinks; the spacers take up the slack. */
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden auto;
+  background-color: var(--arc-ground);
+
+  & > * {
+    flex-shrink: 0;
+  }
+}
+
+.logo {
+  display: block;
+  width: 220px;
+  margin: 28px auto 0;
 }
 
 .heading {
-  margin: var(--gap-6) 0 var(--gap-5);
+  margin: 32px 0 0;
   text-align: center;
   font-family: var(--font-display);
   font-size: 26px;
@@ -18,19 +33,30 @@
   color: var(--arc-text);
 }
 
+.rooms {
+  margin: 24px 28px 0;
+}
+
+/* everything under the logo that belongs to joining: grows to the foot */
+.join {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
 /* the three ways in, as menu keys */
 .modes {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-bottom: 22px;
+  margin: 24px 28px 0;
 }
 
 .mode {
   display: flex;
   align-items: center;
-  gap: var(--gap-4);
-  min-height: 56px;
+  gap: 14px;
+  height: 56px;
   padding: 0 18px;
   border: none;
   background-color: var(--arc-surface);
@@ -48,25 +74,52 @@
 }
 
 .modeOn {
+  --pixel-border-color: var(--arc-yellow);
+
   background-color: var(--arc-surface-hover);
   color: var(--arc-yellow);
-  box-shadow:
-    0 -3px 0 var(--arc-yellow),
-    0 3px 0 var(--arc-yellow),
-    -3px 0 0 var(--arc-yellow),
-    3px 0 0 var(--arc-yellow);
+  box-shadow: var(--pixel-border-3);
 }
 
-/* the menu cursor: a hard pixel triangle, only on the pick */
+/* the menu cursor, in the design's 14px slot: a hard pixel triangle (the
+   design's ▶ is an emoji codepoint), only on the pick */
 .cursor {
   flex: none;
-  width: 10px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
 }
 
 .modeOn .cursor {
   background-color: var(--arc-yellow);
   clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+/* New user and Guest: the shared account form, laid out as 02's column */
+.create {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+
+  & > form {
+    flex: 1 0 auto;
+    margin: 22px 28px 0;
+  }
+}
+
+.spacer {
+  flex: 1;
+}
+
+.cta {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 32px;
+}
+
+/* the account form nudges its submit key down; the start button sits flush */
+.create .cta button[type='submit'] {
+  margin-top: 0;
 }
 
 .hidden {

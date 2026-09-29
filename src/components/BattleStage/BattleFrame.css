@@ -1,45 +1,9 @@
-/* The cabinet the two negotiating phones are looking at: Arcade Flow v2, 13a
-   and 13b.
-
-   Every colour is a variables.css token and src/styles/arcade-rules.test.ts
-   holds this file to that like any other. What is declared here is not a
-   palette but a set of ROLES — which token plays the card, the rule, the
-   local player — read by every screen inside the frame, so BattleSetup,
-   BattleInvite and the shared pieces between them cannot drift onto a fifth
-   grey. The names predate the redesign and are kept because
-   BattleSingerSelect.css reads them too. */
+/* A battle phone screen: Arcade Flow v2 2d, 390 x 844, deep ground, one
+   column. Above the fixed bottom chrome (CoreLayout.css .footer, 99): this is
+   a takeover of the karaoke interface, not a layer inside it. */
 .screen {
-  --arc-inset: var(--arc-deep);
-  --arc-card: var(--arc-surface);
-  --arc-panel: var(--arc-surface);
-  --arc-tile: var(--arc-surface-hover);
-  --arc-row-on: var(--arc-surface-hover);
-  --arc-hair: var(--arc-surface-hover);
-  --arc-rule: var(--arc-line);
-  --arc-quiet: var(--arc-disabled);
-  --arc-ink: var(--arc-text);
-  --arc-one: var(--arc-red);
-  --arc-two: var(--arc-green);
-
-  /* Whichever of the two the local player is. Every primary key, selection
-     ring and name plate on this phone reads from it, so retinting the
-     opponent's side of the feature is this one declaration and not a second
-     copy of every screen. The challenger's phone wears the battle key's gold
-     (13a); the opponent's wears their green (13b). */
-  --arc-mine: var(--arc-gold);
-  --arc-mine-ink: var(--arc-ink-yellow);
-
-  /* Where the last touch landed, in the screen's own coordinates. The iris and
-     every arriving screen grow out of it — see useBattleIris. Centre until a
-     thumb says otherwise, which is what an arrival with no touch behind it
-     wants anyway. */
-  --fx-x: 50%;
-  --fx-y: 50%;
-
   position: fixed;
   inset: 0;
-  /* above the fixed bottom chrome (CoreLayout.css .footer, 99): this is a
-     modal over the karaoke interface, not a layer inside it */
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -49,189 +13,19 @@
   font-family: var(--font-body);
 }
 
-/* The opponent's side of the same machine. */
-.two {
-  --arc-mine: var(--arc-two);
-  --arc-mine-ink: var(--arc-ink-mint);
-}
-
-/* The 4px bar across the top of every battle phone: gold on the challenger's,
-   green on the opponent's. */
-.accent {
+.bar {
   flex: none;
   height: 4px;
-  background-color: var(--arc-mine);
 }
 
-.header {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 16px 20px 0;
-}
+.gold { background-color: var(--arc-gold); }
+.red { background-color: var(--arc-red); }
+.green { background-color: var(--arc-green); }
+.mint { background-color: var(--arc-mint); }
+.grey { background-color: var(--arc-disabled); }
 
-/* A whole target wide, and only present when there is a step behind: a back
-   key that does nothing is worse than no back key, because it is the one
-   control a person presses without looking. */
-.back {
-  flex: none;
-  width: var(--target);
-  height: var(--target);
-  margin-left: -12px;
-  padding: 0;
-  border: none;
-  background: none;
-  font-family: var(--font-display);
-  font-size: 24px;
-  color: var(--arc-muted);
-  cursor: pointer;
-
-  &:active {
-    color: var(--arc-text);
-  }
-
-  &:focus-visible {
-    outline: var(--focus-outline);
-    outline-offset: -4px;
-  }
-}
-
-.headerText {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-/* Kept for the markup's sake: the header now carries its own 20px inset on
-   both screens, so there is nothing extra to add when the back key is gone. */
-.headerTextInset {
-  padding-left: 0;
-}
-
-/* Which player this phone is, in that player's colour: the one fact on the
-   header that differs between the two phones. */
-.eyebrow {
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  color: var(--arc-one);
-}
-
-.two .eyebrow {
-  color: var(--arc-two);
-}
-
-/* BATTLE, 13a: Silkscreen 700 in the battle key's gold, stamped with its own
-   hard brown drop rather than lit. */
-.wordmark {
-  --text-shadow-color: var(--arc-gold-shadow);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-display);
-  font-size: var(--display-m);
-  font-weight: var(--weight-bold);
-  line-height: 1.1;
-  color: var(--arc-gold);
-  text-shadow: var(--text-shadow-hard);
-}
-
-.pips {
-  flex: none;
-  display: flex;
-  gap: 4px;
-}
-
-.pip {
-  width: 18px;
-  height: 6px;
-  background-color: var(--arc-surface-hover);
-}
-
-.pipDone {
-  background-color: var(--arc-mine);
-}
-
-.cancel {
-  flex: none;
-  min-height: var(--target);
-  margin-right: -8px;
-  padding: 0 8px;
-  border: none;
-  background: none;
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  color: var(--arc-muted);
-  cursor: pointer;
-
-  &:active {
-    color: var(--arc-text);
-  }
-
-  &:focus-visible {
-    outline: var(--focus-outline);
-    outline-offset: -4px;
-  }
-}
-
-/* The CRT wash every screen in the redesign carries. */
-.scanlines {
-  position: absolute;
-  inset: 0;
-  z-index: 40;
-  pointer-events: none;
-  background: var(--scanlines);
-}
-
-.fx {
-  position: absolute;
-  inset: 0;
-  z-index: 45;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-/* Both halves of the burst start as the same 24px block at the touch point
-   and are scaled out from it, so the growth is GPU transform rather than
-   layout and a mid-flight step change cannot make it stutter. Square, like
-   every other corner in the cabinet: a pixel iris. */
-.iris,
-.ring {
-  position: absolute;
-  left: var(--fx-x);
-  top: var(--fx-y);
-  width: 24px;
-  height: 24px;
-  margin: -12px 0 0 -12px;
-}
-
-.iris {
-  animation: battle-iris-out 460ms steps(8, end) forwards;
-}
-
-.ring {
-  border: 3px solid;
-  animation: battle-ring-out 460ms steps(8, end) forwards;
-}
-
-@keyframes battle-iris-out {
-  0% { transform: scale(0); opacity: 1; }
-  55% { opacity: 1; }
-  100% { transform: scale(58); opacity: 0; }
-}
-
-@keyframes battle-ring-out {
-  0% { transform: scale(0.2); opacity: 1; }
-  100% { transform: scale(26); opacity: 0; }
-}
-
-/* The swap still happens under the iris; only the growth is skipped. */
-@media (prefers-reduced-motion: reduce) {
-  .iris,
-  .ring {
-    animation: none;
-    opacity: 0;
-  }
-}
+.goldInk { color: var(--arc-gold); }
+.redInk { color: var(--arc-red); }
+.greenInk { color: var(--arc-green); }
+.mintInk { color: var(--arc-mint); }
+.greyInk { color: var(--arc-disabled); }

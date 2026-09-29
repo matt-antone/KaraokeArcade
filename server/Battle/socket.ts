@@ -230,7 +230,7 @@ const ACTION_HANDLERS = {
     Battle.songEnded(sock.server, roomId, payload.queueId, toSide(payload.side))
     acknowledge({ type: BATTLE_SONG_ENDED + _SUCCESS })
   },
-  // One phone's vote in a silent ballot. Battle.vote ignores anything that is
+  // One phone's vote in a ballot. Battle.vote ignores anything that is
   // not the judging beat of a ballot-judged battle actually running, so a tap
   // that lands after the beat closed costs nothing and says nothing.
   //

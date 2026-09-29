@@ -3,7 +3,7 @@ import React from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { configureStore, type UnknownAction } from '@reduxjs/toolkit'
 import { Provider } from 'react-redux'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, useLocation } from 'react-router'
 import { ensureState } from 'redux-optimistic-ui'
 import type { Socket } from 'socket.io-client'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
@@ -39,7 +39,9 @@ const queueState = (pausedUserIds: number[] = []) => queuePush({
   pausedUserIds,
 } as unknown as Parameters<typeof queuePush>[0])
 
-const renderHeader = () => {
+const Where = () => <output data-testid='where'>{useLocation().pathname}</output>
+
+const renderHeader = (path = '/') => {
   const emitted: UnknownAction[] = []
   const socket = {
     on: () => {},
@@ -60,7 +62,10 @@ const renderHeader = () => {
 
   render(
     <Provider store={store}>
-      <MemoryRouter><Header /></MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
+        <Header />
+        <Where />
+      </MemoryRouter>
     </Provider>,
   )
 
@@ -74,6 +79,8 @@ describe('YourTurn pause against the real store', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Pause my songs' }))
 
     expect(emitted).toEqual([expect.objectContaining({ type: QUEUE_PAUSE, payload: { isPaused: true } })])
+    // II goes to the queue, where the hold is shown (07c)
+    expect(screen.getByTestId('where').textContent).toBe('/queue')
     // sitting out is recorded on the server; nothing local has moved yet
     expect(ensureState(store.getState().queue).pausedUserIds).toEqual([])
     expect(screen.getByRole('button', { name: 'Pause my songs' })).toBeTruthy()
@@ -88,11 +95,13 @@ describe('YourTurn pause against the real store', () => {
 
     expect(ensureState(store.getState().queue).pausedUserIds).toEqual([USER_ID])
     expect(screen.getByText('Paused')).toBeTruthy()
-    expect(screen.getByText('you are out of the rotation')).toBeTruthy()
+    expect(screen.getByText('1 song on hold')).toBeTruthy()
 
     // the toggle now reads the other way, which is the state having reached it
     fireEvent.click(screen.getByRole('button', { name: 'Resume my songs' }))
     expect(emitted).toEqual([expect.objectContaining({ type: QUEUE_PAUSE, payload: { isPaused: false } })])
+    // resuming lands on the queue too (07)
+    expect(screen.getByTestId('where').textContent).toBe('/queue')
   })
 
   it('leaves another singer\'s pause alone', () => {
@@ -157,8 +166,35 @@ describe('YourTurn pause against the real store', () => {
     expect(halfway).toBeGreaterThan(atStart)
     expect(nearlyUp).toBeGreaterThan(halfway)
 
-    // headline and meter read the same wait; it used to come from a second
-    // selector that walked the queue for the same number
+    // the time and the meter read the same wait; it used to come from a
+    // second selector that walked the queue for the same number
     expect(document.querySelector('.wait')?.textContent).toBe('10s')
+  })
+})
+
+describe('Header chrome', () => {
+  it('draws the VS key live, and says so when the room has battles off', () => {
+    const { store } = renderHeader()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start a singer battle' }))
+    expect(store.getState().ui.errorMessage).toBe('Singer battles are switched off for this room.')
+  })
+
+  it('draws the brand row alone on tonight\'s scores', () => {
+    renderHeader('/leaderboard')
+
+    expect(screen.getByRole('img', { name: 'KaraokeArcade' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Pause my songs' })).toBeNull()
+  })
+
+  it('draws nothing before sign-in: onboarding has its own HUD', () => {
+    const store = configureStore({ reducer: rootReducer })
+    const { container } = render(
+      <Provider store={store}>
+        <MemoryRouter><Header /></MemoryRouter>
+      </Provider>,
+    )
+
+    expect(container.firstElementChild?.childElementCount).toBe(0)
   })
 })

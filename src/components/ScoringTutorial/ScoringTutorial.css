@@ -6,6 +6,10 @@
   display: flex;
   flex-direction: column;
   overflow: hidden auto;
+
+  & > * {
+    flex-shrink: 0;
+  }
 }
 
 .masthead {
@@ -25,18 +29,13 @@
   height: 88px;
   overflow: hidden;
   background-color: var(--arc-surface-hover);
-  box-shadow:
-    0 -3px 0 var(--pixel-border-color),
-    0 3px 0 var(--pixel-border-color),
-    -3px 0 0 var(--pixel-border-color),
-    3px 0 0 var(--pixel-border-color);
+  box-shadow: var(--pixel-border-3);
 
   img {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    image-rendering: pixelated;
   }
 }
 
@@ -117,7 +116,7 @@
 }
 
 /* A value bursts in, glowing yellow to pink at the peak, and settles to its
-   own colour. The glow is the one blur the system allows, and only here. */
+   own colour. The glow is a blur, and blur lives only in keyframes. */
 .pts {
   display: inline-block;
   font-family: var(--font-display);
@@ -150,18 +149,23 @@
   left: 0;
   width: 35%;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent, var(--arc-ring), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--arc-ring) 35%, transparent), transparent);
   animation: scoring-shine 900ms ease-in-out var(--delay, 0ms) both;
 }
 
-.footer {
-  margin-top: auto;
-  padding: var(--gap-5) 24px calc(28px + env(safe-area-inset-bottom));
+.spacer {
+  flex: 1 0 0;
 }
 
-.key {
+.footer {
+  padding: 0 24px calc(28px + env(safe-area-inset-bottom));
+}
+
+/* the big framed key: amber sides as well as the top and bottom lips */
+.footer .key {
   padding: 16px 0;
   font-size: 20px;
+  box-shadow: var(--bevel-vu-framed);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -174,14 +178,14 @@
   }
 }
 
+/* the design's ptsburst: a tighter glow than the shared burst */
 @keyframes scoring-pts-burst {
   0% { transform: scale(.3); opacity: 0; text-shadow: none; }
-  35% { transform: scale(1.35); opacity: 1; text-shadow: var(--glow-burst); }
+  35% { transform: scale(1.35); opacity: 1; text-shadow: 0 0 14px var(--arc-yellow), 0 0 34px var(--arc-amber), 0 0 60px var(--arc-magenta); }
   100% { transform: scale(1); opacity: 1; text-shadow: none; }
 }
 
-/* the sweep is a pale wash, so its strength lives in the keyframes */
 @keyframes scoring-shine {
-  0% { transform: translateX(-150%) skewX(-20deg); opacity: .35; }
-  100% { transform: translateX(400%) skewX(-20deg); opacity: .35; }
+  0% { transform: translateX(-150%) skewX(-20deg); }
+  100% { transform: translateX(400%) skewX(-20deg); }
 }

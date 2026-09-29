@@ -32,7 +32,6 @@ const AvatarPicker = ({ avatarId, onChoose }: AvatarPickerProps) => {
   return (
     <BattleSingerSelect
       selectedId={selectedId}
-      lastId={avatarId ?? undefined}
       onPick={id => setSelectedId(id)}
       onNext={() => onChoose(selectedId)}
     />

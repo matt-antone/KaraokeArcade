@@ -1,8 +1,11 @@
 // @vitest-environment happy-dom
 import React from 'react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import NowSinging from './NowSinging'
+
+// no server here: every fighter plays on the default grid
+vi.mock('lib/fighterSets', () => ({ useFighterSet: (_g: string, _s: string, _l: string, fallback: unknown) => fallback }))
 
 afterEach(cleanup)
 
@@ -21,5 +24,13 @@ describe('NowSinging', () => {
     expect(screen.getByText('loudlucy')).toBeTruthy()
     expect(screen.getByText('Boulevard of Broken Dreams')).toBeTruthy()
     expect(container.querySelector('img')?.getAttribute('src')).toContain('halloween/deb/location.png')
+  })
+
+  it('draws the singer singing: their sing sheet at 168px, not a still (07)', () => {
+    const { container } = render(<NowSinging singer='loudlucy' avatarId='halloween/deb' />)
+    const figure = container.querySelector<HTMLElement>('[style*="168px"]')
+
+    expect(figure?.style.width).toBe('168px')
+    expect(figure?.innerHTML).toContain('halloween/deb/sing-sheet.png')
   })
 })

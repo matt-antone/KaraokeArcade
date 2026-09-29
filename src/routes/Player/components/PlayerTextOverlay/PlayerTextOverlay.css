@@ -1,185 +1,58 @@
-/* Everything the player draws over (or instead of) the video. Overlays that sit
-   over playing video are solid bars, never washes over the whole frame. Sized
-   in vh from the design's 540px-tall TV canvas: 1px there is 0.185vh here. */
+/* What the player draws over (or instead of) the video. Sized in vh from the
+   design's 540px-tall TV canvas: 1px there is 0.1852vh here. */
 .container {
   font-family: var(--font-body);
   position: absolute;
   top: 0;
+  /* full-screen and never interactive: it must not swallow 10's Play and
+     fullscreen keys, which sit under it in paint order */
+  pointer-events: none;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  color: var(--ink);
-}
-
-/* --- empty / errored ---------------------------------------------------- */
-
-.stateLabel {
-  font-family: var(--font-display);
-  font-size: 1.6vh;
-  margin-bottom: 1.5vh;
-  color: var(--ink-2);
-}
-
-.stateFooter {
-  font-family: var(--font-display);
-  font-size: 1.4vh;
-  margin-top: 1.5vh;
-  color: var(--ink-2);
-}
-
-/* the one label that is not ink: a fault reads magenta */
-.container .fault {
-  color: var(--alert);
-}
-
-/* the empty queue, said in the join screen's panel under the join code */
-.emptyNote {
-  position: absolute;
-  left: 8.9vh;
-  bottom: 8vh;
-}
-
-.emptyNote .stateLabel {
-  font-size: 2.4vh;
-  margin-bottom: 1vh;
-  color: var(--arc-muted);
-}
-
-.emptyPrompt {
-  font-family: var(--font-display);
-  font-size: 3.3vh;
   color: var(--arc-text);
 }
 
-/* --- idle --------------------------------------------------------------- */
-
-/* The play key, over the crowd on the join screen: the amber action key,
-   square like every key. Browsers won't autoplay without a tap. */
-.playKey {
-  position: absolute;
-  left: calc(72% - 13vh);
-  top: calc(50% - 13vh);
-  display: grid;
-  place-items: center;
-  width: 26vh;
-  height: 26vh;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-key);
-  background: var(--key-face-vu);
-  box-shadow: var(--bevel-vu);
-  color: var(--arc-on-amber);
-  cursor: pointer;
-
-  svg {
-    width: 11vh;
-    height: 11vh;
-  }
-
-  /* the key face travels 1px down: that travel is the feedback */
-  &:active {
-    transform: translateY(1px);
-  }
-}
-
-/* upper-right, clear of the lyric band. Always up on the paused stage. */
-.fullscreenKey {
-  position: absolute;
-  top: 2vh;
-  right: 2vh;
-  display: grid;
-  place-items: center;
-  width: 6vh;
-  height: 6vh;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-key);
-  background: var(--key-face);
-  box-shadow: var(--bevel);
-  color: var(--ink-2);
-  cursor: pointer;
-
-  svg {
-    width: 2.8vh;
-    height: 2.8vh;
-  }
-
-  &:active {
-    transform: translateY(1px);
-  }
-}
-
-/* --- intermission: 11a · on stage next ------------------------------------ */
-
-/* The next singer's own stage, full bleed. The shared plate is layered under
-   it, so a fighter with no location art still stands somewhere. */
-.stage {
+/* the design's CRT layer, at the TV's own pitch (2px per 6px at 1080) */
+.scanlines {
   position: absolute;
   inset: 0;
-  overflow: hidden;
-  background-color: var(--arc-ground);
-  background-position: center;
-  background-size: cover;
-  image-rendering: pixelated;
+  z-index: 5;
+  pointer-events: none;
+  background: var(--scanlines-tv);
 }
 
-/* the right-hand half darkens so the billing reads */
-.stageScrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent 0 38%, var(--scrim) 52%);
-}
+/* --- errored (undesigned; kept so the room knows) ------------------------ */
 
-/* singing size: 460 of the design's 540 */
-.fighter {
-  position: absolute;
-  left: -7.4vh;
-  bottom: -2.6vh;
-  height: 85vh;
-  aspect-ratio: 1;
-  image-rendering: pixelated;
-}
-
-.billing {
-  position: absolute;
-  left: 50%;
-  right: 7.4vh;
-  top: 17vh;
+.fault {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 2.2vh;
+  align-items: center;
+  gap: 2.22vh;
+  padding: 0 5.93vh;
+  text-align: center;
 }
 
-.billingLabel {
+.faultLabel {
   font-family: var(--font-display);
-  font-size: 3vh;
-  color: var(--arc-mint);
+  font-size: 2.96vh;
+  color: var(--arc-magenta);
 }
 
-.billingName {
-  max-width: 100%;
-  font-family: var(--font-display);
-  font-size: 7.4vh;
-  line-height: 1;
-  color: var(--arc-amber);
-  overflow-wrap: anywhere;
-}
-
-/* a song title always shows in full: it wraps, it never ellipsises */
-.nextSongTitle {
+.faultTitle {
   font-size: 6.3vh;
   font-weight: var(--weight-bold);
   line-height: 1.1;
-  text-wrap: pretty;
-  color: var(--arc-text);
 }
 
-.nextSongArtist {
-  font-size: 3.3vh;
+.faultNote {
+  font-size: 3.33vh;
+  line-height: 1.4;
   color: var(--arc-text-2);
 }
+
+/* --- the clock before a battle (undesigned) ------------------------------- */
 
 /* the countdown's 200ms tick. Declared here rather than reused from
    variables.css: css-loader scopes animation names per module. */
@@ -188,31 +61,115 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-.countdown {
-  --text-shadow-color: var(--arc-magenta);
+.leadInCountdown {
+  --text-shadow-color: var(--arc-deep);
+  position: absolute;
+  top: 3vh;
+  right: 3vh;
   font-family: var(--font-display);
-  font-size: 7.4vh;
-  line-height: 1;
-  color: var(--arc-yellow);
+  font-size: var(--display-l);
+  line-height: 1.1;
+  color: var(--arc-text);
   text-shadow: 0.56vh 0.56vh 0 var(--text-shadow-color);
   animation: tick 200ms var(--ease-key);
 }
 
-/* The trivia or battle lead-in: the mark owns the middle of the stage, so the
-   clock takes the upper-right corner. The lower right is the QR's. */
-.leadInCountdown {
+/* --- 11a · on stage next -------------------------------------------------- */
+
+.stage {
   position: absolute;
-  top: 3vh;
-  right: 3vh;
-  animation: tick 200ms var(--ease-key);
+  inset: 0;
+  overflow: hidden;
+  background: var(--arc-ground);
 }
 
-/* the two singers after the next one, as cards along the bottom */
+/* the next singer's own location, full bleed, the shared plate under it */
+.location {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+}
+
+/* the right-hand half darkens so the billing reads */
+.stageScrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--arc-ground) 0%, transparent) 0 38%,
+    color-mix(in srgb, var(--arc-ground) 92%, transparent) 52%
+  );
+}
+
+/* 580 of the design's 540, mirrored to face the billing */
+.dancer {
+  left: -7.41vh;
+  bottom: -2.59vh;
+}
+
+.logo {
+  position: absolute;
+  left: 5.19vh;
+  top: 4.44vh;
+  display: block;
+  height: 4.07vh;
+}
+
+.venue {
+  position: absolute;
+  right: 5.19vh;
+  top: 4.44vh;
+  font-family: var(--font-display);
+  font-size: 2.59vh;
+  color: var(--arc-text-2);
+}
+
+.billing {
+  position: absolute;
+  left: 50%;
+  right: 7.41vh;
+  top: 17.04vh;
+  display: flex;
+  flex-direction: column;
+  gap: 2.22vh;
+}
+
+.billingLabel {
+  font-family: var(--font-display);
+  font-size: 2.96vh;
+  color: var(--arc-mint);
+}
+
+.billingName {
+  font-family: var(--font-display);
+  font-size: 7.41vh;
+  line-height: 1;
+  color: var(--arc-amber);
+  overflow-wrap: anywhere;
+}
+
+.nextSongTitle {
+  font-size: 6.3vh;
+  font-weight: var(--weight-bold);
+  line-height: 1.1;
+}
+
+.nextSongArtist {
+  font-size: 3.33vh;
+  color: var(--arc-text-2);
+}
+
+.billingMeter {
+  margin-top: 1.48vh;
+}
+
+/* the three singers after the next one, as cards along the bottom */
 .comingUp {
   position: absolute;
   left: 50%;
-  right: 7.4vh;
-  bottom: 5.2vh;
+  right: 7.41vh;
+  bottom: 5.19vh;
   display: flex;
   flex-direction: column;
   gap: 1.85vh;
@@ -220,13 +177,13 @@
 
 .comingUpHeading {
   font-family: var(--font-display);
-  font-size: 2.4vh;
+  font-size: 2.41vh;
   color: var(--arc-muted);
 }
 
 .comingUpCards {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.85vh;
 }
 
@@ -234,17 +191,16 @@
   display: flex;
   align-items: center;
   gap: 1.85vh;
-  min-width: 0;
-  padding: 1.5vh;
+  padding: 1.48vh;
   background: var(--arc-surface);
   box-shadow: inset 0 0 0 0.37vh var(--arc-line);
 }
 
 .comingUpAvatar {
   flex: none;
-  width: 7.4vh;
-  height: 7.4vh;
-  background: var(--arc-surface-hover);
+  width: 7.41vh;
+  height: 7.41vh;
+  margin: 0;
 }
 
 .comingUpText {
@@ -256,34 +212,22 @@
 
 .comingUpSinger {
   font-family: var(--font-display);
-  font-size: 2vh;
+  font-size: 2.04vh;
   color: var(--arc-mint);
 }
 
 .comingUpTitle {
-  font-size: 2.6vh;
+  font-size: 2.59vh;
   font-weight: var(--weight-semibold);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* --- queue depth -------------------------------------------------------- */
+/* --- 11b · the singer, over the bar and the video frame ------------------- */
 
-/* along the bottom edge, clear of the lyric band */
-.queueDepth {
-  position: absolute;
-  left: 2vh;
-  right: 2vh;
-  bottom: 2vh;
-  display: flex;
-  align-items: center;
-  gap: 1.5vh;
-}
-
-.queueDepthLabel {
-  font-family: var(--font-display);
-  font-size: 1.1vh;
-  flex-shrink: 0;
-  color: var(--ink-2);
+.singer {
+  left: -37.04vh;
+  bottom: -2.59vh;
+  z-index: 2;
 }

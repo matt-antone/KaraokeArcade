@@ -23,8 +23,9 @@ const TOKEN = 'assets/arcade/token.svg'
 const SLOT = 'assets/arcade/slot-plate.svg'
 const LOGO = 'assets/arcade/logo.svg'
 
-/** How long the token takes to drop into the slot before the gate lifts. */
-const INSERT_MS = 450
+/** How long after the drop the gate lifts: the 320ms fall, then "Token
+ *  accepted" held long enough to read. */
+const INSERT_MS = 1200
 
 const prefersReducedMotion = () => typeof matchMedia === 'function'
   && matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -44,7 +45,8 @@ const TokenGate = ({ room, onUnlock }: TokenGateProps) => {
   const [isOver, setIsOver] = useState(false)
   const [isInserted, setIsInserted] = useState(false)
 
-  /** The token's centre over the slot plate, and how far it is from the mouth. */
+  /** The token's centre over the slot plate, and how far it is from the mouth,
+   *  which sits right of the plate's centre and a little above its middle. */
   const hit = () => {
     const t = tokenRef.current?.getBoundingClientRect()
     const s = slotRef.current?.getBoundingClientRect()
@@ -55,7 +57,7 @@ const TokenGate = ({ room, onUnlock }: TokenGateProps) => {
 
     return {
       isOver: cx > s.left && cx < s.right && cy > s.top && cy < s.bottom,
-      dx: s.left + s.width / 2 - cx,
+      dx: s.left + s.width * 0.55 - cx,
       dy: s.top + s.height * 0.47 - cy,
     }
   }

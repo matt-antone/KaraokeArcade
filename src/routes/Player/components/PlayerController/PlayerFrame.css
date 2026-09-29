@@ -1,0 +1,11 @@
+/* 11b · the video frame: black, a 4px amber pixel border and a hard 14px drop.
+   Sized in vh from the design's 540px-tall TV: 1px there is 0.1852vh here. */
+.framed {
+  background: rgb(0, 0, 0);
+  box-shadow:
+    0 -0.74vh 0 var(--arc-amber),
+    0 0.74vh 0 var(--arc-amber),
+    -0.74vh 0 0 var(--arc-amber),
+    0.74vh 0 0 var(--arc-amber),
+    0 2.59vh 0 rgba(0, 0, 0, .5);
+}

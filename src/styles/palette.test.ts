@@ -142,7 +142,7 @@ describe('ARCADE palette contrast', () => {
     // Every literal colour lives in the --arc-* palette. If this fails you
     // are adding a colour: decide that deliberately, then update the number.
     const entries = (css.match(/^\s*--arc-[\w-]+:\s*#/gm) ?? []).length
-    expect(entries).toBe(29)
+    expect(entries).toBe(43)
   })
 
   it('keeps the QR plate colour in step with --ink', () => {

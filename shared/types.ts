@@ -377,12 +377,21 @@ export const POINTS_BATTLE_WIN = 1000
 /** The loser's, and both fighters' on a draw. The winner gets the win alone. */
 export const POINTS_BATTLE_TAKE_PART = 250
 
-/** One row of a room's leaderboard for the night. */
+/** One row of a room's leaderboard for the night. Everyone who has joined the
+ *  room tonight has a row, at 0 until they earn something (023). */
 export interface LeaderboardEntry {
   userId: number
   name: string
   avatarId: string | null
   points: number
+  /** Where the night's points came from: songs sung to the end, battles won,
+   *  battles lost or drawn, trivia points and trivia rounds played. A win is
+   *  not also counted as played; points is the sum of what these pay. */
+  sings: number
+  battleWins: number
+  battlePlays: number
+  triviaPoints: number
+  triviaRounds: number
 }
 
 export interface TriviaScore {
@@ -393,6 +402,18 @@ export interface TriviaScore {
   /** The face beside the name on the podium and the scoreboard rows. Live off
    *  the account: a scoreboard is who is playing, not who fought. */
   avatarId: string | null
+}
+
+/** One player's round, on the final result: everyone who answered at least
+ *  once this round. Night totals come off the leaderboard, not from here. */
+export interface TriviaStanding {
+  userId: number
+  name: string
+  avatarId: string | null
+  /** Earned this round. */
+  points: number
+  /** Questions this player got right this round, out of questionCount. */
+  numCorrect: number
 }
 
 export interface TriviaResult {
@@ -406,6 +427,9 @@ export interface TriviaResult {
   correctIdx: number
   /** Everyone who has answered at least once this room, best first. */
   scores: TriviaScore[]
+  /** The round's result, best first (points, then name). Final result only:
+   *  [] on every other question, which shows how many got it and no more. */
+  standings: TriviaStanding[]
   /** How many of the room got *this* question. The scoreboard says where the
    *  night stands; this is what the room reacts to out loud. */
   numCorrect: number
@@ -425,33 +449,20 @@ export interface TriviaResult {
   sentAt: number
 }
 
-/** How long each beat of a battle holds the stage, in ms. The whole sequence
- *  is ten beats and runs a shade over five minutes, so these are the numbers
- *  that decide how much of the night one battle costs.
- *
- *  The two opening splashes are deliberately unequal: the title card is the
- *  shortest beat in the sequence because it says one word, and the versus card
- *  is the longest of the three because it is a scene rather than a still — the
- *  fighters and the field slide on, hold, and slide back off, and the hold is
- *  the only part of it the room is meant to read. The judging beats are longer
- *  because a crowd needs a moment to work out it is being asked for something. */
-/** The title card: the Singer Battle lockup, and nothing else on the screen.
- *
- *  Its own beat rather than the gap before one. The lockup used to be drawn
- *  only by the player's holding card — the thing on screen while the server's
- *  first payload is in flight — which made the opening scene of a battle a
- *  race against the network: on a quick room nobody saw it, and the one place
- *  it reliably stayed up was the end of the queue, where it was stuck. A scene
- *  the room is meant to see is a beat like any other, sent by the server and
- *  the same length on every screen watching. */
+// How long each beat of a battle holds the stage, in ms: the numbers that
+// decide how much of the night one battle costs. The judging beats are longer
+// than the splashes because a crowd needs a moment to work out it is being
+// asked for something.
+
+/** @deprecated The title card is no longer a beat: the versus scene opens on
+ *  the lockup and clears it (D10). The server never sends `logo` now; this
+ *  stays until the stage and getWaits stop reading it. */
 export const BATTLE_LOGO_MS = 3000
 
-/** The versus card, which is three movements rather than one still: 2s for the
- *  fighters to walk on (the field beats them there in 1.75s), a 5s hold that is
- *  the card itself, and 1.5s to clear the stage for the first intro. The three
- *  add up to this number, and PlayerBattle.css animates against it — change one
- *  and the other has to move with it. */
-export const BATTLE_VERSUS_MS = 8500
+/** The versus scene, one ~9s piece: the lockup clears over 0-2s, VS lands at
+ *  1.9s, "Get ready" counts 05 to 01 from 3.2s, BEGIN slams at 8.2s and holds
+ *  0.8s. The stage animates against this number; change one, move the other. */
+export const BATTLE_VERSUS_MS = 9000
 export const BATTLE_INTRO_MS = 12000
 export const BATTLE_JUDGE_MS = 5000
 export const BATTLE_METER_MS = 15000
@@ -476,7 +487,7 @@ export const BATTLE_JUDGE_BALLOT_MS = BATTLE_METER_MS * 2
  *  night: the room moves on, and a challenge nobody answered should stop being
  *  a thing the challenger is waiting on. Counted by the server — a phone that
  *  slept through it comes back to a lapsed invite, not a live one. */
-export const BATTLE_INVITE_MS = 45000
+export const BATTLE_INVITE_MS = 30000
 
 /** How much of each song gets sung. Two minutes is about a verse, a chorus and
  *  out — long enough to be a performance, short enough that the other fighter
@@ -487,8 +498,7 @@ export const BATTLE_SING_MS = 120000
 /** The beats, in order. The player draws one thing per beat and nothing else,
  *  and the server hands out exactly one of these at a time.
  *
- *  - `logo`     the title card: Singer Battle, and nothing else
- *  - `versus`   both fighters, both songs, before a note is played
+ *  - `versus`   the lockup, then both fighters and both songs, before a note
  *  - `intro1`   the challenger alone
  *  - `sing1`    the challenger sings the song their opponent chose
  *  - `intro2`   the opponent alone
@@ -501,7 +511,10 @@ export const BATTLE_SING_MS = 120000
  *  The judging section is `judge` alone under `ballot` and `judge meter1
  *  meter2` under `crowd`; a room whose player cannot hear it gets the short
  *  `judge` and no metering at all. There is no separate `ballot` phase: asking
- *  the room and counting the room are one screen, so they are one beat. */
+ *  the room and counting the room are one screen, so they are one beat.
+ *
+ *  `logo` is never sent any more (D10: the lockup is the opening of `versus`).
+ *  It stays in the union only until the stage stops naming it. */
 export type BattlePhase
   = | 'logo'
     | 'versus'
@@ -516,9 +529,9 @@ export type BattlePhase
 
 /** How a room settles a fight.
  *
- *  - `ballot`  every phone in the room votes, and nobody sees the count until
- *              the verdict. The default, because it is the only one that works
- *              on a player opened anywhere but the server's own machine
+ *  - `ballot`  every phone in the room votes, and the room watches the split
+ *              fill as it goes. The default, because it is the only one that
+ *              works on a player opened anywhere but the server's own machine
  *  - `crowd`   the player's microphone grades how loud the room was for each
  *              fighter in turn
  *  - `none`    the room asked for `crowd` and this player cannot hear it. Both
@@ -574,24 +587,18 @@ export interface BattleTurn {
   /** How this fight is being decided, settled before the first beat. */
   judging: BattleJudging
   /** That fighter's grade: votes cast for them under `ballot`, how loud the
-   *  room was for them under `crowd`. 0 until the judging beat has finished —
-   *  a ballot in progress is silent, or it is not a ballot. */
+   *  room was for them under `crowd`. 0 until the judging beat has finished;
+   *  the live ballot count is challengerVotes / opponentVotes. */
   challengerScore: number
   opponentScore: number
-  /** How many phones have voted, and how many could. Not the split, and never
-   *  the split: one number for the whole room, which is exactly what both the
-   *  TV's ballot row and the phone's draw — every filled cell identical, no
-   *  matter which way it went.
-   *
-   *  The distinction is the whole design. A room that cannot see voting
-   *  happening thinks the feature is broken and stops. A room that can see who
-   *  is winning stops voting on who sang and starts voting with the crowd, and
-   *  the late half of the room decides the fight. Showing the count and hiding
-   *  the split is the only arrangement that avoids both.
-   *
-   *  `ballotsOf` is measured once, as the battle starts, and is the room minus
-   *  the two fighters — they hold phones like everyone else but neither of
-   *  them votes. Both are 0 on every path but `ballot`. */
+  /** Votes cast for each side so far, re-sent on every vote so the TV and the
+   *  phones draw the split as it fills. 0 on every path but `ballot`. */
+  challengerVotes: number
+  opponentVotes: number
+  /** How many phones have voted, and how many could. `ballotsOf` is measured
+   *  once, as the battle starts, and is the room minus the two fighters: they
+   *  hold phones like everyone else but neither of them votes. Both are 0 on
+   *  every path but `ballot`. */
   ballotsIn: number
   ballotsOf: number
 }
@@ -693,3 +700,13 @@ export const BATTLE_SCORE_MAX = 100
 export const clampBattleScore = (n: number): number => (
   Number.isFinite(n) ? Math.max(0, Math.min(BATTLE_SCORE_MAX, Math.round(n))) : 0
 )
+
+/** What the TV adds to its status while a song's lead-in counts down, so the
+ *  phones can count along (12e0). Epoch ms, and the queue row the lead-in
+ *  belongs to. Absent when no lead-in is running. The TV sends the end by its
+ *  own clock with a `sentAt` stamp; the server rebases it onto its clock and
+ *  restamps, so the phones read it through serverNow. */
+export interface PlayerLeadIn {
+  leadInEndsAt?: number
+  leadInQueueId?: number
+}

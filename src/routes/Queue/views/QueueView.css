@@ -4,6 +4,11 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/* 16px under the tabs; the gutter and the 10px between rows are each row's */
+.list {
+  padding-top: 16px;
+}
+
 /* the Me tab's own footer: "queue another song", then the locked record of
    what's already been sung. The queue rows above run flush; this doesn't. */
 .meFooter {
@@ -19,34 +24,25 @@
 
 .caption {
   padding: 0 var(--gutter) var(--gap-3);
-  color: var(--ink-3);
+  color: var(--arc-muted);
 }
 
-/* Empty states: a Silkscreen amber headline, plain body copy, and where there
-   is somewhere to go, one amber key. The class is doubled so it outranks
-   TextOverlay's own heading rules. */
+/* 07b: centred between the tabs and the nav, one sentence over one key.
+   The class is doubled so it outranks TextOverlay's own rules. */
 .empty.empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--gap-4);
-  padding: 0 var(--gap-6);
-
-  h1 {
-    margin: 0;
-    font-size: var(--text-3xl);
-    color: var(--vu);
-    text-shadow: none;
-  }
 
   p {
     font-size: var(--text-xl);
     line-height: 1.4;
-    color: var(--ink-2);
+    color: var(--arc-text-2);
     text-wrap: pretty;
   }
 }
 
-.browse {
+.cta {
   width: 220px;
 }

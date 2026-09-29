@@ -1,12 +1,13 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect } from 'react'
 import clsx from 'clsx'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
 import { ensureState } from 'redux-optimistic-ui'
-import { Link, useNavigate } from 'react-router'
+import { useNavigate } from 'react-router'
 import { toggleSongStarred } from 'store/modules/userStars'
-import getMyUpcoming from '../selectors/getMyUpcoming'
+import { setQueueTab } from 'store/modules/ui'
+import { resetFilterStr, setTab, toggleFilterStarred } from 'routes/Library/modules/library'
+import getQueueDisplay from '../selectors/getQueueDisplay'
 import getQueueSections from '../selectors/getQueueSections'
-import getRoundRobinQueue from '../selectors/getRoundRobinQueue'
 import QueueList from '../components/QueueList/QueueList'
 import Button from 'components/Button/Button'
 import Panel from 'components/Panel/Panel'
@@ -16,7 +17,16 @@ import TextOverlay from 'components/TextOverlay/TextOverlay'
 import { formatShortDate } from 'lib/dateTime'
 import styles from './QueueView.css'
 
-const QUEUE_ITEM_HEIGHT = 92
+/** 07b: one sentence and one amber key, no headline. Every empty tab here
+ *  speaks the same way. */
+const Empty = ({ children, cta, onClick }: { children: React.ReactNode, cta: string, onClick: () => void }) => (
+  <TextOverlay className={styles.empty}>
+    <p>{children}</p>
+    <div className={styles.cta}>
+      <Button variant='primary' cta onClick={onClick}>{cta}</Button>
+    </div>
+  </TextOverlay>
+)
 
 const QueueView = () => {
   const dispatch = useAppDispatch()
@@ -24,15 +34,14 @@ const QueueView = () => {
   const { innerWidth, innerHeight, headerHeight, footerHeight } = useAppSelector(state => state.ui)
   const isInRoom = useAppSelector(state => !!state.user.roomId)
   const isLoading = useAppSelector(state => ensureState(state.queue).isLoading)
-  const queue = useAppSelector(getRoundRobinQueue)
-  const queueId = useAppSelector(state => state.status.queueId)
   const queueTab = useAppSelector(state => state.ui.queueTab)
-  const { played, upcoming } = useAppSelector(getQueueSections)
-  const mine = useAppSelector(getMyUpcoming)
+  const isStarredOnly = useAppSelector(state => state.library.filterStarred)
+  const isPaused = useAppSelector(state => ensureState(state.queue).pausedUserIds.includes(state.user.userId))
+  const { played } = useAppSelector(getQueueSections)
+  const { upcoming, mine } = useAppSelector(getQueueDisplay)
   const history = useAppSelector(state => state.user.history)
   const starredSongs = useAppSelector(state => ensureState(state.userStars).starredSongs)
   const starCounts = useAppSelector(state => state.starCounts)
-  const containerRef = useRef<HTMLDivElement>(null)
 
   const historyItems: SongHistoryDisplayItem[] = history.map(({ songId, artist, title, dateSung }) => ({
     songId,
@@ -43,18 +52,43 @@ const QueueView = () => {
     starCount: starCounts.songs[songId] || 0,
   }))
 
-  // ensure current song is in view on first mount only
+  // 07, 07b and 07c always draw the Queue tab: leaving puts it back, so every
+  // way in (nav, II, the up-next alert) lands there
+  useEffect(() => () => {
+    dispatch(setQueueTab('queue'))
+  }, [dispatch])
+
+  // II pressed while already here (Me, History) still lands on 07c
   useEffect(() => {
-    if (containerRef.current) {
-      const i = queue.result.indexOf(queueId)
-      containerRef.current.scrollTop = QUEUE_ITEM_HEIGHT * i
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    if (isPaused) dispatch(setQueueTab('queue'))
+  }, [dispatch, isPaused])
+
+  // 07b's key goes to 04: the Songs tab, unfiltered
+  const toSongs = () => {
+    dispatch(setTab('songs'))
+    dispatch(resetFilterStr())
+    if (isStarredOnly) dispatch(toggleFilterStarred())
+    navigate('/library')
+  }
+
+  // what an empty tab says, if this one is empty
+  let empty: React.ReactNode = null
+
+  if (!isInRoom) {
+    empty = <Empty cta='Sign in' onClick={() => navigate('/account')}>Sign in to a room to start queueing songs.</Empty>
+  } else if (isLoading) {
+    empty = <Spinner />
+  } else if (queueTab === 'queue' && upcoming.length === 0) {
+    empty = <Empty cta='Browse songs' onClick={toSongs}>Nobody’s queued yet. Pick a song and you’re first up.</Empty>
+  } else if (queueTab === 'me' && mine.length === 0) {
+    empty = <Empty cta='Browse songs' onClick={toSongs}>Nothing queued yet. Tap a song in the library to queue it.</Empty>
+  } else if (queueTab === 'history' && played.length === 0) {
+    empty = <Empty cta='Browse songs' onClick={toSongs}>Nothing sung yet. Songs land here once they’ve been played.</Empty>
+  }
 
   return (
     <div
       className={styles.container}
-      ref={containerRef}
       style={{
         paddingTop: headerHeight,
         paddingBottom: footerHeight,
@@ -62,64 +96,24 @@ const QueueView = () => {
         height: innerHeight,
       }}
     >
-      {!isInRoom && (
-        <TextOverlay className={styles.empty}>
-          <h1>Get a Room!</h1>
-          <p>
-            <Link to='/account'>Sign in to a room</Link>
-            {' '}
-            to start queueing songs.
-          </p>
-        </TextOverlay>
+      {empty ?? (
+        <div className={styles.list}>
+          {queueTab === 'me' && (
+            <div className={clsx('silkscreen', styles.caption)}>My songs &mdash; hold to reorder, swipe for settings</div>
+          )}
+          {queueTab === 'history' && (
+            <div className={clsx('silkscreen', styles.caption)}>Sung tonight &mdash; these are locked</div>
+          )}
+
+          <QueueList />
+        </div>
       )}
 
-      {isLoading && <Spinner />}
-
-      {!isLoading && queueTab === 'history' && played.length === 0 && (
-        <TextOverlay className={styles.empty}>
-          <h1>Nothing Sung Yet</h1>
-          <p>Songs land here once they&rsquo;ve been played.</p>
-        </TextOverlay>
-      )}
-
-      {!isLoading && queueTab === 'queue' && upcoming.length === 0 && (
-        <TextOverlay className={styles.empty}>
-          <h1>Queue Empty</h1>
-          <p>Nobody&rsquo;s queued yet. Pick a song and you&rsquo;re first up.</p>
-          <Button variant='primary' className={styles.browse} onClick={() => navigate('/library')}>
-            Browse songs
-          </Button>
-        </TextOverlay>
-      )}
-
-      {!isLoading && queueTab === 'me' && mine.length === 0 && (
-        <TextOverlay className={styles.empty}>
-          <h1>Nothing Queued</h1>
-          <p>
-            Tap a song in the
-            {' '}
-            <Link to='/library'>library</Link>
-            {' '}
-            to queue it.
-          </p>
-        </TextOverlay>
-      )}
-
-      {!isLoading && queueTab === 'me' && mine.length > 0 && (
-        <div className={clsx('silkscreen', styles.caption)}>my songs &mdash; drag to reorder, swipe for settings</div>
-      )}
-
-      {!isLoading && queueTab === 'history' && played.length > 0 && (
-        <div className={clsx('silkscreen', styles.caption)}>sung tonight &mdash; these are locked</div>
-      )}
-
-      <QueueList />
-
-      {!isLoading && queueTab === 'me' && (
+      {isInRoom && !isLoading && queueTab === 'me' && (
         <div className={styles.meFooter}>
           {/* a labelled key needs a variant: without one it renders bare, and
               the label inherits the view's dim ink onto the dark ground */}
-          <Button variant='default' icon='PLUS' size={20} onClick={() => navigate('/library')}>
+          <Button variant='default' icon='PLUS' size={20} onClick={toSongs}>
             Queue another song
           </Button>
 

@@ -1,56 +1,60 @@
-.usersFilter {
-  max-width: 50%;
+/* 09 Users: one flex row per account — portrait, name, role, joined — then
+   the Create user key. No column headings: each cell says what it is. */
+.content {
+  padding: 0;
 }
 
-.showAll {
-  cursor: pointer;
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
 }
 
-.table {
-  width: 100%;
+/* the amber ring sits under the portrait, as the design stacks it */
+.row .portrait {
+  width: 36px;
+  flex: none;
+  margin: 0;
+  box-shadow: inset 0 0 0 2px var(--arc-amber);
 }
 
-.table > * {
-  outline: none;
-}
-
-.table th {
-  font-family: var(--font-mono);
-  font-size: var(--silkscreen-size);
-  font-weight: var(--weight-regular);
-  letter-spacing: var(--silkscreen-tracking);
-  text-transform: uppercase;
-  color: var(--ink-3);
+.name {
+  flex: 1;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-body);
+  font-size: var(--text-l);
+  font-weight: var(--weight-semibold);
+  color: var(--arc-text);
   text-align: left;
 }
 
-.table th:first-child {
-  width: 100%;
+button.name {
+  cursor: pointer;
 }
 
-.table th:nth-child(2) {
-  min-width: 70px;
+.role,
+.date {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
 }
 
-.table td {
-  height: 32px;
-  overflow: hidden;
-  white-space: nowrap;
+.role {
+  color: var(--arc-magenta);
 }
 
-/* meta columns are data printed on the panel, so they are mono */
-.table td:nth-child(2),
-.table td:nth-child(3) {
-  font-family: var(--font-mono);
-  font-size: var(--text-s);
-  color: var(--ink-3);
+.date {
+  color: var(--arc-muted);
 }
 
-.table td:first-child  {
-  text-overflow: ellipsis;
-  max-width: 0;
-}
+.create {
+  padding: 0 14px 14px;
 
-.createBtn {
-  margin-top: var(--gap-3);
+  & > button {
+    padding: 10px 0;
+    font-size: var(--text-s);
+  }
 }

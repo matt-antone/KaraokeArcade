@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { useMatch } from 'react-router'
+import { useMatch, useNavigate } from 'react-router'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
 import useResizeObserver from 'use-resize-observer'
 // global stylesheets should be imported before any
@@ -10,7 +10,6 @@ import BattleSetup from 'components/BattleSetup/BattleSetup'
 import BattleVote from 'components/BattleVote/BattleVote'
 import Button from 'components/Button/Button'
 import Header from 'components/Header/Header'
-import InstallHint from 'components/InstallHint/InstallHint'
 import Navigation from 'components/Navigation/Navigation'
 import Modal from 'components/Modal/Modal'
 import TriviaDialog from 'components/TriviaDialog/TriviaDialog'
@@ -31,6 +30,7 @@ const CoreLayout = () => {
   const isSettingsRoute = useMatch('/settings')
   const hasPopovers = !isPlayerRoute && !isSettingsRoute
   const dispatch = useAppDispatch()
+  const navigate = useNavigate()
   const headerRef = useRef<HTMLDivElement>(null)
   const navRef = useRef<HTMLDivElement>(null)
 
@@ -126,7 +126,6 @@ const CoreLayout = () => {
 
       {!isPlayerRoute && (
         <div className={styles.footer} ref={navRef}>
-          <InstallHint />
           {/* the tabs lead into the app, and before sign-in there is none */}
           {isSignedIn && <Navigation />}
         </div>
@@ -162,7 +161,11 @@ const CoreLayout = () => {
           variant={socketStatus.state === 'connecting' ? 'loading' : 'lost'}
           room={roomName}
           attempt={socketStatus.attempt}
-          onRetry={() => socket.connect()}
+          onRetry={() => {
+            socket.connect()
+            // the design lands on the queue (07) once the line is back
+            navigate('/queue')
+          }}
         />
       )}
 

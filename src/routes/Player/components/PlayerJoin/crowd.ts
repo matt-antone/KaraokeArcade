@@ -42,3 +42,11 @@ export const crowdOf = (seeds: number[], roster: RosterSinger[]): CrowdMember[] 
     }
   })
 }
+
+/** 10's join line: "12 singers in" / "1 singer in" / "Waiting for singers".
+ *  Capped at forty like the crowd, so the line never counts past the room. */
+export const joinCountOf = (joined: number) => {
+  const n = Math.min(CROWD_MAX, joined)
+
+  return n ? `${n} ${n === 1 ? 'singer' : 'singers'} in` : 'Waiting for singers'
+}

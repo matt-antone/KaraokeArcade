@@ -153,7 +153,7 @@ class User {
     const entities = {}
 
     const query = sql`
-      SELECT users.userId, users.username, users.name, users.dateCreated, users.dateUpdated, roles.name AS role
+      SELECT users.userId, users.username, users.name, users.avatarId, users.dateCreated, users.dateUpdated, roles.name AS role
       FROM users
         INNER JOIN roles USING (roleId)
       ORDER BY dateCreated DESC
@@ -360,6 +360,14 @@ class User {
       WHERE userId = ${userId}
     `
     db.run(String(artistStarsQuery), artistStarsQuery.parameters)
+
+    // and tonight's scores: everyone who joins a room has a board row (023),
+    // and either table's foreign key would fail the delete below
+    const pointsQuery = sql`DELETE FROM roomPoints WHERE userId = ${userId}`
+    db.run(String(pointsQuery), pointsQuery.parameters)
+
+    const triviaQuery = sql`DELETE FROM triviaScores WHERE userId = ${userId}`
+    db.run(String(triviaQuery), triviaQuery.parameters)
 
     // remove the user
     const usersQuery = sql`

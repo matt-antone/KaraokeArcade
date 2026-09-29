@@ -156,23 +156,34 @@ function dealRotation (map: Map<number, number[]>, resultByUser: number[]): numb
   return upcoming
 }
 
+/** The rotation, off the raw rows. getRoundRobinQueue is this over the store;
+ *  getQueueDisplay deals it again with the viewer's own pause lifted. */
+export const dealQueue = (
+  result: number[],
+  entities: Record<number, QueueItem | OptimisticQueueItem>,
+  history: number[],
+  curId: number,
+  nextUserId: number | null,
+  pausedUserIds: number[],
+) => {
+  const settled = getSettled(result, entities, history, curId, nextUserId, pausedUserIds)
+  const map = groupBySinger(result, entities, settled, pausedUserIds)
+  // Nothing settled can be optimistic: an optimistic row is appended to the
+  // end of the queue and has never been played, so it reaches neither the
+  // play history nor the playing row, and the "lock in next singer" pass
+  // above skips it explicitly. Without the assertion this reads off a row
+  // type that has neither a userId nor a type to derive a rotation id from.
+  const resultByUser = settled.map(queueId => rotationIdOf(entities[queueId] as QueueItem))
+
+  return {
+    result: settled.concat(dealRotation(map, resultByUser)) as number[],
+    entities: entities as Record<number, QueueItem>,
+  }
+}
+
 const getRoundRobinQueue = createSelector(
   [getResult, getEntities, getPlayerHistory, getQueueId, getNextUserId, getPausedUserIds],
-  (result, entities, history, curId, nextUserId, pausedUserIds) => {
-    const settled = getSettled(result, entities, history, curId, nextUserId, pausedUserIds)
-    const map = groupBySinger(result, entities, settled, pausedUserIds)
-    // Nothing settled can be optimistic: an optimistic row is appended to the
-    // end of the queue and has never been played, so it reaches neither the
-    // play history nor the playing row, and the "lock in next singer" pass
-    // above skips it explicitly. Without the assertion this reads off a row
-    // type that has neither a userId nor a type to derive a rotation id from.
-    const resultByUser = settled.map(queueId => rotationIdOf(entities[queueId] as QueueItem))
-
-    return {
-      result: settled.concat(dealRotation(map, resultByUser)) as number[],
-      entities: entities as Record<number, QueueItem>,
-    }
-  },
+  dealQueue,
 )
 
 export default getRoundRobinQueue

@@ -15,7 +15,7 @@ import rootReducer from 'store/reducers'
 import createSocketMiddleware from 'store/socketMiddleware'
 import { queuePush } from '../../modules/queue'
 import { SNAP_AT, SWIPE_ACTION_WIDTH } from 'components/SwipeRow/constants'
-import { PLAYER_REQ_NEXT, PLAYER_REQ_REPLAY, QUEUE_REMOVE, QUEUE_SET_KEY, STAR_SONG, UNSTAR_SONG } from 'shared/actionTypes'
+import { QUEUE_REMOVE, QUEUE_SET_KEY } from 'shared/actionTypes'
 import { KEY_CHANGE_MAX } from 'shared/types'
 import QueueItem from './QueueItem'
 
@@ -25,11 +25,9 @@ import QueueItem from './QueueItem'
  * middleware (with a stub socket in place of the network), so what is asserted
  * is where each action ends up.
  *
- * Two different endings, and the difference is the point:
- *  - starring is optimistic and lands in local state immediately
- *  - removing, replaying and skipping are requests: the middleware emits them
- *    and the server's push is what changes state. Nothing local to assert, so
- *    these assert the emit, plus the push that completes the round trip.
+ * Removing and setting a key are requests: the middleware emits them and the
+ * server's push is what changes state. Nothing local to assert, so these
+ * assert the emit, plus the push that completes the round trip.
  */
 
 // vitest globals are off, so RTL's own afterEach hook never registers
@@ -82,25 +80,16 @@ const serverQueue = (queueIds: number[]) => queuePush({
 
 const base = {
   artist: 'Cheap Trick',
-  errorMessage: '',
-  isCurrent: false,
-  isErrored: false,
   isMovable: true,
   isOwner: false,
   isPaused: false,
   isPlayed: false,
-  isPlaying: true,
   isRemovable: true,
-  isReplayable: true,
-  isSkippable: true,
-  isStarred: false,
   isTunable: false,
-  isUpcoming: false,
   keyChange: 0,
-  pctPlayed: 0,
+  points: 0,
   queueId: 1,
   songId: SONG_ID,
-  starCount: 0,
   title: 'Surrender',
   userDateUpdated: 0,
   userDisplayName: 'Robin',
@@ -143,48 +132,7 @@ describe('QueueItem against the real store', () => {
     expect(ensureState(store.getState().queue).result).toEqual([2])
   })
 
-  it('stars the song in local state as soon as the star is pressed', async () => {
-    const { store, emitted } = renderRow()
-
-    await act(async () => {
-      fireEvent.click(screen.getByLabelText('star'))
-    })
-
-    // optimistic: the reducer has already run, ahead of any server answer
-    expect(ensureState(store.getState().userStars).starredSongs).toEqual([SONG_ID])
-    expect(typesOf(emitted)).toEqual([STAR_SONG])
-  })
-
-  it('unstars from the same key, which means the thunk read the real store', async () => {
-    const { store, emitted } = renderRow({ isStarred: true })
-
-    await act(async () => {
-      fireEvent.click(screen.getByLabelText('unstar'))
-    })
-    // nothing starred yet, so a store-blind toggle would star it here
-    expect(ensureState(store.getState().userStars).starredSongs).toEqual([SONG_ID])
-
-    await act(async () => {
-      fireEvent.click(screen.getByLabelText('unstar'))
-    })
-    expect(ensureState(store.getState().userStars).starredSongs).toEqual([])
-    expect(typesOf(emitted)).toEqual([STAR_SONG, UNSTAR_SONG])
-  })
-
-  it('sends the transport request behind Replay and Skip', () => {
-    const { emitted, slider } = renderRow()
-
-    swipeOpen(slider)
-    fireEvent.click(screen.getByLabelText('Replay'))
-    fireEvent.click(screen.getByLabelText('Skip'))
-
-    expect(emitted).toEqual([
-      expect.objectContaining({ type: PLAYER_REQ_REPLAY, payload: { queueId: 1 } }),
-      expect.objectContaining({ type: PLAYER_REQ_NEXT }),
-    ])
-  })
-
-  it('gives a played row nothing that can reach the server but the star', async () => {
+  it('gives a played row nothing that can reach the server', async () => {
     // every permission still granted — being played is what takes them away
     const { container, emitted, dispatched, slider } = renderRow({ isPlayed: true })
 
@@ -195,8 +143,8 @@ describe('QueueItem against the real store', () => {
       })
     }
 
-    expect(typesOf(emitted)).toEqual([STAR_SONG])
-    expect(typesOf(dispatched).filter(t => t.startsWith('server/'))).toEqual([STAR_SONG])
+    expect(typesOf(emitted)).toEqual([])
+    expect(typesOf(dispatched).filter(t => t.startsWith('server/'))).toEqual([])
   })
 })
 
@@ -207,7 +155,7 @@ describe('QueueItem against the real store', () => {
  */
 describe('song settings', () => {
   const open = () => {
-    const ctx = renderRow({ isTunable: true, isUpcoming: true, isPlaying: false })
+    const ctx = renderRow({ isTunable: true })
     swipeOpen(ctx.slider)
     fireEvent.click(screen.getByLabelText('Settings'))
     return ctx
@@ -252,7 +200,7 @@ describe('song settings', () => {
   })
 
   it('cannot step past the supported range', () => {
-    const ctx = renderRow({ isTunable: true, isUpcoming: true, isPlaying: false, keyChange: KEY_CHANGE_MAX })
+    const ctx = renderRow({ isTunable: true, keyChange: KEY_CHANGE_MAX })
     swipeOpen(ctx.slider)
     fireEvent.click(screen.getByLabelText('Settings'))
 
@@ -268,7 +216,7 @@ describe('song settings', () => {
   })
 
   it('sends 0 on reset once the song has left its own key', () => {
-    const ctx = renderRow({ isTunable: true, isUpcoming: true, isPlaying: false, keyChange: -4 })
+    const ctx = renderRow({ isTunable: true, keyChange: -4 })
     swipeOpen(ctx.slider)
     fireEvent.click(screen.getByLabelText('Settings'))
     fireEvent.click(screen.getByText('Reset to original key'))
@@ -276,10 +224,5 @@ describe('song settings', () => {
     expect(ctx.emitted).toEqual([
       expect.objectContaining({ type: QUEUE_SET_KEY, payload: { keyChange: 0, queueId: 1 } }),
     ])
-  })
-
-  it('reads the key on the row face without opening anything', () => {
-    renderRow({ keyChange: 3 })
-    expect(screen.getByText('key +3')).toBeTruthy()
   })
 })

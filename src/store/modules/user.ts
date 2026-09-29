@@ -173,7 +173,6 @@ export const resetPassword = createAsyncThunk(
   'user/RESET_PASSWORD',
   async (body: { username: string, securityAnswer: string, newPassword: string, newPasswordConfirm: string }) => {
     await api.post('user/reset', { body })
-    alert('Password changed. Sign in with your new password.')
   },
 )
 

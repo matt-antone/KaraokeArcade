@@ -1,8 +1,8 @@
 /* Choosing who you sing as. See BattleSingerSelect.tsx. Lifted from Arcade
    Flow v2, 03 Select your singer. */
 
-/* A column that owns the rest of the screen. It arrives on a slam out of the
-   point the thumb just left (--fx-x/--fx-y, when a caller sets them). */
+/* A column that owns the rest of the screen, scrolling rather than
+   squeezing on a short phone. */
 .body {
   --accent: var(--arc-amber);
 
@@ -12,8 +12,10 @@
   flex-direction: column;
   overflow: hidden auto;
   background-color: var(--arc-ground);
-  transform-origin: var(--fx-x, 50%) var(--fx-y, 50%);
-  animation: battle-select-slam 260ms cubic-bezier(.2, .8, .3, 1) both;
+
+  & > * {
+    flex-shrink: 0;
+  }
 }
 
 .title {
@@ -22,14 +24,6 @@
   font-family: var(--font-display);
   font-size: var(--display-m);
   font-weight: var(--weight-regular);
-}
-
-.lede {
-  margin: var(--gap-2) 0 0;
-  text-align: center;
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  color: var(--arc-muted);
 }
 
 /* theme tabs: the one on show is filled in its accent */
@@ -47,7 +41,6 @@
   color: var(--arc-text-2);
   font-family: var(--font-display);
   font-size: var(--display-s);
-  text-transform: capitalize;
   cursor: pointer;
 
   &:focus-visible {
@@ -73,7 +66,7 @@
 
   position: relative;
   flex: none;
-  height: clamp(180px, 34vh, 300px);
+  height: 300px;
   margin: 18px 24px 0;
   overflow: hidden;
   background-color: var(--arc-surface);
@@ -93,13 +86,11 @@
   object-position: 50% 75%;
 }
 
+/* the pick singing, 330px square, feet just under the frame */
 .figure {
-  position: absolute;
   left: 50%;
   bottom: -10px;
-  height: 110%;
   transform: translateX(-50%);
-  image-rendering: pixelated;
 }
 
 .badge {
@@ -135,7 +126,6 @@
   flex: none;
   font-family: var(--font-display);
   font-size: var(--text-s);
-  text-transform: capitalize;
   color: var(--arc-text-2);
 }
 
@@ -169,12 +159,10 @@
 }
 
 .tileOn {
+  --pixel-border-color: var(--arc-yellow);
+
   z-index: 1;
-  box-shadow:
-    0 -3px 0 var(--arc-yellow),
-    0 3px 0 var(--arc-yellow),
-    -3px 0 0 var(--arc-yellow),
-    3px 0 0 var(--arc-yellow);
+  box-shadow: var(--pixel-border-3);
 }
 
 .portrait {
@@ -183,44 +171,19 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  image-rendering: pixelated;
 }
 
-/* a fact about the tile rather than a state of it: a stamp in the corner */
-.tag {
-  position: absolute;
-  left: 0;
-  top: 0;
-  padding: 3px 4px;
-  font-family: var(--font-display);
-  font-size: 7px;
-  color: var(--arc-on-amber);
-  background-color: var(--arc-mint);
+.spacer {
+  flex: 1 0 0;
 }
 
-/* pinned, so the key that acts on the pick is in reach however far down the
-   roster somebody is */
 .footer {
-  position: sticky;
-  bottom: 0;
-  margin-top: auto;
-  padding: var(--gap-5) 24px calc(28px + env(safe-area-inset-bottom));
-  background-color: var(--arc-ground);
+  padding: 0 24px calc(28px + env(safe-area-inset-bottom));
 }
 
-.select {
+/* the big framed key: amber sides as well as the top and bottom lips */
+.footer .select {
   padding: 16px 0;
   font-size: 20px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .body {
-    animation: none;
-  }
-}
-
-@keyframes battle-select-slam {
-  0% { transform: scale(1.9); opacity: 0; }
-  40% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
+  box-shadow: var(--bevel-vu-framed);
 }

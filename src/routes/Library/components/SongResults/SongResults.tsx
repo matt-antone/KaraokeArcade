@@ -6,9 +6,9 @@ import PaddedList from 'components/PaddedList/PaddedList'
 import SongList from '../SongList/SongList'
 import type { RowComponentProps } from 'react-window'
 
-// estimate only: rows are measured once rendered (see PaddedList), because a
-// song title always shows in full and a wrapped title makes the row taller
-const ROW_HEIGHT_SONG_WITH_ARTIST = 56 // --row-song, seam rule included
+// estimate only: rows are measured once rendered (see PaddedList).
+// 12 + 17px title + 2 + 13px meta + 12, plus the 2px seam
+const ROW_HEIGHT_SONG_WITH_ARTIST = 67
 
 // stable identity: PaddedList keys its measurement cache off this function
 const rowHeight = () => ROW_HEIGHT_SONG_WITH_ARTIST
@@ -18,7 +18,6 @@ interface SongResultsProps {
 }
 
 interface CustomRowProps {
-  filterKeywords: string[]
   songsResult: number[]
 }
 
@@ -27,15 +26,10 @@ interface CustomRowProps {
 const RowComponent = ({
   index,
   style,
-  filterKeywords,
   songsResult,
 }: RowComponentProps<CustomRowProps>) => (
   <div style={style}>
-    <SongList
-      songIds={[songsResult[index]]}
-      showArtist
-      filterKeywords={filterKeywords}
-    />
+    <SongList songIds={[songsResult[index]]} showArtist />
   </div>
 )
 
@@ -43,19 +37,18 @@ const SongResults = ({ ui }: SongResultsProps) => {
   const filterStr = useAppSelector(state => state.library.filterStr)
   const { songsResult } = useAppSelector(getSearchResults)
 
-  const filterKeywords = filterStr.trim() ? filterStr.trim().toLowerCase().split(' ') : []
-
+  // full-bleed rows; the header's own 8px band sits between them and the tabs (04)
   return (
     <PaddedList
       rowComponent={RowComponent}
-      rowProps={{ filterKeywords, songsResult }}
+      rowProps={{ songsResult }}
       rowHeight={rowHeight}
       cacheKey={filterStr}
       numRows={songsResult.length}
-      paddingTop={ui.headerHeight + 14}
-      paddingRight={4}
+      paddingTop={ui.headerHeight}
+      paddingRight={0}
       paddingBottom={ui.footerHeight + 20}
-      paddingLeft={14}
+      paddingLeft={0}
       height={ui.innerHeight}
     />
   )

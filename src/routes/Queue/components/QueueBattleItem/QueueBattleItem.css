@@ -1,8 +1,8 @@
-/* Sits in the same list as the singers, so it keeps their card and their gap.
-   Taller than one of them because it carries two of everything — --row-queue is
-   a minimum, and this row legitimately exceeds it.
+/* Sits in the same list as the singers, so it keeps the 07 row's frame: place,
+   then content, 12px apart, 10px in. Taller than one of them because it carries
+   two of everything; the content sets the height.
 
-   The frame is mint queued and gold on stage; the two channel colours live on
+   The frame is mint while queued; the two channel colours live on
    the fighters inside, where they tell you which singer is which rather than
    what the row's state is. */
 .shell {
@@ -12,13 +12,30 @@
 .container {
   position: relative;
   display: flex;
-  flex-direction: column;
-  gap: var(--gap-3);
-  min-height: var(--row-queue);
+  align-items: center;
+  gap: 12px;
   padding: var(--gap-3);
   background: var(--arc-surface);
   box-shadow: inset 0 0 0 2px var(--standby);
   line-height: normal;
+}
+
+/* the place in line, as on every 07 row */
+.position {
+  flex: none;
+  width: 18px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: var(--text-l);
+  color: var(--arc-disabled);
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-3);
 }
 
 .header {
@@ -78,12 +95,12 @@
   color: var(--ink);
 }
 
-/* titles always show in full: they wrap, and the row grows to fit */
 .title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: var(--text-l);
   font-weight: var(--weight-semibold);
-  line-height: 1.25;
-  overflow-wrap: break-word;
   color: var(--ink);
 }
 
@@ -104,16 +121,4 @@
 
   .challenger,
   .opponent { box-shadow: var(--well-deep); }
-}
-
-.current .container {
-  box-shadow: inset 0 0 0 3px var(--arc-yellow);
-}
-
-.now {
-  flex: none;
-  padding: 0 var(--gap-2);
-  font-family: var(--font-display);
-  font-size: var(--display-s);
-  color: var(--arc-yellow);
 }

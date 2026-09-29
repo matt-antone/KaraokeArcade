@@ -15,13 +15,14 @@ import {
 /**
  * The frame of a fighter's animation that is on screen right now.
  *
- * Cycling sets — `sing`, `dance` — take their index from the wall clock rather
- * than from a counter, so two fighters mounted at different moments (the
- * versus card's pair, the winner arriving over the beat before it) are on the
- * same frame as each other, and neither drifts across a two-minute song.
+ * Cycling sets — `sing`, `dance`, `victory` — take their index from the wall
+ * clock rather than from a counter, so two fighters mounted at different
+ * moments (the versus card's pair, the winner arriving over the beat before
+ * it) are on the same frame as each other, and neither drifts across a
+ * two-minute song.
  *
- * One-shot sets — `ko`, `victory` — play once and hold their last frame, and
- * so need `elapsedMs`: how far into the animation the room is. Unlike a cycle
+ * One-shot sets — `ko` — play once and hold their last frame, and so need
+ * `elapsedMs`: how far into the animation the room is. Unlike a cycle
  * there is a right moment for frame 0, and a wall-clock index would drop the
  * fighter into the middle of their own knockdown.
  *
@@ -55,6 +56,9 @@ import {
  * `want` is what the beat would like to see, not what it gets: a fighter
  * missing the set that was asked for falls back to one they have rather than
  * to a 404, which is battleSingerLoop's job.
+ *
+ * prefers-reduced-motion holds still: a cycle holds frame 0 and a one-shot
+ * holds its last frame (the pose it lands on), and the clock stops ticking.
  */
 export default function useSpriteFrame (
   singer: RosterSinger,
@@ -64,7 +68,10 @@ export default function useSpriteFrame (
   const loop = battleSingerLoop(singer, want)
   const set = useFighterSet(singer.group, singer.slug, loop, battleSingerSet(singer, loop))
   const frameMs = setFrameMs(set)
-  const now = useNow(frameMs)
+  const isStill = typeof window !== 'undefined'
+    && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  // ponytail: read once per render, not subscribed; a change applies on the next frame or mount
+  const now = useNow(isStill ? 3_600_000 : frameMs)
 
   useEffect(() => {
     const img = new Image()
@@ -77,10 +84,10 @@ export default function useSpriteFrame (
 
   if (ONE_SHOT_SETS.has(loop)) {
     const last = set.frames - 1
-    const frame = elapsedMs === undefined ? last : Math.floor(elapsedMs / frameMs)
+    const frame = elapsedMs === undefined || isStill ? last : Math.floor(elapsedMs / frameMs)
 
     return battleSingerCell(drawn, loop, Math.min(last, Math.max(0, frame)))
   }
 
-  return battleSingerCell(drawn, loop, Math.floor(now / frameMs))
+  return battleSingerCell(drawn, loop, isStill ? 0 : Math.floor(now / frameMs))
 }

@@ -1,5 +1,6 @@
-/* 11b · the playing bar. Solid, never a wash: the video behind it would eat
-   the type otherwise. Sized in vh from the design's 540px-tall canvas. */
+/* 11b · the playing bar, up for the whole song. The video sits inset below it,
+   so it is deep at 85% rather than solid. Sized in vh from the design's
+   540px-tall TV: 1px there is 0.1852vh here. */
 .panel {
   position: absolute;
   top: 0;
@@ -7,45 +8,36 @@
   right: 0;
   display: flex;
   align-items: center;
-  gap: 3vh;
-  height: 11vh;
-  padding: 0 5.2vh;
-  background: var(--arc-deep);
-  box-shadow: 0 0.74vh 0 var(--arc-line);
+  gap: 2.96vh;
+  height: 11.11vh;
+  padding: 0 5.19vh;
+  background: color-mix(in srgb, var(--arc-deep) 85%, transparent);
+  color: var(--arc-text);
 }
 
 .logo {
   display: block;
   flex: none;
-  height: 3vh;
+  height: 2.96vh;
 }
 
 .rule {
   flex: none;
   width: 0.37vh;
-  height: 4vh;
+  height: 4.07vh;
   background: var(--arc-line);
 }
 
-.label {
+.singer,
+.time,
+.nextLabel,
+.nextName {
   flex: none;
   font-family: var(--font-display);
-  font-size: 2vh;
-  color: var(--arc-muted);
 }
 
 .singer {
-  flex: none;
-  max-width: 30vw;
-  font-family: var(--font-display);
-  font-size: 2.6vh;
-  color: var(--arc-mint);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.vu {
+  font-size: 2.59vh;
   color: var(--arc-amber);
 }
 
@@ -53,9 +45,8 @@
   flex: 1;
   min-width: 0;
   font-family: var(--font-body);
-  font-size: 2.8vh;
+  font-size: 2.78vh;
   font-weight: var(--weight-semibold);
-  color: var(--arc-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -64,4 +55,31 @@
 .artist {
   font-weight: var(--weight-regular);
   color: var(--arc-text-2);
+}
+
+.meter {
+  flex: none;
+  width: 22.22vh;
+}
+
+.time {
+  font-size: 2.22vh;
+  color: var(--arc-text-2);
+}
+
+.nextLabel {
+  font-size: 2.04vh;
+  color: var(--arc-muted);
+}
+
+.nextAvatar {
+  flex: none;
+  width: 4.44vh;
+  height: 4.44vh;
+  margin: 0;
+}
+
+.nextName {
+  font-size: 2.04vh;
+  color: var(--arc-mint);
 }

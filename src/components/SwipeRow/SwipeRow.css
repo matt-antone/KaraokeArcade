@@ -33,8 +33,6 @@
   /* the label is what makes the payoff of the gesture obvious */
   font-family: var(--font-display);
   font-size: var(--text-xs);
-  letter-spacing: var(--silkscreen-tracking);
-  text-transform: uppercase;
 }
 
 .panel {

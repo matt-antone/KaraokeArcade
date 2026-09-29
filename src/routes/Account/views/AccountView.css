@@ -1,14 +1,24 @@
-/* The Account column: plain document flow — the page scrolls, not this box.
-   See SettingsView.css for why nothing here is sized in JS. */
+/* 08 My account's body: plain document flow — the page scrolls, not this box
+   (see SettingsView.css for why nothing here is sized in JS). The fixed chrome
+   is cleared with the heights CoreLayout publishes. */
 .container {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding:
+    calc(var(--header-h, 0px) + 18px)
+    var(--gutter)
+    calc(var(--nav-h, 0px) + var(--gap-5));
+}
+
+/* First run (the admin account) keeps the reading column it was built in */
+.column {
   max-width: var(--content-max);
   margin: 0 auto;
   padding:
     calc(var(--header-h, 0px) + var(--gap-4))
     var(--gutter)
     calc(var(--nav-h, 0px) + var(--gap-5));
-
-  & > * + * {
-    margin-top: var(--gap-4);
-  }
 }

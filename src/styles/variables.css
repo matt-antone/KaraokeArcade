@@ -22,7 +22,8 @@
    edge (--bevel), an outline is the four-shadow pixel border
    (--pixel-border), and type drops a hard 3px offset (--text-shadow-hard).
    Blur exists only at the peak of a glow burst (--glow-burst), inside
-   @keyframes. */
+   @keyframes, and in the two static glows the design draws (--glow-pip,
+   --glow-answer). */
 
 :root {
   /* ================================================================== */
@@ -56,6 +57,22 @@
   --arc-green: #7fe3a5;         /* battle opponent */
   --arc-red: #ff8a8a;           /* battle challenger */
   --arc-white: #fff;
+
+  /* colours the redesign draws outside the first palette (fidelity pass) */
+  --arc-yellow-lo: #8a7300;       /* the yellow key's dark bottom edge */
+  --arc-hold-ink: #ffe9a0;        /* 07c hold notice text */
+  --arc-mint-well: #17332f;       /* 04 a row queued by me */
+  --arc-amber-side: #e87510;      /* 03/03b framed key side edges */
+  --arc-podium-numeral: #4b3a7a;  /* 12b/12c rank numerals */
+  --arc-on-red: #2a0b0b;          /* ink on --arc-red */
+  --arc-gold-hi: #ffe29a;         /* the gold battle key's top lip */
+  --arc-gold-lo: #8a6a1a;         /* ...and its bottom lip */
+  --arc-green-hi: #b4f2cb;        /* the green battle key's top lip */
+  --arc-green-lo: #2f7a4c;        /* ...and its bottom lip */
+  --arc-red-hi: #ffb0b0;          /* the red battle key's top lip */
+  --arc-red-lo: #8a3a3a;          /* ...and its bottom lip */
+  --arc-stage-p1: #1a0f2e;        /* P1 stage ground */
+  --arc-stage-p2: #0f1f2a;        /* P2 stage ground */
 
   /* trivia's cabinet extras */
   --arc-violet: #b388ff;
@@ -150,6 +167,11 @@
   --bevel: 0 -2px 0 var(--arc-line), 0 2px 0 var(--arc-deep);
   --bevel-vu: 0 -4px 0 var(--arc-amber-hi), 0 4px 0 var(--arc-gold-shadow);
   --bevel-alert: 0 -4px 0 var(--arc-magenta-hi), 0 4px 0 var(--arc-magenta-lo);
+  --bevel-yellow: 0 -2px 0 var(--arc-ring), 0 2px 0 var(--arc-yellow-lo);
+  /* the framed amber key: lit top, dark bottom, amber sides (03, 03b) */
+  --bevel-vu-framed: 0 -4px 0 var(--arc-amber-hi), 0 4px 0 var(--arc-gold-shadow), -4px 0 0 var(--arc-amber-side), 4px 0 0 var(--arc-amber-side);
+  /* a small lit amber key (09 transport) */
+  --bevel-vu-2: 0 -2px 0 var(--arc-amber-hi), 0 2px 0 var(--arc-gold-shadow);
   /* a recess: a hard inset outline */
   --well: inset 0 0 0 2px var(--arc-surface-hover);
   --well-deep: inset 0 0 0 2px var(--arc-line);
@@ -176,12 +198,18 @@
 
   /* the glow burst, yellow to pink — peak frame of a @keyframes only */
   --glow-burst: 0 0 18px var(--arc-yellow), 0 0 44px var(--arc-amber), 0 0 80px var(--arc-magenta);
+  /* the two static glows the design draws: trivia's lit pip and the
+     revealed answer. arcade-rules.test.ts allows these two by name. */
+  --glow-pip: 0 0 12px var(--arc-amber);
+  --glow-answer: 0 0 24px var(--arc-magenta);
 
   /* the dim behind a modal: --arc-deep at 88% */
   --scrim: rgba(11, 6, 24, .88);
 
   /* CRT scanlines, drawn over every screen by global.css */
   --scanlines: repeating-linear-gradient(0deg, rgba(0, 0, 0, .3) 0 1px, transparent 1px 3px);
+  /* the TV's own layer: 2px per 6px at 1080, drawn by each TV screen */
+  --scanlines-tv: repeating-linear-gradient(0deg, rgba(0, 0, 0, .3) 0 .1852vh, transparent .1852vh .5556vh);
 
   /* focus: a hard amber ring. Visible, unambiguous, no blur. */
   --focus-outline: 2px solid var(--vu);
@@ -217,7 +245,7 @@
   --display-xl: 11vh;     /* player countdown numeral */
 
   --silkscreen-size: var(--text-xs);
-  --silkscreen-tracking: 0.04em;
+  --silkscreen-tracking: normal; /* the design tracks Silkscreen nowhere */
 
   --icon-s: 1rem;         /* 16px */
   --icon-m: 1.375rem;     /* 22px — row actions */
@@ -242,11 +270,13 @@
      still need as a number. */
   --content-max: 768px;
 
-  --target: 44px;         /* absolute minimum for anything tappable */
+  --target: 44px;         /* floor for undesigned controls; design-drawn keys take their drawn size */
   --target-l: 46px;       /* transport keys */
 
   --row-artist: 46px;     /* library folder row */
   --row-song: 56px;       /* library song row */
+  /* DECK-era: QueueItem no longer uses these; QueueBattleItem and
+     QueueTriviaItem still do */
   --row-queue: 86px;      /* queue row — sized by the 62px avatar */
   --avatar-queue: 62px;
   --avatar-form: 96px;
@@ -275,7 +305,13 @@
     0 4px 0 var(--pixel-border-color),
     -4px 0 0 var(--pixel-border-color),
     4px 0 0 var(--pixel-border-color);
+  --pixel-border-3:
+    0 -3px 0 var(--pixel-border-color),
+    0 3px 0 var(--pixel-border-color),
+    -3px 0 0 var(--pixel-border-color),
+    3px 0 0 var(--pixel-border-color);
   --text-shadow-hard: 3px 3px 0 var(--text-shadow-color);
+  --text-shadow-hard-4: 4px 4px 0 var(--text-shadow-color);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -18,7 +18,7 @@ describe('Tabs', () => {
     render(<Tabs tabs={tabs} active='me' />)
 
     const selected = screen.getAllByRole('tab').filter(t => t.getAttribute('aria-selected') === 'true')
-    expect(selected.map(t => t.textContent)).toEqual(['Me0'])
+    expect(selected.map(t => t.textContent)).toEqual(['Me 0'])
     expect(selected[0].className).toContain('active')
   })
 

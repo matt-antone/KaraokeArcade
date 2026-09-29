@@ -1,14 +1,14 @@
-/* Always square, always sitting in a recessed well. The
-   fallback glyph is unlit, like every other empty indicator. Size it from
-   the outside via the container the caller supplies. */
+/* Always square, a flat violet tile with no well and no ring: a caller that
+   wants a ring (amber for mine, --arc-line otherwise) adds it with its own
+   className. The fallback glyph is unlit, like every other empty indicator.
+   Size it from the outside via the container the caller supplies. */
 .container {
   aspect-ratio: 1;
   margin: 0 auto;
   display: grid;
   place-items: center;
   overflow: hidden;
-  background: var(--key-well);
-  box-shadow: var(--well-deep);
+  background: var(--arc-surface-hover);
   border-radius: var(--radius-key);
 
   svg {
@@ -17,12 +17,10 @@
     color: var(--ink-5);
   }
 
-  /* The portraits are pixel art: the browser's smoothing turns a 34px crop
-     drawn at 4x into mush, the same reason BattleSprite pins it. */
+  /* portrait-80 at the browser's default smoothing, as the design draws it */
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    image-rendering: pixelated;
   }
 }

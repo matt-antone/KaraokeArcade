@@ -1,12 +1,12 @@
-/* The signature readout. Unlit segments are dark cells; lit ones are flat
-   colour. Colour comes from a segment's POSITION on the scale, not from the
-   value — so the meter reads as a calibrated strip that fills, the way a real
-   VU register does, rather than a bar that changes colour as it grows. */
+/* The signature readout, as the design draws it: unlit cells are the violet
+   key colour, lit cells amber, and lit cells past the peak mark yellow.
+   Colour comes from a cell's POSITION on the scale, not from the value — so
+   the meter reads as a calibrated strip that fills. */
 
 .container {
   display: flex;
   flex-direction: row;
-  gap: var(--gap-1);
+  gap: var(--vu-gap);
   width: 100%;
   height: var(--vu-thickness);
 }
@@ -19,18 +19,18 @@
 
 .seg {
   flex: 1;
-  background: var(--key);
+  background: var(--arc-surface-hover);
 }
 
-/* lit: the segment carries signal */
 .lit {
-  background: var(--vu-dim);
-}
-
-.hot {
-  background: var(--vu);
+  background: var(--arc-amber);
 }
 
 .peak {
-  background: var(--alert);
+  background: var(--arc-yellow);
+}
+
+/* 09 media: every lit cell mint */
+.mint .lit {
+  background: var(--arc-mint);
 }

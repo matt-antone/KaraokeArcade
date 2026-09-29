@@ -64,7 +64,7 @@ const ScoringTutorial = ({ singer, onContinue }: ScoringTutorialProps) => (
     <div className={styles.cards}>
       <Row title='Sing a song' sub='Every song you finish' points={POINTS_SONG} tone='amber' at={400} />
       <Row title='Win a singer battle' sub='The room votes' points={POINTS_BATTLE_WIN} tone='yellow' at={750} />
-      <Row title='Play in a battle' sub='Win or lose' points={POINTS_BATTLE_TAKE_PART} tone='mint' at={1100} />
+      <Row title='Play in a battle' sub='Lose or draw' points={POINTS_BATTLE_TAKE_PART} tone='mint' at={1100} />
 
       <div className={styles.card}>
         <span className={styles.shine} style={delay(2150)} />
@@ -90,6 +90,7 @@ const ScoringTutorial = ({ singer, onContinue }: ScoringTutorialProps) => (
       </div>
     </div>
 
+    <div className={styles.spacer} />
     <div className={styles.footer}>
       <Button variant='primary' className={styles.key} onClick={onContinue}>Continue</Button>
     </div>

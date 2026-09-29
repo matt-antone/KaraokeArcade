@@ -1,107 +1,43 @@
-/* The opponent's phone: Arcade Flow v2, 13b (challenge received).
-
-   Every colour is a variables.css token, read through the roles the frame
-   declares on .screen in BattleStage/BattleFrame.css (on this phone the local
-   player is green), and src/styles/arcade-rules.test.ts holds this file to the
-   same rules as the rest of the app. */
-
-.body {
-  flex: 1;
-  min-height: 0;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.slam {
-  transform-origin: var(--fx-x) var(--fx-y);
-  animation: battle-invite-slam 260ms steps(6, end) both;
-}
-
-.gap {
-  flex: 1 1 auto;
-  min-height: 12px;
-}
-
-.footer {
-  flex: none;
-  position: relative;
-  padding: 12px 20px calc(24px + env(safe-area-inset-bottom));
-}
-
-.footerStack {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.footerPair {
-  display: flex;
-  gap: 10px;
-}
-
-/* 13b: Accept takes two thirds of the row, Decline the rest. */
-.accept {
-  flex: 2;
-  min-width: 0;
-}
-
-.decline {
-  flex: 1;
-  min-width: 0;
-  margin: 4px 0;
-}
-
-/* --- invite -------------------------------------------------------------- */
+/* The opponent's phone: Arcade Flow v2 13b, challenge received. */
 
 .topRow {
   flex: none;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
   padding: 16px 20px 0;
 }
 
-.incomingDot {
-  flex: none;
-  width: 10px;
-  height: 10px;
-  background-color: var(--arc-red);
-  animation: battle-invite-blink 1.1s steps(1) infinite;
-}
-
 .incoming {
-  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--font-display);
   font-size: var(--display-s);
   color: var(--arc-red);
 }
 
-/* Gold, and quiet about it until the last ten seconds: a clock that shouts for
-   forty-five of them is a clock nobody reads by the end. */
+.incomingDot {
+  width: 10px;
+  height: 10px;
+  background: var(--arc-red);
+  animation: blink 1.1s steps(1) infinite;
+}
+
 .clock {
-  flex: none;
   font-family: var(--font-display);
   font-size: var(--text-l);
-  font-variant-numeric: tabular-nums;
   color: var(--arc-gold);
 }
 
-.clockUrgent {
-  color: var(--arc-red);
-}
-
-/* The challenger in their own room, ringed in their red with a 4px pixel
-   border. */
+/* The challenger in their own room, ringed in their red. */
 .hero {
   --pixel-border-color: var(--arc-red);
-  flex: 0 1 300px;
-  min-height: 180px;
+  flex: none;
   position: relative;
-  margin: 20px 20px 0;
+  height: 300px;
+  margin: 16px 20px 0;
   overflow: hidden;
-  background-color: var(--arc-surface);
   box-shadow: var(--pixel-border);
 }
 
@@ -114,63 +50,52 @@
   object-position: 50% 80%;
 }
 
-/* Standing to the right of the card, clear of the name in the corner. */
-.hero .heroArt {
-  inset: auto -24px -6px auto;
-  width: 72%;
-  height: 100%;
-  object-position: right bottom;
-  animation: battle-invite-slam 340ms steps(6, end) both;
+.heroArt {
+  position: absolute;
+  right: -60px;
+  bottom: -6px;
+  width: 320px;
 }
 
-/* A dark floor under the name so it reads over any room. */
 .heroFade {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
   height: 120px;
-  background: linear-gradient(0deg, color-mix(in srgb, var(--arc-deep) 95%, transparent), transparent);
+  background: linear-gradient(0deg,
+    color-mix(in srgb, var(--arc-deep) 95%, transparent),
+    color-mix(in srgb, var(--arc-deep) 0%, transparent));
 }
 
 .heroText {
   position: absolute;
   left: 14px;
   bottom: 14px;
-  right: 14px;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   gap: 6px;
 }
 
-.heroTag {
+.chip {
+  align-self: flex-start;
   padding: 3px 7px;
-  background-color: var(--arc-red);
+  background: var(--arc-red);
   font-family: var(--font-display);
   font-size: var(--text-xs);
-  color: var(--arc-on-amber);
+  color: var(--arc-on-red);
 }
 
-/* The knock on the door: a two-step shake on arrival and never again, because
-   a name that keeps moving is a name nobody can read. */
 .challenger {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   font-family: var(--font-display);
   font-size: var(--display-m);
-  animation: battle-invite-knock 520ms steps(2) 1;
 }
 
-.heroWants {
-  font-family: var(--font-body);
+.wants {
   font-size: 15px;
   color: var(--arc-text-2);
 }
 
-/* "You'll sing", 13b. */
 .card {
   flex: none;
   display: flex;
@@ -178,213 +103,94 @@
   gap: 6px;
   margin: 22px 20px 0;
   padding: 14px 16px;
-  background-color: var(--arc-surface);
+  background: var(--arc-surface);
   box-shadow: var(--well-deep);
 }
 
-.cardLegend {
+.legend {
   font-family: var(--font-display);
   font-size: var(--text-xs);
   color: var(--arc-muted);
-}
-
-.cardTitle {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-display);
-  font-size: var(--text-3xl);
-}
-
-.cardMeta {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  color: var(--arc-muted);
-}
-
-.cardBy {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--arc-red);
-}
-
-.stakes {
-  flex: none;
-  padding: 0 20px;
-}
-
-.terms {
-  font-family: var(--font-display);
-  font-size: 10px;
-  line-height: 1.6;
-  color: var(--arc-muted);
-  text-align: center;
-}
-
-/* --- confirm ------------------------------------------------------------- */
-
-.masthead {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 28px 20px 0;
 }
 
 .title {
   font-family: var(--font-display);
   font-size: var(--text-3xl);
-  line-height: 1.15;
 }
 
-.lede {
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  color: var(--arc-muted);
-}
-
-.scroller {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden auto;
-  padding: 20px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--arc-line) var(--arc-surface);
-}
-
-.closing {
-  margin-top: 16px;
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  line-height: 2;
-  color: var(--arc-muted);
-  text-align: center;
-}
-
-/* --- handoff ------------------------------------------------------------- */
-
-/* YOU'RE IN, set like 13e's YOU'RE ON: gold on a magenta drop. */
-.inHead {
-  --text-shadow-color: var(--arc-magenta);
-  flex: none;
-  padding: 32px 24px 0;
-  font-family: var(--font-display);
-  font-size: 40px;
-  font-weight: var(--weight-bold);
-  line-height: 1.05;
-  color: var(--arc-gold);
-  text-shadow: 4px 4px 0 var(--text-shadow-color);
-  text-align: center;
-  animation: battle-invite-slam 320ms steps(6, end) both;
-}
-
-.inPair {
-  flex: none;
-  margin-top: 12px;
-  padding: 0 24px;
-  font-family: var(--font-body);
-  font-size: var(--text-xl);
+.meta {
+  font-size: var(--text-m);
   color: var(--arc-text-2);
-  text-align: center;
 }
 
-.inLockup {
-  flex: 1;
-  min-height: 0;
+.pickedBy {
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  color: var(--arc-red);
+}
+
+.stakes {
+  flex: none;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  padding: 16px 20px;
+  gap: 8px;
+  margin: 14px 20px 0;
 }
 
-/* The one non-pixel asset in the set, told not to sample like one. */
-.lockupLarge {
-  flex: 0 1 auto;
-  min-height: 0;
-  width: 100%;
-  max-width: 340px;
-  height: auto;
-  object-fit: contain;
-  image-rendering: auto;
+.stakeWin,
+.stakePlay {
+  padding: 6px 8px;
+  background: var(--arc-surface-hover);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
 }
 
-/* --- declined / too slow ------------------------------------------------- */
+.stakeWin {
+  color: var(--arc-gold);
+}
 
-/* The answer is final, and offering a way back into it is offering to reopen
-   a decision the challenger has already been told about. */
-.ended {
+.stakePlay {
+  color: var(--arc-mint);
+}
+
+.gap {
   flex: 1;
-  min-height: 0;
+}
+
+.footer {
+  flex: none;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 0 32px;
+  gap: 12px;
+  padding: 0 20px 24px;
+}
+
+.keys {
+  display: flex;
+  gap: 10px;
+}
+
+.accept {
+  flex: 2;
+}
+
+.decline {
+  flex: 1;
+}
+
+.caption {
+  font-family: var(--font-display);
+  font-size: 10px;
+  color: var(--arc-muted);
   text-align: center;
 }
 
-.lockup {
-  width: 100%;
-  max-width: 250px;
-  height: auto;
-  image-rendering: auto;
-}
-
-/* Spent: drained of colour rather than faded, so nothing ghosts through. */
-.lockupSpent {
-  filter: grayscale(1) brightness(0.5);
-}
-
-.endedTitle {
-  --text-shadow-color: var(--arc-deep);
-  font-family: var(--font-display);
-  font-size: 44px;
-  font-weight: var(--weight-bold);
-  line-height: 1.05;
-  color: var(--arc-red);
-  text-shadow: 4px 4px 0 var(--text-shadow-color);
-}
-
-.endedNote {
-  font-family: var(--font-body);
-  font-size: var(--text-xl);
-  line-height: 1.4;
-  color: var(--arc-text-2);
-}
-
-@keyframes battle-invite-slam {
-  0% { transform: scale(1.9); opacity: 0; }
-  40% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-@keyframes battle-invite-blink {
+@keyframes blink {
   0%, 49% { opacity: 1; }
   50%, 100% { opacity: 0; }
 }
 
-@keyframes battle-invite-knock {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-3px); }
-  40% { transform: translateX(3px); }
-  60% { transform: translateX(-2px); }
-  80% { transform: translateX(2px); }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .slam,
-  .hero .heroArt,
-  .incomingDot,
-  .challenger,
-  .inHead {
+  .incomingDot {
     animation: none;
   }
 }

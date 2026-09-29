@@ -1,0 +1,6 @@
+/* 08 My room + Song history: one column at the design's 10px */
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

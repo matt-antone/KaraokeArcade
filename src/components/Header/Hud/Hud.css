@@ -1,15 +1,22 @@
-/* One row of Silkscreen across the top of the screen. The room sits between
-   two slots of equal weight so it stays centred whatever the slots hold. */
+/* One row of Silkscreen across the top of the screen. With no right slot (the
+   design's credit counter, dropped) the room sits centred between two slots
+   of equal weight. */
 
 .container {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: var(--gap-3);
-  padding: var(--gap-4) var(--gutter) 0;
+  padding: 20px 24px 0;
   font-family: var(--font-display);
-  font-size: 12px;
-  line-height: 1;
+  font-size: var(--text-m);
+}
+
+/* a right slot of the design's own (90 Offline, trivia, battle): the design's
+   flex row, three items spread with equal gaps, room not screen-centred */
+.split {
+  display: flex;
+  justify-content: space-between;
 }
 
 .player {

@@ -1,0 +1,138 @@
+/* 1 Player Start. See StartButton.tsx. Lifted from Arcade Flow v2, 02.
+   Modelled hardware: its chrome, soft bevels and cap glow are the design's
+   own literals, and this folder is exempt from the palette, square and
+   hard-edge rules (arcade-rules.test.ts). */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+/* the chrome bezel */
+.button {
+  position: relative;
+  flex: none;
+  width: 136px;
+  height: 136px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, #5a5d62 0 40%, #26282b 70%, #111214 100%);
+  box-shadow: 0 8px 0 #0b0618, 0 10px 18px rgba(0, 0, 0, .6), inset 0 2px 0 rgba(255, 255, 255, .35);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: 4px;
+  }
+}
+
+.ring {
+  position: absolute;
+  inset: 9px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, rgba(255, 255, 255, .28), rgba(255, 255, 255, .06) 60%, rgba(0, 0, 0, .25));
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .35), inset 0 -3px 6px rgba(0, 0, 0, .4);
+}
+
+.well {
+  position: absolute;
+  inset: 19px;
+  border-radius: 50%;
+  background: #1b1c1e;
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .18);
+}
+
+/* the lit cap, which is what travels on a press */
+.cap {
+  position: absolute;
+  inset: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 38%, #ffd29a 0 12%, #ffa03d 45%, #f5820b 80%, #d86d05 100%);
+  box-shadow: 0 0 22px rgba(255, 138, 30, .75), inset 0 -4px 8px rgba(122, 67, 16, .45), inset 0 3px 4px rgba(255, 255, 255, .5);
+}
+
+.button:active .cap {
+  transform: translateY(3px);
+  box-shadow: 0 0 34px rgba(255, 138, 30, .95), inset 0 -2px 6px rgba(122, 67, 16, .45);
+}
+
+/* the pixel player printed on the cap */
+.player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.head {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #3a2410;
+}
+
+.row {
+  display: flex;
+  gap: 2px;
+}
+
+.legs {
+  margin-top: -2px;
+}
+
+.arm {
+  width: 4px;
+  height: 20px;
+  margin-top: 1px;
+  background: #3a2410;
+}
+
+.body {
+  width: 14px;
+  height: 22px;
+  background: #3a2410;
+}
+
+.leg {
+  width: 6px;
+  height: 22px;
+  background: #3a2410;
+}
+
+.labels {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.label {
+  font-family: var(--font-display);
+  font-size: 14px;
+  color: var(--arc-amber);
+  animation: start-blink 1.1s steps(1) infinite;
+}
+
+.sub {
+  font-family: var(--font-display);
+  font-size: 11px;
+  color: var(--arc-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .label {
+    animation: none;
+  }
+}
+
+@keyframes start-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}

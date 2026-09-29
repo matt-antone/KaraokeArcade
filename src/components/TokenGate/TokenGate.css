@@ -19,8 +19,8 @@
 
 .logo {
   display: block;
-  width: min(300px, 76vw);
-  margin-top: clamp(24px, 8vh, 72px);
+  width: 300px;
+  margin-top: 72px;
 }
 
 /* where the token and the slot live; the token starts bottom left and the
@@ -46,8 +46,6 @@
 .plate {
   display: block;
   width: 136px;
-  max-height: 34vh;
-  object-fit: contain;
   user-select: none;
 }
 

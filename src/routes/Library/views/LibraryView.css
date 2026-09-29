@@ -1,23 +1,43 @@
-/* Empty and no-match states: a Silkscreen amber headline over plain body copy.
-   The class is doubled so it outranks TextOverlay's own heading rules. */
+/* The space between the tab row and the nav, where the spinner and the empty
+   states centre (04c). The header ends 8px under the tabs (the list's clip
+   band), and 04c centres from the tabs themselves, so the band is given back.
+   Click-through, so it never sits over a list's taps. */
+.overlay {
+  position: fixed;
+  top: calc(var(--header-h, 0px) - 8px);
+  right: 0;
+  bottom: var(--nav-h, 0px);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  pointer-events: none;
+
+  > * {
+    pointer-events: auto;
+  }
+}
+
+/* Empty and no-match states (04c): a Silkscreen amber headline over plain body
+   copy, 14px apart. The class is doubled so it outranks TextOverlay's own
+   heading rules. */
 .empty.empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--gap-4);
-  padding: 0 var(--gap-6);
 
   h1 {
     margin: 0;
     font-size: var(--text-3xl);
-    color: var(--vu);
+    color: var(--arc-amber);
     text-shadow: none;
   }
 
   p {
     font-size: var(--text-xl);
     line-height: 1.4;
-    color: var(--ink-2);
+    color: var(--arc-text-2);
     text-wrap: pretty;
   }
 }

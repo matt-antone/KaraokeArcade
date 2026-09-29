@@ -23,10 +23,10 @@ import styles from './RoomTransport.css'
  * room lights neither — so the strip reads as a status column at a glance and
  * all three states stay apart without a word beside them.
  */
-const RUNNING_KEY: Record<RoomStatus, { next: RoomStatus, icon: 'PLAY' | 'PAUSE', label: string }> = {
-  play: { next: 'paused', icon: 'PAUSE', label: 'Pause' },
-  paused: { next: 'play', icon: 'PLAY', label: 'Play' },
-  stopped: { next: 'play', icon: 'PLAY', label: 'Play' },
+const RUNNING_KEY: Record<RoomStatus, { next: RoomStatus, label: string }> = {
+  play: { next: 'paused', label: 'Pause' },
+  paused: { next: 'play', label: 'Play' },
+  stopped: { next: 'play', label: 'Play' },
 }
 
 interface RoomTransportProps {
@@ -67,20 +67,23 @@ const RoomTransport = ({ roomId, name, status }: RoomTransportProps) => {
           from across a list of rooms. Still a key you press, so it does not
           take .active's dead cursor the way a stopped room's stop key does. */}
       <Button
-        className={styles.key}
+        className={clsx(styles.key, isPlaying && styles.lit)}
         variant={isPlaying ? 'primary' : 'default'}
-        icon={running.icon}
         onClick={() => handleClick(running.next)}
         aria-label={running.label}
-      />
+      >
+        {/* 09 draws the glyphs as type; play is a CSS triangle, since the play glyph is an emoji */}
+        {isPlaying ? 'II' : <span className={styles.play} />}
+      </Button>
       <Button
-        className={clsx(styles.key, isStopped && styles.active)}
+        className={clsx(styles.key, isStopped && styles.lit, isStopped && styles.active)}
         variant={isStopped ? 'primary' : 'default'}
-        icon='STOP'
         onClick={() => handleClick('stopped')}
         aria-label='Stop'
         aria-pressed={isStopped}
-      />
+      >
+        ■
+      </Button>
 
       {confirmDialog}
     </div>

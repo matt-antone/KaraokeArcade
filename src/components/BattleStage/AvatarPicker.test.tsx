@@ -30,6 +30,7 @@ vi.mock('lib/fighterSets', () => ({
     default: { belter: {}, crooner: {} },
     halloween: { hex: {} },
   }),
+  useFighterSet: (_group: string, _slug: string, _loop: string, fallback: unknown) => fallback,
 }))
 
 beforeEach(() => localStorage.clear())
@@ -69,7 +70,8 @@ const inRoomWithHalloweenOn = {
   rooms: { entities: { 5: { prefs: { battle: { groups: { halloween: true } } } } } },
 }
 
-const groupLegend = () => screen.queryByText('halloween')
+/** The theme tabs, named as the design names them: 'Default 8'. */
+const tab = (name: RegExp) => screen.queryByRole('tab', { name })
 
 describe('AvatarPicker', () => {
   it('shows the shipped group first and grows when the room lands', () => {
@@ -77,14 +79,16 @@ describe('AvatarPicker', () => {
     render(<Provider store={store}><AvatarGate /></Provider>)
 
     // no room in the store yet, so no prefs: `default` is on unless a host
-    // turns it off, and every other group is off until one turns it on
-    expect(groupLegend()).toBeNull()
-    expect(screen.getByLabelText('BELTER')).toBeTruthy()
+    // turns it off, and every other group is off until one turns it on. The
+    // tab row is drawn either way.
+    expect(tab(/^Default 2$/)).not.toBeNull()
+    expect(tab(/^Halloween/)).toBeNull()
+    expect(screen.getByLabelText('Belter')).toBeTruthy()
 
     setState(inRoomWithHalloweenOn)
 
-    expect(groupLegend()).not.toBeNull()
-    expect(screen.getByLabelText('HEX')).toBeTruthy()
+    expect(tab(/^Halloween 1$/)).not.toBeNull()
+    expect(screen.getByLabelText('Hex')).toBeTruthy()
   })
 
   it('arrives with a live Select rather than an empty selection', () => {
@@ -106,9 +110,21 @@ describe('AvatarPicker', () => {
     const onChoose = vi.fn()
     render(<Provider store={store}><AvatarPicker avatarId='p1' onChoose={onChoose} /></Provider>)
 
-    fireEvent.click(screen.getByLabelText('HEX'))
+    fireEvent.click(screen.getByLabelText('Hex'))
     fireEvent.click(screen.getByText('Select'))
 
+    expect(onChoose).toHaveBeenCalledWith('halloween/hex')
+  })
+
+  it('selects the first fighter of a theme when its tab is pressed', () => {
+    const { store } = makeStore(inRoomWithHalloweenOn)
+    const onChoose = vi.fn()
+    render(<Provider store={store}><AvatarPicker avatarId='p1' onChoose={onChoose} /></Provider>)
+
+    fireEvent.click(tab(/^Halloween 1$/)!)
+
+    expect(screen.getByLabelText('Hex').getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(screen.getByText('Select'))
     expect(onChoose).toHaveBeenCalledWith('halloween/hex')
   })
 
@@ -116,7 +132,7 @@ describe('AvatarPicker', () => {
     const { store, dispatched } = makeStore(inRoomWithHalloweenOn)
     render(<Provider store={store}><AvatarGate /></Provider>)
 
-    fireEvent.click(screen.getByLabelText('HEX'))
+    fireEvent.click(screen.getByLabelText('Hex'))
     fireEvent.click(screen.getByText('Select'))
     fireEvent.click(screen.getByText('Continue'))
 

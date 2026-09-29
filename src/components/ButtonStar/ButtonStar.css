@@ -2,25 +2,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1px;
-  color: var(--ink-5);
+  color: var(--arc-line);
 }
 
 /* off reads as unlit, on reads as lit — no greyscale filter, no opacity */
 .star {
   display: block;
-  font-size: 1.125rem;
-  line-height: 1;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
 }
 
 .starred {
-  color: var(--vu);
-}
-
-/* the count is data: Silkscreen, tight against the star */
-.starCount {
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  line-height: 1;
-  pointer-events: none;
+  color: var(--arc-yellow);
 }

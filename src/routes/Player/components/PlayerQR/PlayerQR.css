@@ -1,32 +1,12 @@
-/* Parked in the lower-right, out of the lyric band and clear of the bottom
-   queue-depth meter. It fades out and back in rather than burning in. */
+/* 10 · the join code in the join column: a flat, square 8px ring in the
+   code's own plate colour, no bevel. */
 .container {
-  position: absolute;
-  bottom: 5vh;
-  right: 3vh;
-  opacity: 1;
-  transition: opacity 0.3s ease;
-  background: var(--ink);
-  border-radius: var(--radius-key);
-  box-shadow: var(--bevel);
+  flex: none;
+  line-height: 0;
+  background: var(--arc-text);
+  box-shadow: 0 0 0 1.48vh var(--arc-text);
 
   canvas {
-    border-radius: var(--radius-key);
+    display: block;
   }
-}
-
-/* in the idle screen's join panel: laid out by the panel, not the corner */
-.docked {
-  position: relative;
-  bottom: auto;
-  right: auto;
-  flex: none;
-}
-
-.enterActive {
-  opacity: 1;
-}
-
-.exitActive {
-  opacity: 0;
 }

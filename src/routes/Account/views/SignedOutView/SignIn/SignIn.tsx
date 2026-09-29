@@ -1,5 +1,5 @@
 import React from 'react'
-import Button from 'components/Button/Button'
+import StartButton from 'components/StartButton/StartButton'
 import styles from './SignIn.css'
 
 interface SignInProps {
@@ -8,28 +8,27 @@ interface SignInProps {
   onUsernameChange: (username: string) => void
   onPasswordChange: (password: string) => void
   onSubmit: (e: React.FormEvent) => void
-  onFirstFieldRef: (el: HTMLInputElement | null) => void
   onForgotPassword: () => void
 }
 
+/** 02 as a returning user: name and password, then the start button pinned
+ *  to the bottom with the way out of a forgotten password under it. */
 const SignIn = ({
   username,
   password,
   onUsernameChange,
   onPasswordChange,
   onSubmit,
-  onFirstFieldRef,
   onForgotPassword,
 }: SignInProps) => {
   return (
-    <form noValidate onSubmit={onSubmit} className={styles.container}>
+    <form noValidate onSubmit={onSubmit} className={styles.form}>
       <input
         type='text'
         autoComplete='username'
         placeholder='name'
         value={username}
         onChange={e => onUsernameChange(e.target.value)}
-        ref={onFirstFieldRef}
       />
       <input
         type='password'
@@ -38,12 +37,13 @@ const SignIn = ({
         value={password}
         onChange={e => onPasswordChange(e.target.value)}
       />
-      <Button type='submit' variant='primary'>
-        Sign In
-      </Button>
-      <button type='button' className={styles.link} onClick={onForgotPassword}>
-        Forgot password?
-      </button>
+      <div className={styles.spacer} />
+      <div className={styles.cta}>
+        <StartButton sub='Sign in' />
+        <button type='button' className={styles.link} onClick={onForgotPassword}>
+          Forgot password?
+        </button>
+      </div>
     </form>
   )
 }

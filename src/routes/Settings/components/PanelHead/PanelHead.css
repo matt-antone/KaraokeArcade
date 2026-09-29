@@ -1,0 +1,26 @@
+/* the right slot of a 09 panel head: Silkscreen 11px text, no well */
+.control {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  color: var(--arc-text-2);
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:focus-visible,
+  &:has(select:focus-visible) {
+    outline: var(--focus-outline);
+  }
+}
+
+.select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  opacity: 0;
+}

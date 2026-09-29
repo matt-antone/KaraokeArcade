@@ -93,6 +93,8 @@ export default function (io, jwtKey) {
           payload: { socketId: sock.id },
         })
       }
+
+      Rooms.pushSingers(io, sock.user.roomId)
     })
 
     // attach action handler
@@ -167,6 +169,7 @@ export default function (io, jwtKey) {
     // add user to room and track membership
     sock.join(Rooms.prefix(sock.user.roomId))
     Rooms.trackUser(sock.user.roomId, sock.user.userId)
+    Rooms.pushSingers(io, sock.user.roomId)
 
     // if there's a player in room, emit its last known status
     // @todo this just emits the first status found
@@ -174,7 +177,8 @@ export default function (io, jwtKey) {
       if (s.user && s.user.roomId === sock.user.roomId && s._lastPlayerStatus) {
         io.to(sock.id).emit('action', {
           type: PLAYER_STATUS,
-          payload: s._lastPlayerStatus,
+          // restamped: the lead-in end in it is by our clock (12e0)
+          payload: { ...s._lastPlayerStatus, sentAt: Date.now() },
         })
 
         break
@@ -204,8 +208,10 @@ export default function (io, jwtKey) {
       payload: Queue.get(sock.user.roomId),
     })
 
-    // where everyone stands tonight
-    Points.push(io, sock.user.roomId, sock.id)
+    // where everyone stands tonight. Joining puts you on the board at 0, and
+    // the rest of the room is told when that is news; otherwise just this phone
+    if (Points.join(sock.user.roomId, sock.user.userId)) Points.push(io, sock.user.roomId)
+    else Points.push(io, sock.user.roomId, sock.id)
 
     // A room whose queue predates trivia being switched on has no round waiting
     // in it; put one there rather than making someone queue a song first.

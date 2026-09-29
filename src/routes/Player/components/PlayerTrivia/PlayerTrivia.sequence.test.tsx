@@ -35,6 +35,7 @@ const result: TriviaResult = {
   isFinal: false,
   correctIdx: 0,
   scores: [{ userId: 42, name: 'Dot Matrix', score: 3, numAnswered: 2, avatarId: 'p1' }],
+  standings: [],
   numCorrect: 2,
   scoresFrom: SERVER_T0 + 26000,
   boardFrom: null,
@@ -67,13 +68,15 @@ describe('a round, beat by beat', () => {
     state = triviaReducer(state, { type: TRIVIA_RESULT, payload: result })
 
     const answer = screen(state)
-    expect(answer).toContain('answer')
+    expect(answer).toContain('Answer')
+    expect(answer).not.toContain('got it')
     expect(answer).not.toContain('Dot Matrix')
 
-    // 6s later the count takes the stage, and holds for 3s
+    // 6s later the count lands under the answer, and holds for 3s
     vi.setSystemTime(SERVER_T0 + 26500 - 60000)
     const tally = screen(state)
-    expect(tally).toContain('who got it')
+    expect(tally).toContain('Answer')
+    expect(tally).toContain('got it')
     expect(tally).toContain('>2<')
 
     vi.setSystemTime(SERVER_T0 + 28900 - 60000)

@@ -19,6 +19,10 @@ import { describe, expect, it } from 'vitest'
 
 const SRC = join(__dirname, '..')
 
+/** The 02 "1 Player Start" button: modelled hardware, exempt from the
+ *  square, hard-edge and palette rules. */
+const START_BUTTON = 'components/StartButton/'
+
 /** Files matching a glob, repo-relative. */
 function files (glob: string): string[] {
   return execFileSync('grep', ['-rlE', '-e', '', SRC, '--include', glob], { encoding: 'utf8' })
@@ -171,14 +175,17 @@ describe('ARCADE rules', () => {
     expect([...new Set(hits)]).toEqual([])
   })
 
-  it('is square: radius 0 everywhere, the Knob the one circle', () => {
+  it('is square: radius 0 everywhere, the Knob and the StartButton the circles', () => {
     // "Radius: 0 throughout." A corner is a token (all of which are 0) or 0;
-    // --radius-round is the Knob's, and nothing else may take it.
+    // --radius-round is the Knob's, and nothing else may take it. The one
+    // other circle is the StartButton (02 "1 Player Start"): modelled
+    // hardware, round because the design draws it round, at 50% and only 50%.
     const OK = /border-radius:\s*(0|none|var\(--(radius-(key|panel|tab)|border-radius)\))\s*;/
     const round = search('border-radius', '*.css')
       .filter(l => !l.startsWith('styles/variables.css'))
       .filter(l => !OK.test(l))
       .filter(l => !(l.startsWith('components/Knob/') && /var\(--radius-round\)/.test(l)))
+      .filter(l => !(l.startsWith(START_BUTTON) && /border-radius:\s*50%\s*;/.test(l)))
     expect(round).toEqual([])
   })
 
@@ -186,11 +193,15 @@ describe('ARCADE rules', () => {
     // "Hard offset text shadows (3px 3px 0) instead of blurs, except during
     // glow bursts." A shadow's third length is its blur; it must be 0. The
     // burst's peak frame lives in @keyframes, so those blocks are skipped —
-    // and --glow-burst may not be reached for anywhere else.
+    // and --glow-burst may not be reached for anywhere else. The design draws
+    // exactly two static glows, trivia's lit pip (--glow-pip) and the revealed
+    // answer (--glow-answer); those two tokens are allowed by name and every
+    // other --glow-* still fails. The StartButton is modelled hardware (radial
+    // chrome, soft bevels, cap glow) and is exempt.
     const soft: string[] = []
 
     for (const file of files('*.css')) {
-      if (file === 'styles/variables.css') continue
+      if (file === 'styles/variables.css' || file.startsWith(START_BUTTON)) continue
       const text = stripKeyframes(stripComments(readFileSync(join(SRC, file), 'utf8')))
 
       for (const m of text.matchAll(/(?:^|[;{\s])(text-shadow|box-shadow|filter)\s*:\s*([^;}]+)/g)) {
@@ -199,7 +210,7 @@ describe('ARCADE rules', () => {
         const shadows = prop === 'filter'
           ? [...value.matchAll(/drop-shadow\(((?:[^()]|\([^()]*\))*)\)/g)].map(d => d[1])
           : splitTopLevel(value)
-        if (/var\(--glow-burst\)/.test(value) || shadows.some(isBlurred)) {
+        if (/var\(--glow-(?!(?:pip|answer)\))[\w-]+\)/.test(value) || shadows.some(isBlurred)) {
           soft.push(`${file}:${line}:${prop}: ${value.trim().replace(/\s+/g, ' ')}`)
         }
       }
@@ -230,9 +241,11 @@ describe('ARCADE rules', () => {
     // The palette is closed. A raw hex, hsl() or coloured rgb() in a component
     // is a new colour sneaking in without deciding it. Transparent black is
     // the one literal allowed: it is an absence of colour (a tap highlight
-    // switched off, a shadow faded to nothing), not a colour.
+    // switched off, a shadow faded to nothing), not a colour. The StartButton
+    // is modelled hardware whose chrome literals are not palette.
     const literal = search('#[0-9a-fA-F]{3,8}\\b|hsla?\\(|rgba?\\(', '*.css')
       .filter(l => !l.startsWith('styles/variables.css'))
+      .filter(l => !l.startsWith(START_BUTTON))
       // data: URIs carry encoded SVG markup, not palette
       .filter(l => !/url\("data:/.test(l))
       .filter(l => !/^[^:]+:\d+:\s*(\/\*|\*)/.test(l))
@@ -274,6 +287,12 @@ describe('ARCADE rules', () => {
     // A line-based grep cannot tell a disabled rule from a live one — the
     // selector is on another line — so walk each file tracking its enclosing
     // block. Keyframes are animation, not a dim of content.
+    //
+    // The design dims art and idle sides, never content. Those dims carry a
+    // design-dim marker comment on the same line, and only these are sanctioned:
+    // 07d/08c location .35, 10 stage .5, 13a2 portrait .5, 13e/13e2/13h
+    // location .5, 13j* location .55, TV 13e/13g idle side .6, 12e unpicked
+    // answers .35. Everything else stays banned.
     const dims: string[] = []
 
     for (const file of new Set(search('opacity:\\s*0?\\.[0-9]', '*.css').map(l => l.split(':')[0]))) {
@@ -290,6 +309,8 @@ describe('ARCADE rules', () => {
 
         const m = line.match(/opacity:\s*(0?\.[0-9]+)/)
         if (!m || inKeyframes) continue
+        // a dim the design draws, marked on its line (see above)
+        if (/\/\*\s*design-dim\s*\*\//.test(line)) continue
         if (/disabled/.test(block)) continue // the one sanctioned dim, at 45%
         // "numbers are quiet": silkscreen counts ride at 75%
         if (m[1] === '.75' || m[1] === '0.75') continue

@@ -34,6 +34,15 @@ const PlayerView = () => {
     document.title = 'KaraokeArcade | Player'
   }, [])
 
+  // the TV draws its own scanlines per screen (--scanlines-tv), and 11b none,
+  // so the phones' global layer steps aside here (global.css)
+  useEffect(() => {
+    document.documentElement.dataset.screen = 'tv'
+    return () => {
+      delete document.documentElement.dataset.screen
+    }
+  }, [])
+
   return (
     <div style={{ overflow: 'hidden' }}>
       <div

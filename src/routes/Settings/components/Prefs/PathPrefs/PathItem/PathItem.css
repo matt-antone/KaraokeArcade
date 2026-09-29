@@ -1,59 +1,49 @@
-/* A folder in the library, in priority order. The row holds the path and its
-   keys, so it is a well; the keys inside it carry the bevel. */
+/* A folder in the library, in priority order: flat on the panel, the path
+   and its count over a mint meter. */
 
 .pathItem {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: var(--gap-2);
-  min-height: var(--target);
-  padding: var(--gap-2);
-  margin-bottom: var(--gap-2);
-  background: var(--key-well);
-  box-shadow: var(--well);
-  border-radius: var(--radius-key);
+  gap: 8px;
 }
 
+/* stretch, as the design leaves it: path and count sit on the row's top */
 .topRow {
   display: flex;
-  align-items: center;
-  gap: var(--gap-2);
+  gap: 8px;
 }
 
-/* the count is data printed on the panel, so it is silkscreen mono, not language */
-.count {
-  flex-shrink: 0;
-}
-
-.meter {
-  flex-shrink: 0;
-}
-
-/* the path is data printed on the panel, so it is mono */
 .pathName {
   flex: 1;
   min-width: 0;
-  font-family: var(--font-mono);
-  font-size: var(--text-s);
-  color: var(--ink-2);
+  font-size: var(--text-m);
+  color: var(--arc-text);
   user-select: text;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  direction: rtl;
-  text-align: left;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.count {
+  flex: none;
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  color: var(--arc-mint);
 }
 
 .btnDrag {
+  flex: none;
+  align-self: center;
   cursor: grab;
-  color: var(--ink-3);
+  color: var(--arc-muted);
   height: var(--icon-l);
 }
 
 .btnRefresh,
 .btnInfo {
   flex-shrink: 0;
-  color: var(--vu);
+  align-self: center;
+  color: var(--arc-amber);
 
   svg {
     height: var(--icon-m);

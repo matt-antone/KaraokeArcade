@@ -4,12 +4,15 @@ import { PersistGate } from 'redux-persist/es/integration/react'
 import store from 'store/store'
 import * as Persistor from 'store/Persistor'
 import CoreLayout from './CoreLayout/CoreLayout'
-import Spinner from '../Spinner/Spinner'
+import ConnectionScreen from './ConnectionScreen/ConnectionScreen'
+
+// 91 Loading is the boot screen too, not a bare spinner
+const boot = <ConnectionScreen variant='loading' />
 
 const App = () => (
   <Provider store={store}>
-    <PersistGate loading={<Spinner />} persistor={Persistor.get()}>
-      <React.Suspense fallback={<Spinner />}>
+    <PersistGate loading={boot} persistor={Persistor.get()}>
+      <React.Suspense fallback={boot}>
         <CoreLayout />
       </React.Suspense>
     </PersistGate>

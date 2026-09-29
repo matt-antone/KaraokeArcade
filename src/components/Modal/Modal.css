@@ -67,6 +67,31 @@
   }
 }
 
+/* variant='screen': a full-viewport takeover (08c, 08 → 03, trivia). No
+   title bar, no padding, no fade — it is a screen, not a panel over one. */
+.screen {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  background: var(--arc-deep);
+  box-shadow: none;
+
+  &[open] {
+    animation: none;
+    opacity: 1;
+    box-shadow: none;
+  }
+
+  .content {
+    padding: 0;
+  }
+}
+
 .buttons {
   display: flex;
   flex-direction: column;

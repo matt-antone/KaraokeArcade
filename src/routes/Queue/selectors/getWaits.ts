@@ -3,7 +3,6 @@ import { createSelector } from '@reduxjs/toolkit'
 import {
   BATTLE_INTRO_MS,
   BATTLE_JUDGE_MS,
-  BATTLE_LOGO_MS,
   BATTLE_METER_MS,
   BATTLE_SING_MS,
   BATTLE_VERSUS_MS,
@@ -19,9 +18,9 @@ const getQueue = (state: RootState) => getRoundRobinQueue(state)
 const getQueueId = (state: RootState) => state.status.queueId
 const getSongs = (state: RootState) => state.songs
 
-/** Everything in a battle that is not singing: the title card, the versus
- *  splash, both fighter intros, the judging section and the verdict. Seconds, because every
- *  duration in this file is.
+/** Everything in a battle that is not singing: the versus scene (the title
+ *  card is part of it now, D10), both fighter intros, the judging section and
+ *  the verdict. Seconds, because every duration in this file is.
  *
  *  The judging section is the crowd path's — a short ask plus two metering
  *  beats — and it is counted whichever way the room actually decides its
@@ -42,7 +41,7 @@ const getSongs = (state: RootState) => state.songs
  *  A player that cannot hear the room skips metering entirely and the row runs
  *  thirty-five seconds shorter than this. Same trade, same direction. */
 const BATTLE_OVERHEAD_SECS = (
-  BATTLE_LOGO_MS + BATTLE_VERSUS_MS + (BATTLE_INTRO_MS * 2)
+  BATTLE_VERSUS_MS + (BATTLE_INTRO_MS * 2)
   + BATTLE_JUDGE_MS + (BATTLE_METER_MS * 2) + BATTLE_WINNER_MS
 ) / 1000
 

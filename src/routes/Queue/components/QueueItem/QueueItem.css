@@ -1,8 +1,6 @@
-/* A turn in the rotation: a surface card in a pixel frame, the singer's
-   character in a ring at the left. People find their turn by looking for their
-   face, not by reading, so the avatar is the primary identifier. */
+/* A turn in the rotation (07): place, face, title/artist/singer, wait. */
 
-/* The swipe shell. Rows are separate cards with air between them. */
+/* The swipe shell. The gutter and the 10px between rows are the list's. */
 .shell {
   margin: 0 var(--gutter) var(--gap-3);
 }
@@ -11,16 +9,12 @@
    transparency here would let them ghost through. The frame is inset so the
    shell's overflow:hidden cannot clip it, and it travels with the row. */
 .container {
-  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--gap-4);
-  /* a MINIMUM: a long title wraps and the row grows past it */
-  min-height: var(--row-queue);
+  gap: 12px;
   padding: var(--gap-3);
   background: var(--arc-surface);
   box-shadow: var(--well);
-  line-height: normal;
 }
 
 /* the viewer's own row is framed in dark amber */
@@ -28,110 +22,29 @@
   box-shadow: inset 0 0 0 2px var(--arc-gold-shadow);
 }
 
-/* the row on stage is framed in yellow */
-.current {
-  box-shadow: inset 0 0 0 3px var(--arc-yellow);
-}
-
-/* The playing row IS the progress bar — a dark amber wash grown to the played
-   percentage, never a separate progress element and never a tint over the
-   whole row. The playhead is the fill's own right edge. */
-.fill {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: var(--progress, 0%);
-  background: var(--arc-on-amber);
-  border-right: 2px solid var(--vu);
-  pointer-events: none;
-}
-
-/* Declared locally, not pulled from variables.css: css-loader hashes
-   `animation: <name>` inside a CSS module even when the keyframe is only
-   declared globally, so a global @keyframes silently resolves to nothing.
-   The same trap applies to key-press, vu-settle and tick. */
-@keyframes vu-sweep {
-  0% { background-position: -40% 0; }
-  100% { background-position: 140% 0; }
-}
-
-/* a slow sweep across the fill. Paused, not hidden, when the audio pauses. */
-.sweep {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: var(--progress, 0%);
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent 35%, var(--arc-gold-shadow) 50%, transparent 65%);
-  background-size: 55% 100%;
-  background-repeat: no-repeat;
-  animation: vu-sweep 4s linear infinite;
-}
-
-.paused .sweep {
-  animation-play-state: paused;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sweep { animation: none; }
-}
-
-.dragHandle {
-  position: relative;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  color: var(--ink-4);
-  touch-action: none;
-}
-
 /* the place in line: Silkscreen, disabled-grey, centred in a fixed column */
 .position {
-  position: relative;
   flex: none;
   width: 18px;
   text-align: center;
   font-family: var(--font-display);
   font-size: var(--text-l);
-  color: var(--ink-4);
+  color: var(--arc-disabled);
 }
 
-.imageContainer {
-  position: relative;
-  flex-shrink: 0;
+.avatar {
+  flex: none;
   width: 52px;
-}
-
-.imageContainer .avatar {
-  width: 100%;
-  background: var(--arc-surface-hover);
+  margin: 0;
   box-shadow: inset 0 0 0 2px var(--arc-line);
 }
 
 /* the viewer's own face rings amber */
-.isOwner .imageContainer .avatar {
-  box-shadow: inset 0 0 0 2px var(--vu);
-}
-
-/* the wait is data: Silkscreen, amber, at the row's right edge */
-.wait {
-  position: relative;
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  font-family: var(--font-display);
-  font-size: var(--display-s);
-  color: var(--vu);
-}
-
-.waitIsCurrent {
-  color: var(--arc-yellow);
+.isOwner .avatar {
+  box-shadow: inset 0 0 0 2px var(--arc-amber);
 }
 
 .primary {
-  position: relative;
   flex: 1;
   min-width: 0;
   display: flex;
@@ -139,67 +52,52 @@
   gap: var(--gap-1);
 }
 
-/* Song titles are never truncated, site-wide: they wrap and the row grows. */
-.title {
-  font-size: var(--text-l);
-  line-height: 1.2;
-  font-weight: var(--weight-semibold);
-  color: var(--ink);
-  overflow-wrap: anywhere;
-}
-
-/* artist and singer still ellipsise on one line — only titles wrap */
-.artist,
-.user {
+.title,
+.artist {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.artist {
-  font-size: 13px;
-  color: var(--ink-3);
+.title {
+  font-size: var(--text-l);
+  font-weight: var(--weight-semibold);
+  color: var(--arc-text);
 }
 
-/* the singer is a Silkscreen label, mint unless it is the viewer's own row */
+.artist {
+  font-size: 13px;
+  color: var(--arc-muted);
+}
+
+/* "singer · points": mint, amber on the viewer's own row */
 .user {
   font-family: var(--font-display);
   font-size: var(--text-xs);
-  color: var(--standby);
+  color: var(--arc-mint);
 }
 
 .userIsOwner {
-  color: var(--vu);
+  color: var(--arc-amber);
 }
 
-/* Spent — played, or the singer is sitting out. Dim by stepping down the ink
-   ramp and greyscaling the avatar, NEVER by opacity: this row is the only
-   opaque layer over its action keys. */
-.spent {
-  .title { color: var(--ink-4); }
-  .artist,
-  .user { color: var(--ink-4); }
-  .wait { color: var(--arc-yellow); }
-  .imageContainer { filter: grayscale(1) brightness(.7); }
-}
-
-.errored .title {
-  color: var(--alert);
-}
-
-.star {
-  position: relative;
-  flex-shrink: 0;
-  align-self: center;
-}
-
-/* Key offset chip. Amber because it is a lit state — this row will not sound
-   like the recording — and Silkscreen so +2 and −2 read as data. */
-.keyChange {
-  flex-shrink: 0;
-  align-self: center;
-  padding: 2px var(--gap-2);
+.wait {
+  flex: none;
   font-family: var(--font-display);
-  color: var(--vu);
-  background: var(--vu-well);
+  font-size: var(--text-m);
+  color: var(--arc-amber);
+}
+
+/* a paused singer's row keeps its colour; only the wait turns to Hold */
+.held {
+  color: var(--arc-yellow);
+}
+
+/* Played. Dim by stepping down the ink and greyscaling the face, NEVER by
+   opacity: this row is the only opaque layer over its action keys. */
+.spent {
+  .title,
+  .artist,
+  .user { color: var(--arc-disabled); }
+  .avatar { filter: grayscale(1) brightness(.7); }
 }

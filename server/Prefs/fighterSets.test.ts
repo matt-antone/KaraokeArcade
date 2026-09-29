@@ -57,7 +57,7 @@ describe('a fighter set out of a manifest', () => {
 
   it('gives a fighter all four sets whatever the manifest holds', async () => {
     const dir = withManifest(JSON.stringify({ sets: { dance: { frames: 24, fps: 12, columns: 8 } } }))
-    const sets = await fighterSets(dir)
+    const { sets } = await fighterSets(dir)
 
     expect(Object.keys(sets).sort()).toEqual([...BATTLE_SETS].sort())
     expect(sets.dance).toEqual({ frames: 24, fps: 12, columns: 8 })
@@ -70,12 +70,43 @@ describe('a fighter set out of a manifest', () => {
     const broken = withManifest('{ not json')
 
     for (const dir of [empty, broken]) {
-      expect(await fighterSets(dir)).toEqual({
-        sing: DEFAULT_SET,
-        dance: DEFAULT_SET,
-        ko: DEFAULT_SET,
-        victory: DEFAULT_SET,
+      expect(await fighterSets(dir)).toStrictEqual({
+        sets: {
+          sing: DEFAULT_SET,
+          dance: DEFAULT_SET,
+          ko: DEFAULT_SET,
+          victory: DEFAULT_SET,
+        },
+        name: undefined,
+        height: undefined,
       })
     }
+  })
+
+  it('takes the name and height a manifest gives', async () => {
+    const dir = withManifest(JSON.stringify({ name: 'Hype Man', height: '5\' 10"' }))
+
+    expect(await fighterSets(dir)).toMatchObject({ name: 'Hype Man', height: '5\' 10"' })
+  })
+
+  it('leaves off a name or height it would not draw', async () => {
+    // both are drawn as text on every phone; a name is capped at 24 so it
+    // fits the name row, and a height is feet and inches or nothing
+    for (const [name, height] of [
+      ['', 'tall'],
+      ['   ', '5.10'],
+      ['A name far too long to fit the row', '5\'10'],
+      [42, 70],
+      [null, null],
+    ]) {
+      const listing = await fighterSets(withManifest(JSON.stringify({ name, height })))
+
+      expect(listing.name).toBeUndefined()
+      expect(listing.height).toBeUndefined()
+    }
+
+    // trimmed, and a height without the space is still a height
+    expect(await fighterSets(withManifest(JSON.stringify({ name: ' Diva ', height: '5\'9"' }))))
+      .toMatchObject({ name: 'Diva', height: '5\'9"' })
   })
 })

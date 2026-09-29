@@ -18,6 +18,7 @@ import {
   PLAYER_UPDATE,
   REDUX_SLICE_INJECT_NOOP,
 } from 'shared/actionTypes'
+import type { PlayerLeadIn } from 'shared/types'
 
 // internal use
 const playerUpdate = createAction<object>(PLAYER_UPDATE)
@@ -96,7 +97,9 @@ export function playerLeave (): AppThunk {
 // ------------------------------------
 // Reducer
 // ------------------------------------
-export interface PlayerState {
+/** The lead-in fields ride along only while a trivia row counts in (D8), so
+ *  the phones can draw 12e0; every other status carries them as absent. */
+export interface PlayerState extends PlayerLeadIn {
   cdgAlpha: number
   cdgSize: number
   duration: number

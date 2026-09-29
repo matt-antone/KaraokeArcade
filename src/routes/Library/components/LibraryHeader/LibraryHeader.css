@@ -11,7 +11,7 @@
   display: flex;
   align-items: center;
   gap: var(--gap-3);
-  margin-top: var(--gap-5);
+  margin-top: 16px;
   padding: 0 var(--gutter);
 }
 
@@ -19,16 +19,18 @@
   display: flex;
   flex: 1;
   align-items: center;
-  gap: var(--gap-2);
+  gap: 8px;
   min-width: 0;
-  min-height: var(--target);
+  min-height: 44px;
   padding: 0 var(--gap-4);
   background: var(--arc-deep);
   box-shadow: var(--well-deep);
 }
 
-.fieldActive {
-  box-shadow: inset 0 0 0 2px var(--vu);
+/* the ring is the focus indicator too, so the input inside draws none */
+.fieldActive,
+.field:focus-within {
+  box-shadow: inset 0 0 0 2px var(--arc-amber);
 }
 
 /* Scoped under .field so it outranks global.css's input[type="search"] well
@@ -40,36 +42,44 @@
   min-height: var(--target);
   padding: 0;
   font-size: var(--text-l);
-  color: var(--ink);
+  color: var(--arc-text);
+  caret-color: var(--arc-amber);
   background: transparent;
   box-shadow: none;
   border: none;
   border-radius: 0;
 
   &::placeholder {
-    color: var(--ink-3);
+    color: var(--arc-muted);
   }
 
   &:focus {
     background: transparent;
     box-shadow: none;
+    outline: none;
   }
 }
 
-.field .searchInput:focus {
-  box-shadow: none;
-}
-
+/* a text ✕ at the field's right end; the hit area takes the field's height
+   and its right padding without moving the glyph */
 .btnClear {
   flex-shrink: 0;
-  color: var(--ink-3);
+  align-self: stretch;
+  padding: 0 var(--gap-4) 0 var(--gap-2);
+  margin-right: calc(-1 * var(--gap-4));
+  font-family: var(--font-display);
+  font-size: var(--text-s);
+  color: var(--arc-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
 }
 
 /* the favourite control is a text star — never an emoji */
 .btnStar {
   flex-shrink: 0;
-  width: var(--target);
-  min-height: var(--target);
+  width: 44px;
+  height: 44px;
   font-size: var(--text-2xl);
   line-height: 1;
   color: var(--arc-yellow);
@@ -80,13 +90,16 @@
 }
 
 .starActive {
-  color: var(--on-vu);
+  color: var(--arc-on-amber);
   background: var(--arc-yellow);
   box-shadow: inset 0 0 0 2px var(--arc-yellow);
 }
 
+/* The list is clipped 8px under the tabs (04: margin-top 8px on an
+   overflow:hidden box), so that band of ground belongs to the header: rows
+   scroll away beneath it, never flush against the tab keys. */
 .tabRow {
-  padding: var(--gap-4) var(--gutter) var(--gap-2);
+  padding: 14px var(--gutter) 8px;
 }
 
 /* Battle mode. Above the search rather than below it, because it changes what

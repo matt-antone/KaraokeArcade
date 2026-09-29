@@ -7,6 +7,7 @@ import RoomTransport from './RoomTransport/RoomTransport'
 import { closeRoomEditor, fetchRooms, filterByStatus, openRoomEditor } from 'store/modules/rooms'
 import { filterByRoom } from '../../modules/users'
 import getRoomList from '../../selectors/getRoomList'
+import { HeadSelect } from '../PanelHead/PanelHead'
 import styles from './Rooms.css'
 
 const Rooms = () => {
@@ -35,46 +36,53 @@ const Rooms = () => {
   const rows = rooms.result.map((roomId) => {
     const room = rooms.entities[roomId]
     return (
-      <tr key={String(roomId)}>
-        <td translate='no'><a data-room-id={roomId} onClick={handleOpen}>{room.name}</a></td>
-        <td>
-          <RoomTransport roomId={roomId} name={room.name} status={room.status} />
-        </td>
-        <td>
-          {room.numUsers > 0 && (
-            <a data-room-id={roomId} onClick={handleFilterUsers}>
-              {room.numUsers}
-            </a>
-          )}
-        </td>
-      </tr>
+      <div key={String(roomId)} className={styles.row}>
+        <button type='button' className={styles.name} translate='no' data-room-id={roomId} onClick={handleOpen}>
+          {room.name}
+        </button>
+        <RoomTransport roomId={roomId} name={room.name} status={room.status} />
+        {/* the slot holds its width so the transports line up */}
+        <span className={styles.count}>
+          {room.numUsers > 0
+            ? (
+                <button type='button' data-room-id={roomId} onClick={handleFilterUsers} aria-label={`Show users in ${room.name}`}>
+                  {room.numUsers}
+                </button>
+              )
+            : room.numUsers}
+        </span>
+      </div>
     )
   })
 
+  const statusText = { play: 'Playing', paused: 'Paused', stopped: 'Stopped' }
+
   const roomsFilter = (
-    <select className={styles.roomsFilter} onChange={handleFilterChange} value={filterStatus === false ? 'all' : filterStatus as string}>
+    <HeadSelect
+      text={filterStatus === false ? 'All' : statusText[filterStatus as keyof typeof statusText] ?? 'All'}
+      aria-label='Show rooms'
+      onChange={handleFilterChange}
+      value={filterStatus === false ? 'all' : filterStatus as string}
+    >
       <option key='all' value='all'>All</option>
       <option key='play' value='play'>Playing</option>
       <option key='paused' value='paused'>Paused</option>
       <option key='stopped' value='stopped'>Stopped</option>
-    </select>
+    </HeadSelect>
   )
 
   return (
-    <Panel title='Rooms' titleComponent={roomsFilter}>
+    <Panel title='Rooms' titleComponent={roomsFilter} contentClassName={styles.content}>
       <>
-        {/* No header row. Three columns wide, each one self-evident — a name,
-            a transport that names its own keys, and a count — a row of
-            headings over them was labelling what the cells already say. */}
-        <table className={styles.table}>
-          <tbody>
-            {rows}
-          </tbody>
-        </table>
+        {/* No header row: a name, a transport that names its own keys, and a
+            count are each self-evident. */}
+        {rows}
 
-        <Button className={styles.createBtn} onClick={handleOpen} variant='default'>
-          Create Room
-        </Button>
+        <div className={styles.create}>
+          <Button onClick={handleOpen} variant='default'>
+            Create room
+          </Button>
+        </div>
 
         {isEditorOpen && <EditRoom onClose={handleClose} room={editorRoom} />}
       </>

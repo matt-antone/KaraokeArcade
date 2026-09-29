@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react'
 import clsx from 'clsx'
+import { ensureState } from 'redux-optimistic-ui'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
 import { setFilterStr, resetFilterStr, setTab, toggleFilterStarred } from '../../modules/library'
 import { exitBattlePick, getBattlePick } from 'store/modules/battle'
@@ -24,6 +25,16 @@ const LibraryHeader = () => {
   const dispatch = useAppDispatch()
   const { filterStr, filterStarred, tab } = useAppSelector(state => state.library)
   const { artistsResult, songsResult } = useAppSelector(getSearchResults)
+  const numSongs = useAppSelector(state => state.songs.result.length)
+  const numArtists = useAppSelector(state => state.artists.result.length)
+  const numStarred = useAppSelector(state => ensureState(state.userStars).starredSongs.length)
+
+  // the whole library's size, comma-grouped (04/06), or how many you starred (04d)
+  const placeholder = filterStarred
+    ? `Search ${numStarred} starred`
+    : tab === 'artists'
+      ? `Search ${numArtists.toLocaleString('en-US')} artists`
+      : `Search ${numSongs.toLocaleString('en-US')} songs`
 
   // Selected down to a string rather than taking the object getBattlePick
   // returns: that object is rebuilt on every call, and a component subscribed
@@ -49,12 +60,21 @@ const LibraryHeader = () => {
     dispatch(resetFilterStr())
   }
 
+  // ★ from any library screen lands on 04d: the Songs tab, the field emptied
+  const toggleStarred = () => {
+    if (!filterStarred) {
+      clearSearch()
+      dispatch(setTab('songs'))
+    }
+    dispatch(toggleFilterStarred())
+  }
+
   return (
     <div className={styles.container}>
       {battleForName && (
         <div className={styles.battleStrip}>
           <div className={styles.battleFor}>
-            <span className={clsx('silkscreen', styles.battleLegend)}>picking a song for</span>
+            <span className={clsx('silkscreen', styles.battleLegend)}>Picking a song for</span>
             <span className={styles.battleName} translate='no'>{battleForName}</span>
           </div>
           <Button
@@ -72,20 +92,21 @@ const LibraryHeader = () => {
           <input
             type='search'
             className={styles.searchInput}
-            placeholder='search'
+            placeholder={placeholder}
             aria-label='Search the library'
             value={value}
             onChange={handleChange}
             ref={searchInput}
           />
           {filterStr && (
-            <Button
-              icon='CLEAR'
-              size={24}
+            <button
+              type='button'
               aria-label='Clear search'
               onClick={clearSearch}
               className={styles.btnClear}
-            />
+            >
+              ✕
+            </button>
           )}
         </div>
         <button
@@ -93,7 +114,7 @@ const LibraryHeader = () => {
           aria-label='Starred only'
           aria-pressed={filterStarred}
           className={clsx(styles.btnStar, filterStarred && styles.starActive)}
-          onClick={() => dispatch(toggleFilterStarred())}
+          onClick={toggleStarred}
         >
           ★
         </button>

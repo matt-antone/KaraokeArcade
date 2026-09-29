@@ -1,95 +1,60 @@
 import React from 'react'
 import clsx from 'clsx'
-import type { Iris } from './useBattleIris'
+import Hud from 'components/Header/Hud/Hud'
+import { useAppSelector } from 'store/hooks'
+import useNow from 'lib/useNow'
+import { formatDuration } from 'lib/dateTime'
 import styles from './BattleFrame.css'
 
 /**
- * The cabinet both phones in a battle are looking at.
+ * The phone every battle screen is drawn on (Arcade Flow v2 2d): a full-screen
+ * takeover on the deep ground, the 4px bar across the top in the colour the
+ * screen is about, and the HUD row — Battle, the venue, and one word saying
+ * what this screen is doing.
  *
- * The challenger's setup and the opponent's invite are the same machine seen
- * from two sides, so the accent strip, the header, the CRT wash and the iris
- * are one component rather than two that agree today. The only thing that
- * varies is which side is holding the phone, which is one prop: the local
- * player is always gold-or-their-own-tint and the header says which player
- * they are.
- *
- * The scanline wash is the last child and takes no pointer events, so it sits
- * over the whole screen without eating a tap meant for the key underneath.
+ * 13a and 13b draw their own header instead, and pass no status; 13h and 13h2
+ * have no bar. The CRT wash is global.css's, over everything.
  */
 
+export type BattleTone = 'gold' | 'red' | 'green' | 'mint' | 'grey'
+
 interface BattleFrameProps {
-  /** Which side of the negotiation is holding this phone. */
-  variant: 'setup' | 'invite'
-  /** The gold wordmark under PLAYER n. Fixed on setup; the invite
-   *  renames itself per step, which is the only progress cue it has. */
-  title: string
-  /** One entry per step, true for the ones already behind. */
-  pips: boolean[]
-  iris: Iris
-  frameRef: React.RefObject<HTMLDivElement | null>
-  /** Omitted when there is no step behind this one — the `‹` key is not drawn
-   *  disabled, it is not drawn at all. */
-  onBack?: (e: React.MouseEvent<HTMLButtonElement>) => void
-  /** The invite has none on purpose: declining is a decision, not a
-   *  dismissal, and a CANCEL in the corner is how somebody answers a
-   *  challenge without meaning to. */
-  onCancel?: (e: React.MouseEvent<HTMLButtonElement>) => void
+  /** The 4px bar across the top, or none. */
+  bar?: BattleTone
+  /** The HUD's right-hand word ('Sent', 'Voting', 'Result'…), or no HUD. */
+  status?: string
+  statusTone?: BattleTone
   children: React.ReactNode
-  /** Drawn above the wash and the iris. The flying singer lives here: it has
-   *  to cross the whole frame, so it cannot be inside the screen it is
-   *  leaving. */
-  overlay?: React.ReactNode
 }
 
-const BattleFrame = ({
-  variant, title, pips, iris, frameRef, onBack, onCancel, children, overlay,
-}: BattleFrameProps) => (
-  <div
-    ref={frameRef}
-    className={clsx(styles.screen, variant === 'invite' && styles.two)}
-    style={{ '--fx-x': iris.x, '--fx-y': iris.y } as React.CSSProperties}
-  >
-    <div className={styles.accent} />
+const BattleFrame = ({ bar, status, statusTone = 'mint', children }: BattleFrameProps) => {
+  const venue = useAppSelector(state => (
+    state.user.roomId == null ? undefined : state.rooms.entities[state.user.roomId]?.name
+  ))
 
-    <div className={styles.header}>
-      {onBack && (
-        <button type='button' className={styles.back} onClick={onBack} aria-label='Back'>
-          &#8249;
-        </button>
+  return (
+    <div className={styles.screen}>
+      {bar && <div className={clsx(styles.bar, styles[bar])} />}
+
+      {status && (
+        <Hud
+          left={<span className={styles.goldInk}>Battle</span>}
+          room={venue}
+          right={<span className={styles[`${statusTone}Ink`]}>{status}</span>}
+        />
       )}
 
-      <div className={clsx(styles.headerText, !onBack && styles.headerTextInset)}>
-        <div className={styles.eyebrow}>{variant === 'setup' ? 'PLAYER 1' : 'PLAYER 2'}</div>
-        <div className={styles.wordmark}>{title}</div>
-      </div>
-
-      <div className={styles.pips}>
-        {pips.map((isDone, i) => (
-          <div key={i} className={clsx(styles.pip, isDone && styles.pipDone)} />
-        ))}
-      </div>
-
-      {onCancel && (
-        <button type='button' className={styles.cancel} onClick={onCancel}>CANCEL</button>
-      )}
+      {children}
     </div>
+  )
+}
 
-    {children}
+/** m:ss to a server deadline (an invite's expiresAt). Its own component so
+ *  only the numeral re-renders on the tick, not the screen around it. */
+export const BattleClock = ({ endsAt, className }: { endsAt: number, className?: string }) => {
+  const now = useNow()
 
-    {/* Over everything, touchable through: the CRT wash sits on every
-        screen in the redesign, so the room is looking at one cabinet from
-        every phone in it. */}
-    <div className={styles.scanlines} />
-
-    {iris.isBursting && (
-      <div className={styles.fx} key={iris.n}>
-        <div className={styles.iris} style={{ backgroundColor: iris.tone }} />
-        <div className={styles.ring} style={{ borderColor: iris.tone }} />
-      </div>
-    )}
-
-    {overlay}
-  </div>
-)
+  return <span className={className}>{formatDuration(Math.ceil(Math.max(0, endsAt - now) / 1000))}</span>
+}
 
 export default BattleFrame

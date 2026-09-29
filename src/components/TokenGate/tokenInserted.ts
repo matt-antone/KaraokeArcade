@@ -20,3 +20,12 @@ export const rememberInserted = () => {
     // not remembered; the slot asks again next mount, which is harmless
   }
 }
+
+/** Leaving the room goes back to the slot (08c › Leave room → 01). */
+export const forgetInserted = () => {
+  try {
+    sessionStorage.removeItem(SESSION_KEY)
+  } catch {
+    // nothing was remembered either
+  }
+}

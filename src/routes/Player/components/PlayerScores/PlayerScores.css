@@ -1,63 +1,101 @@
 /* 14 · Tonight's scores. Sized in vh: the design is 540 tall, so 1px there
-   is 0.185vh here. */
+   is 0.1852vh here. */
 .container {
   position: absolute;
   inset: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding: 4vh 5vh 0;
   background: var(--arc-ground);
   color: var(--arc-text);
+}
+
+/* the design's CRT layer, at the TV's own pitch (2px per 6px at 1080) */
+.scanlines {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: var(--scanlines-tv);
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 4.07vh 5.19vh 0;
 }
 
 .logo {
   display: block;
-  height: 3.4vh;
+  height: 3.33vh;
 }
 
 .venue,
-.count {
+.count,
+.title,
+.rank,
+.name,
+.points {
   font-family: var(--font-display);
-  font-size: 2.6vh;
-  color: var(--arc-text-2);
 }
 
-.count {
-  font-size: 2.2vh;
-  color: var(--arc-muted);
+.venue {
+  font-size: 2.59vh;
+  color: var(--arc-text-2);
 }
 
 .titleRow {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-top: 3.4vh;
+  padding: 3.33vh 5.19vh 0;
 }
 
 .title {
   --text-shadow-color: var(--arc-magenta);
-  font-family: var(--font-display);
   font-weight: var(--weight-bold);
-  font-size: 5.9vh;
+  font-size: 5.93vh;
   color: var(--arc-yellow);
   text-shadow: 0.74vh 0.74vh 0 var(--text-shadow-color);
 }
 
+.count {
+  font-size: 2.22vh;
+  color: var(--arc-muted);
+}
+
+/* three rows' worth of board; the grid slides up through it */
+.viewport {
+  position: relative;
+  flex: none;
+  height: 72.59vh;
+  margin: 2.96vh 5.19vh 0;
+  overflow: hidden;
+}
+
+/* --row is the row scrolled to: a pitch of one 124px row and its 10px gap */
 .grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  grid-auto-rows: 23vh;
+  grid-auto-rows: 22.96vh;
   gap: 1.85vh;
-  margin: 3vh 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
-  overflow: hidden;
+  transform: translateY(calc(var(--row) * -24.81vh));
+  transition: transform .7s cubic-bezier(.3, .8, .3, 1);
+}
+
+/* back to the top of the loop, which is the same picture: no transition */
+.snap {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grid {
+    transition: none;
+  }
 }
 
 .card {
@@ -66,43 +104,41 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.1vh;
+  gap: 1.11vh;
   min-width: 0;
-  padding: 1.85vh 1.1vh 1.5vh;
+  padding: 1.85vh 1.11vh 1.48vh;
   background: var(--arc-surface);
-  box-shadow: inset 0 0 0 0.37vh var(--arc-line);
+  box-shadow: inset 0 0 0 0.37vh var(--arc-surface-hover);
 }
 
-/* the leader's card: a pixel border in the action colour */
-.first {
-  --pixel-border-color: var(--arc-yellow);
-  box-shadow: var(--pixel-border);
+.spacer {
+  visibility: hidden;
 }
 
 .rank {
   position: absolute;
-  left: 1.1vh;
+  left: 1.11vh;
   top: 0.74vh;
-  font-family: var(--font-display);
-  font-size: 3vh;
-  color: var(--arc-muted);
+  font-size: 2.96vh;
+  color: var(--arc-disabled);
 }
 
-.first .rank {
+/* the top three */
+.podium {
   color: var(--arc-yellow);
 }
 
 .avatar {
   flex: none;
-  width: 8.9vh;
-  height: 8.9vh;
-  background: var(--arc-surface-hover);
+  width: 8.89vh;
+  height: 8.89vh;
+  margin: 0;
 }
 
 .name {
+  flex: none;
   max-width: 100%;
-  font-family: var(--font-display);
-  font-size: 2.4vh;
+  font-size: 2.41vh;
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
@@ -110,8 +146,8 @@
 }
 
 .points {
-  font-family: var(--font-display);
-  font-size: 3.3vh;
+  flex: none;
+  font-size: 3.33vh;
   line-height: 1;
   color: var(--arc-yellow);
 }

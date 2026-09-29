@@ -62,6 +62,8 @@ const dirs = (dir: string) => readdirSync(dir, { withFileTypes: true }).filter(d
 
 const manifestOf = (group: string, slug: string) =>
   JSON.parse(readFileSync(join(FIGHTERS, group, slug, 'manifest.json'), 'utf8')) as {
+    name: string
+    height: string
     cell: [number, number]
     sets: Record<string, { frames: number, fps: number, columns: number }>
     location?: { file: string, size: [number, number] }
@@ -268,7 +270,7 @@ describe('battle roster', () => {
   })
 
   it('draws a group fighter from its id alone, and refuses one that is not a folder name', () => {
-    expect(battleSingerOrDefault('halloween/frank')).toMatchObject({ id: 'halloween/frank', group: 'halloween', slug: 'frank', name: 'FRANK' })
+    expect(battleSingerOrDefault('halloween/frank')).toMatchObject({ id: 'halloween/frank', group: 'halloween', slug: 'frank', name: 'Frank' })
     // the shipped group answers to its legacy ids, however it is asked for
     expect(battleSingerAt('default', 'belter').id).toBe('p1')
     expect(battleSingerOrDefault('default/belter').id).toBe('p1')
@@ -294,6 +296,32 @@ describe('battle roster', () => {
     }
 
     expect(BATTLE_SINGERS).toHaveLength(8)
+  })
+
+  it('names every fighter from an id alone the way their manifest does', () => {
+    // Before the listing lands (and on every surface that only has an id) the
+    // name is the slug in title case, so the two must agree or a fighter is
+    // renamed mid-screen when the listing arrives.
+    const wrong = dirs(FIGHTERS)
+      .flatMap(group => dirs(join(FIGHTERS, group)).map(slug => [battleSingerAt(group, slug).name, manifestOf(group, slug).name]))
+      .filter(([ours, theirs]) => ours !== theirs)
+
+    expect(wrong).toEqual([])
+    expect(battleSingerOrDefault('p3').name).toBe('Hype Man')
+  })
+
+  it('lays the shipped grid out alphabetically, ids unchanged', () => {
+    expect(BATTLE_SINGERS.map(s => s.name)).toEqual(
+      ['Belter', 'Crooner', 'Diva', 'Heavyweight', 'Hype Man', 'Idol', 'Outlaw', 'Screamer'])
+    expect(BATTLE_SINGERS.map(s => s.id)).toEqual(['p1', 'p2', 'p4', 'p8', 'p3', 'p7', 'p6', 'p5'])
+  })
+
+  it('carries the listed name and height, and keeps the legacy id', () => {
+    const hype = battleSingerAt('default', 'hype-man', undefined, { name: 'Hype Man', height: '5\' 10"' })
+
+    expect(hype).toMatchObject({ id: 'p3', name: 'Hype Man', height: '5\' 10"' })
+    // an unlisted fighter has no height to show, rather than a made-up one
+    expect(battleSingerAt('halloween', 'deb').height).toBeUndefined()
   })
 
   it('keeps a roster id for every slug and never reuses either', () => {

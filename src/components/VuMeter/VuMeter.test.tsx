@@ -11,7 +11,7 @@ import { clampValue, segmentState } from './segments'
  */
 
 /** State of every segment on a 20-segment scale, as a compact string. */
-const scale = (value: number, peakFrom = 0.86, segments = 20) =>
+const scale = (value: number, peakFrom?: number, segments = 20) =>
   Array.from({ length: segments }, (_, i) =>
     segmentState(i, segments, value, peakFrom)[0]).join('')
 
@@ -26,24 +26,27 @@ describe('segmentState', () => {
     expect(scale(1)).not.toContain('o')
   })
 
-  it('steps dim -> hot up the scale, so the strip reads as calibrated', () => {
-    // HOT_FROM is 0.55, so segments 0-10 are dim and 11+ are hot
-    expect(scale(1, 2)).toBe('d'.repeat(11) + 'h'.repeat(9))
+  it('draws the design meter(24, 17, 20): 17 lit, the lit ones from 20 peak', () => {
+    const hud = (value: number) => Array.from({ length: 24 }, (_, i) =>
+      segmentState(i, 24, value, 20 / 24)[0]).join('')
+
+    expect(hud(17 / 24)).toBe('l'.repeat(17) + 'o'.repeat(7))
+    expect(hud(1)).toBe('l'.repeat(20) + 'p'.repeat(4))
   })
 
-  it('reddens only the top of the scale, and only past peakFrom', () => {
-    // peakFrom 0.8 => the segments at 0.80, 0.85, 0.90, 0.95
-    expect(scale(1, 0.8).split('').filter(c => c === 'p')).toHaveLength(4)
+  it('peaks only past peakFrom', () => {
+    // peakFrom 0.8 => segments 16, 17, 18, 19
+    expect(scale(1, 0.8)).toBe('l'.repeat(16) + 'p'.repeat(4))
   })
 
-  it('never reddens when peaking is switched off', () => {
-    // every non-audio meter passes peakFrom above 1: a scan at 90% is not a fault
-    expect(scale(1, 2)).not.toContain('p')
+  it('never peaks without a peakFrom', () => {
+    // every non-audio meter leaves it out: a scan at 90% is not a fault
+    expect(scale(1)).toBe('l'.repeat(20))
   })
 
   it('colours by position, not by value: a segment does not change as it fills', () => {
-    // segment 15 reads the same whether the meter is half lit or fully lit
-    expect(segmentState(15, 20, 0.8, 2)).toBe(segmentState(15, 20, 1, 2))
+    // segment 17 reads the same whether the meter is 90% lit or fully lit
+    expect(segmentState(17, 20, 0.9, 0.8)).toBe(segmentState(17, 20, 1, 0.8))
   })
 })
 
@@ -75,5 +78,12 @@ describe('VuMeter', () => {
   it('renders one element per segment', () => {
     const html = renderToStaticMarkup(<VuMeter value={0.5} segments={24} />)
     expect(html.match(/<i/g)).toHaveLength(24)
+  })
+
+  it('takes thickness and gap as px or as any CSS length', () => {
+    expect(renderToStaticMarkup(<VuMeter height={8} gap={2} />))
+      .toContain('--vu-thickness:8px;--vu-gap:2px')
+    expect(renderToStaticMarkup(<VuMeter height='2.22vh' gap='.56vh' />))
+      .toContain('--vu-thickness:2.22vh;--vu-gap:.56vh')
   })
 })

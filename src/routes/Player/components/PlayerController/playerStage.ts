@@ -1,4 +1,5 @@
 import type { BattlePhase, BattleSide, QueueItem } from 'shared/types'
+import type { BattleVideoRect } from '../PlayerBattle/battleVideoRect'
 
 /**
  * The decisions PlayerController makes about what is on the stage, apart from
@@ -101,8 +102,9 @@ export function resolveMedia (queueItem: QueueItem | undefined, battleSide: Batt
 }
 
 /**
- * Whether the media layer covers the stage. It covers it completely when it
- * does, and the thread field behind stops drawing.
+ * Whether the media plays and is drawn. It never covers the whole stage any
+ * more: an ordinary song sits in the 11b frame on its singer's stage
+ * (songVideoRect), and a battle's in the bezel's hole.
  *
  * A battle row shows media on two of its ten beats and an overlay on the
  * other seven, so it is visible only while somebody is actually singing.
@@ -135,4 +137,17 @@ export function getIsMediaVisible ({ queueItem, isTriviaRow, isErrored, isAtQueu
  */
 export function getIsRowOnStage (isRowType: boolean, isAtQueueEnd: boolean): boolean {
   return isRowType && !isAtQueueEnd
+}
+
+/**
+ * 11b · where an ordinary song's video sits: the design's 764x430 frame at
+ * (168, 84) on its 960x540 TV, scaled to the player's box.
+ */
+export function songVideoRect (width: number, height: number): BattleVideoRect {
+  return {
+    left: width * 168 / 960,
+    top: height * 84 / 540,
+    width: width * 764 / 960,
+    height: height * 430 / 540,
+  }
 }

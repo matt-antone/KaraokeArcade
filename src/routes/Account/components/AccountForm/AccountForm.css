@@ -7,7 +7,7 @@
 
   input,
   select {
-    min-height: 52px;
+    height: 52px;
     padding: 0 16px;
     font-size: var(--text-xl);
     box-shadow: var(--well-deep);
@@ -15,6 +15,53 @@
 
   button[type='submit'] {
     margin-top: var(--gap-2);
+  }
+}
+
+/* the security question's select, stretched to the column. Its indicator is
+   the design's muted Silkscreen ▾ inside the well's side padding, not the
+   global SVG chevron */
+.well {
+  display: flex;
+  position: relative;
+
+  select {
+    flex: 1;
+    min-width: 0; /* else the longest question widens the page */
+    padding-right: 36px; /* a picked question stops short of the ▾ */
+    background-image: none;
+  }
+
+  &::after {
+    content: '▾';
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    translate: 0 -50%;
+    font-family: var(--font-display);
+    font-size: var(--text-s);
+    color: var(--arc-muted);
+    pointer-events: none;
+  }
+}
+
+/* 08 My account: the design's smaller wells */
+.compact {
+  input,
+  select {
+    height: 48px;
+    padding: 0 14px;
+    font-size: var(--text-l);
+  }
+
+  .well {
+    select {
+      padding-right: 34px;
+    }
+
+    &::after {
+      right: 14px;
+    }
   }
 }
 

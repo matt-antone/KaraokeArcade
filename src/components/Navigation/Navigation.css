@@ -1,6 +1,7 @@
 /* The bottom tab bar: a surface panel ruled off from the screen, at the base of
    the footer stack that CoreLayout pins there. One glyph per tab, painted
-   through a mask so the colour is the state — amber when on, dim when off. */
+   through a mask so the colour is the state — amber when on, disabled
+   violet when off. */
 
 .container {
   display: flex;
@@ -12,9 +13,10 @@
     flex: 1;
     display: grid;
     place-items: center;
-    min-height: var(--nav-bar);
+    /* the design's 64px cell is content-box: +6px bottom pad = 70px (72px bar) */
+    min-height: calc(var(--nav-bar) + var(--gap-2));
     padding-bottom: var(--gap-2);
-    color: var(--arc-muted);
+    color: var(--arc-disabled);
   }
 
   a.active {

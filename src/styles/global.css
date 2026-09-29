@@ -16,6 +16,7 @@ body {
   background-color: var(--chassis);
   color: var(--ink);
   font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
   height: 100%;
   margin: 0;
   padding: 0;
@@ -30,6 +31,12 @@ body::after {
   z-index: 2147483647;
   pointer-events: none;
   background: var(--scanlines);
+}
+
+/* The TV draws its own scanline layer (--scanlines-tv) at each screen's
+   z-index, so the phone's global layer steps aside there. */
+:root[data-screen='tv'] body::after {
+  display: none;
 }
 
 body.scroll-lock {
@@ -47,13 +54,12 @@ a {
 /* The silkscreen label: every label printed on the cabinet — section headings,
    panel titles, durations, tags, counts, waits, meter legends. A utility
    because it is a package, not a size. If it is language, it is Chakra
-   Petch; if it is a label or a number, it is Silkscreen. */
+   Petch; if it is a label or a number, it is Silkscreen. Written in the
+   design's case, untracked. */
 .silkscreen {
   font-family: var(--font-display);
   font-size: var(--silkscreen-size);
   font-weight: var(--weight-regular);
-  letter-spacing: var(--silkscreen-tracking);
-  text-transform: uppercase;
   color: var(--ink-3);
 }
 
@@ -130,21 +136,26 @@ select {
   }
 }
 
+/* an unpicked select reads as a placeholder */
+select:has(option[value='']:checked) {
+  color: var(--arc-muted);
+}
+
+/* the design draws no match highlighting */
 mark {
+  background: none;
   color: inherit;
-  background-color: var(--vu-well);
 }
 
-/* override modern-normalize's bad defaults */
-html {
-  line-height: normal;
-}
-
+/* override modern-normalize's 1.15. The design sets no line-height except on
+   the few blocks that ask for one (1.4 on long copy, 1-1.1 on headlines);
+   those set it themselves. */
+html,
 body,
 button,
 input,
 optgroup,
 select,
 textarea {
-  line-height: 1.4;
+  line-height: normal;
 }

@@ -1,13 +1,21 @@
-/* A library artist row: name left, song count and a chevron right, ruled off
-   from the next by a surface seam. Only the songs underneath are keys. */
+/* A library artist row (06): name left, song count and a chevron right, ruled
+   off from the next by a surface seam. The first artist of each letter group
+   carries the letter above it. */
+.letter {
+  padding: 12px var(--gutter) 4px;
+  font-family: var(--font-display);
+  font-size: var(--text-s);
+  color: var(--arc-magenta);
+}
+
 .container {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--gap-4);
+  gap: 12px;
   width: 100%;
   min-height: var(--row-artist);
-  padding: var(--gap-3) var(--gutter);
+  padding: 12px var(--gutter);
   font: inherit;
   text-align: left;
   color: inherit;
@@ -17,53 +25,44 @@
   cursor: pointer;
 
   &:active {
-    background-color: var(--arc-surface);
+    background-color: var(--arc-surface-hover);
+  }
+}
+
+/* open: the design's active row — a key-coloured ground and an amber chevron */
+.open {
+  background-color: var(--arc-surface-hover);
+
+  .chevron {
+    color: var(--arc-amber);
   }
 }
 
 .name {
   flex: 1;
   min-width: 0;
+  overflow-wrap: break-word;
   font-family: var(--font-body);
   font-size: var(--text-xl);
   font-weight: var(--weight-semibold);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--ink);
-}
-
-/* a queued child lights the name amber */
-.upcoming {
-  color: var(--vu);
+  color: var(--arc-text);
 }
 
 .meta {
   display: flex;
   align-items: center;
-  gap: var(--gap-3);
+  gap: 12px;
   flex-shrink: 0;
 }
 
 .count {
   font-family: var(--font-display);
   font-size: var(--text-s);
-  color: var(--ink-3);
-}
-
-/* a starred child lights the count yellow */
-.countStarred {
-  color: var(--arc-yellow);
+  color: var(--arc-muted);
 }
 
 .chevron {
   font-family: var(--font-display);
-  font-size: var(--display-s);
-  color: var(--ink-4);
-}
-
-/* open, the chevron turns amber and points down */
-.chevronOpen {
-  color: var(--vu);
-  transform: rotate(90deg);
+  font-size: 14px;
+  color: var(--arc-line);
 }

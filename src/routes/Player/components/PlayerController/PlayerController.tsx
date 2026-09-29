@@ -11,6 +11,7 @@ import PlayerBattle from '../PlayerBattle/PlayerBattle'
 import type { BattleUpNext } from '../PlayerBattle/battleBeats'
 import battleVideoRect from '../PlayerBattle/battleVideoRect'
 import PlayerFrame from './PlayerFrame'
+import frameStyles from './PlayerFrame.css'
 import getRoundRobinQueue from 'routes/Queue/selectors/getRoundRobinQueue'
 import { playerLeave, playerError, playerLoad, playerPlay, playerStatus, type PlayerState } from '../../modules/player'
 import getRoomPrefs from '../../selectors/getRoomPrefs'
@@ -19,7 +20,8 @@ import useBattleStage from 'lib/useBattleStage'
 import { requestTriviaRound } from 'store/modules/trivia'
 import { battleSongEnded, requestBattleTurn } from 'store/modules/battle'
 import getSkipEndsAt, { INTERMISSION_MS } from './getSkipEndsAt'
-import { getBattleSide, getIsMediaVisible, getIsRowOnStage, resolveMedia } from './playerStage'
+import { getBattleSide, getIsMediaVisible, getIsRowOnStage, resolveMedia, songVideoRect } from './playerStage'
+import { battleSingerOrDefault, battleSingerStage } from 'lib/battleSingers'
 import { SONG_PLAYED } from 'shared/actionTypes'
 import {
   isBattleItem, isTriviaItem, rotationIdOf,
@@ -30,9 +32,6 @@ interface PlayerControllerProps {
   width: number
   height: number
 }
-
-// how long before a song ends to tease the next singer
-const UP_NEXT_SECS = 15
 
 /** How long the player holds a trivia row that has produced nothing before
  *  moving on. A primed round arrives in well under a second, but one fetched
@@ -68,30 +67,6 @@ const BATTLE_STRANDED_MS = 20000
 const CAN_HEAR_ROOM = typeof window !== 'undefined'
   && window.isSecureContext
   && !!navigator.mediaDevices?.getUserMedia
-
-/** The room's join code, when the room is showing one. Its own component so
- *  the two levels of "has the room asked for this" do not sit in the middle of
- *  the stage's render. */
-const RoomQR = ({ roomPrefs, height, isBattleRow, queueItem, isDocked }: {
-  roomPrefs?: { qr?: React.ComponentProps<typeof PlayerQR>['prefs'] & { isEnabled?: boolean } }
-  height: number
-  /** A battle owns the whole screen for the length of the row. */
-  isBattleRow: boolean
-  queueItem?: QueueItem
-  /** Drawn inside the join screen's panel rather than parked in a corner. */
-  isDocked?: boolean
-}) => {
-  // Never over a battle. The stage is a designed 12:7 composition with the
-  // fighters at its outer edges, and the code parks itself in a corner on top
-  // of one of them. The join code is for the idle end of the night anyway —
-  // during a battle the room is watching, not joining, and the two phones in
-  // the fight are already in.
-  if (isBattleRow) return null
-
-  if (!roomPrefs?.qr?.isEnabled) return null
-
-  return <PlayerQR height={height} prefs={roomPrefs.qr} queueItem={queueItem} isDocked={isDocked} />
-}
 
 /**
  * Whatever owns the stage above the media: a trivia round, a battle, or the
@@ -156,7 +131,7 @@ const StageOverlay = ({
     <>
       {/* One mount across the whole lead-in, so the splash does not restart
           the moment the row goes current. */}
-      {isTriviaLeadIn && <PlayerTriviaSplash width={width} height={height} />}
+      {isTriviaLeadIn && <PlayerTriviaSplash intermissionEndsAt={overlay.intermissionEndsAt} width={width} height={height} />}
       {!isTriviaRow && <PlayerTextOverlay {...overlay} width={width} height={height} />}
     </>
   )
@@ -170,6 +145,7 @@ const PlayerController = (props: PlayerControllerProps) => {
   const roomPrefs = useAppSelector(getRoomPrefs)
   const roomName = useAppSelector(state => state.rooms.entities[state.user.roomId]?.name)
   const leaderboard = useAppSelector(state => state.points.leaderboard)
+  const singerCount = useAppSelector(state => state.rooms.singerCount)
   // Two views of the same round, and they are not interchangeable. The live
   // one expires with the countdown and drives *when* the player moves on; the
   // stored one persists between questions and drives *what is on screen*, so
@@ -186,8 +162,8 @@ const PlayerController = (props: PlayerControllerProps) => {
   const queueItem = queue.entities[player.queueId]
   const nextIdx = queue.result.indexOf(player.queueId) + 1
   const nextQueueItem = queue.entities[queue.result[nextIdx]]
-  // the two singers after the next one, shown during the intermission
-  const comingUpQueueItems = queue.result.slice(nextIdx + 1, nextIdx + 3).map(id => queue.entities[id])
+  // the three singers after the next one, shown during the intermission (11a)
+  const comingUpQueueItems = queue.result.slice(nextIdx + 1, nextIdx + 4).map(id => queue.entities[id])
   const comingUpSongTitles = useAppSelector(state => comingUpQueueItems.map(item => state.songs.entities[item.songId]?.title))
   const nextSong = useAppSelector(state => nextQueueItem ? state.songs.entities[nextQueueItem.songId] : undefined)
   const nextArtist = useAppSelector(state => nextSong ? state.artists.entities[nextSong.artistId] : undefined)
@@ -209,7 +185,7 @@ const PlayerController = (props: PlayerControllerProps) => {
         songTitle: nextSong?.title,
       }
     : null
-  // the corner panel names the singer *and* their song, so the player needs the current one too
+  // the 11b bar names the singer *and* their song, so the player needs the current one too
   const song = useAppSelector(state => queueItem ? state.songs.entities[queueItem.songId] : undefined)
   const artist = useAppSelector(state => song ? state.artists.entities[song.artistId] : undefined)
 
@@ -269,6 +245,8 @@ const PlayerController = (props: PlayerControllerProps) => {
   // a fresh arrow every render would restart the microphone on every tick.
   const playerRef = useRef<Player>(null)
   const getAudioCtx = useCallback(() => playerRef.current?.audioCtx ?? null, [])
+  // the 11b bar's meter reads the room's level off Player's analyser
+  const getAnalyser = useCallback(() => playerRef.current?.analyser ?? null, [])
 
   const handleStatus = useCallback((status?: Partial<PlayerState>) => dispatch(playerStatus(status)), [dispatch])
   const handleLoad = () => dispatch(playerLoad())
@@ -554,6 +532,19 @@ const PlayerController = (props: PlayerControllerProps) => {
     playerVisualizer,
   ])
 
+  // D8 · the phones' 12e0 waiting screen counts down with the TV: while a
+  // round is coming (the gap before it, then the wait for its first question)
+  // the status says which row and when. Once the lead-in is over both go out
+  // as absent, which the phones' status reducer reads as "no lead-in". A row
+  // reached with no intermission of its own carries the last one's end, which
+  // is past: the phones hold at 0 until the question lands.
+  const leadInQueueId = isTriviaLeadIn && !isTriviaOnStage
+    ? (isTriviaRow ? player.queueId : nextQueueItem.queueId)
+    : undefined
+  const leadInEndsAt = leadInQueueId === undefined ? undefined : (intermissionEndsAt ?? intermission?.endsAt)
+
+  useEffect(() => handleStatus({ leadInEndsAt, leadInQueueId }), [handleStatus, leadInEndsAt, leadInQueueId])
+
   // The intermission's own timer, owned by an effect rather than a ref so it
   // re-arms whenever the end moves — which is exactly what a trivia round
   // claiming the gap does. Same shape as the skip timer below.
@@ -641,29 +632,41 @@ const PlayerController = (props: PlayerControllerProps) => {
         queueItem,
         isErrored: player.isErrored,
         intermissionEndsAt,
-        isSongEnding: false,
       })
   // 10 · the idle / join screen, whenever nobody is singing
   const isJoinShown = stage === 'empty' || stage === 'idle'
   // 11a · the intermission draws the next singer's own stage, full bleed —
-  // except before a trivia round or a battle, where it is only a clock
+  // except before a trivia round (its splash) or a battle (only a clock)
   const isOnStageNext = stage === 'intermission' && !isTriviaItem(nextQueueItem) && !isBattleItem(nextQueueItem)
+  // 11b · an ordinary song plays in a frame on its singer's own stage
+  const isSongOnStage = isMediaVisible && !isBattleRow
+  const frameRect = videoRect ?? (isSongOnStage ? songVideoRect(props.width, props.height) : null)
 
   return (
     <>
       {/* A battle overlay is opaque on eight of its ten beats and the media
           covers the other two, so the thread field has to stop for the whole
           row — otherwise it burns a core behind the fight for five minutes.
-          The join screen and the on-stage-next page are opaque too. */}
-      <PlayerBackdrop isCovered={isMediaVisible || isTriviaLeadIn || isBattleRow || isJoinShown || isOnStageNext} />
+          The join screen, the on-stage-next page and a song's own stage
+          are opaque too. */}
+      <PlayerBackdrop
+        isCovered={isMediaVisible || isTriviaLeadIn || isBattleRow || isJoinShown || isOnStageNext}
+        stage={isSongOnStage ? battleSingerStage(battleSingerOrDefault(queueItem.userAvatarId)) : undefined}
+      />
       {/* On a singing beat the stage above is a bezel with a hole cut in it and
           this is what shows through, so the media is sized and placed to the
-          opening rather than to the screen. Everywhere else it is the whole
-          display — the same box with different numbers, never a removed one.
+          opening rather than to the screen; an ordinary song sits in 11b's
+          frame. Everywhere else it is the whole display — the same box with
+          different numbers, never a removed one.
           Taking the wrapper away for that case, by fragment or by
           `display: contents`, costs either the AudioContext or the video's
           compositing layer; PlayerFrame.tsx has the full account. */}
-      <PlayerFrame rect={videoRect} width={props.width} height={props.height}>
+      <PlayerFrame
+        rect={frameRect}
+        width={props.width}
+        height={props.height}
+        className={isSongOnStage ? frameStyles.framed : undefined}
+      >
         <Player
           ref={playerRef}
           cdgAlpha={player.cdgAlpha}
@@ -688,15 +691,17 @@ const PlayerController = (props: PlayerControllerProps) => {
           rgTrackPeak={media.rgTrackPeak}
           visualizer={playerVisualizer}
           volume={player.volume}
-          width={videoRect ? videoRect.width : props.width}
-          height={videoRect ? videoRect.height : props.height}
+          width={frameRect ? frameRect.width : props.width}
+          height={frameRect ? frameRect.height : props.height}
         />
       </PlayerFrame>
       {isJoinShown && (
         <PlayerJoin
           roomName={roomName}
           leaderboard={leaderboard}
-          qr={<RoomQR roomPrefs={roomPrefs} height={props.height} isBattleRow={false} queueItem={queueItem} isDocked />}
+          singerCount={singerCount}
+          isIdle={stage === 'idle'}
+          qr={<PlayerQR height={props.height} prefs={roomPrefs?.qr} />}
         />
       )}
       <StageOverlay
@@ -719,17 +724,16 @@ const PlayerController = (props: PlayerControllerProps) => {
           songArtist: artist?.name,
           nextSongTitle: nextSong?.title,
           nextSongArtist: nextArtist?.name,
-          queueDepth: Math.max(0, queue.result.length - nextIdx),
-          isSongEnding: player.duration > 0 && player.duration - player.position <= UP_NEXT_SECS,
           isAtQueueEnd: player.isAtQueueEnd,
           isQueueEmpty: !queue.result.length,
           intermissionEndsAt,
           isErrored: player.isErrored,
+          venue: roomName,
+          position: player.position,
+          duration: player.duration,
+          getAnalyser,
         }}
       />
-      {!isJoinShown && (
-        <RoomQR roomPrefs={roomPrefs} height={props.height} isBattleRow={isBattleRow} queueItem={queueItem} />
-      )}
     </>
   )
 }

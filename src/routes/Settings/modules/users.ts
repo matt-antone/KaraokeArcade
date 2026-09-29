@@ -84,7 +84,7 @@ export interface UsersState {
 const initialState: UsersState = {
   result: [],
   entities: {},
-  filterOnline: true,
+  filterOnline: false, // 09 opens on "All"
   filterRoomId: null,
   isEditorOpen: false,
 }

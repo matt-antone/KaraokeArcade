@@ -1,4 +1,4 @@
-/* 07d: the singer's own fighter location, dimmed over the deepest ground, with
+/* 07d: the singer's own fighter location at .35 under a 70% deep scrim, with
    one mint-ruled card centred on it. */
 
 .container {
@@ -18,13 +18,20 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: brightness(.4); /* the art dimmed by light, not opacity (see arcade-rules) */
+  opacity: .35; /* design-dim */
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--arc-deep) 70%, transparent);
 }
 
 .card {
   --pixel-border-color: var(--arc-mint);
 
   position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -48,9 +55,8 @@
   font-weight: 700;
   line-height: 1.05;
   text-align: center;
-  text-transform: uppercase;
   color: var(--arc-yellow);
-  text-shadow: var(--text-shadow-hard);
+  text-shadow: var(--text-shadow-hard-4);
 }
 
 .song {

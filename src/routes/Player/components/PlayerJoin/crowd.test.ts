@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { BATTLE_SINGERS } from 'lib/battleSingers'
-import { CROWD_MAX, crowdOf } from './crowd'
+import { CROWD_MAX, crowdOf, joinCountOf } from './crowd'
 
 const seeds = (n: number) => Array.from({ length: n }, (_, i) => (i * 0.137) % 1)
 
@@ -31,5 +31,14 @@ describe('crowdOf', () => {
 
     expect(crowdOf([0, 0.5, 0.999999], BATTLE_SINGERS).every(m => ids.has(m.singer.id))).toBe(true)
     expect(crowdOf(seeds(40), [])).toEqual([])
+  })
+})
+
+describe('joinCountOf', () => {
+  it('says the room in the design\'s words, capped at forty like the crowd', () => {
+    expect(joinCountOf(0)).toBe('Waiting for singers')
+    expect(joinCountOf(1)).toBe('1 singer in')
+    expect(joinCountOf(39)).toBe('39 singers in')
+    expect(joinCountOf(46)).toBe('40 singers in')
   })
 })

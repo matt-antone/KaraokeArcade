@@ -1,12 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useState } from 'react'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
 import type { RootState } from 'store/store'
-import { Routes, Route, useLocation } from 'react-router'
+import { Routes, Route, useLocation, useNavigate } from 'react-router'
 import { createSelector } from '@reduxjs/toolkit'
 
 import { ensureState } from 'redux-optimistic-ui'
 import { formatSeconds } from 'lib/dateTime'
-import { requestScanStop } from 'store/modules/prefs'
 import { setPaused } from 'routes/Queue/modules/queue'
 import getMyRotation from 'routes/Queue/selectors/getMyRotation'
 import getMyUpcoming from 'routes/Queue/selectors/getMyUpcoming'
@@ -15,10 +14,9 @@ import getWaits from 'routes/Queue/selectors/getWaits'
 import LibraryHeader from 'routes/Library/components/LibraryHeader/LibraryHeader'
 import QueueHeader from 'routes/Queue/components/QueueHeader/QueueHeader'
 import Logo from 'components/Logo/Logo'
-import Hud from './Hud/Hud'
+import { myStanding } from 'store/selectors/points'
+import { showErrorMessage } from 'store/modules/ui'
 import UpNextAlert from './UpNextAlert/UpNextAlert'
-import BattleStrip from './BattleStrip/BattleStrip'
-import ProgressBar from './ProgressBar/ProgressBar'
 import YourTurn from './YourTurn/YourTurn'
 import styles from './Header.css'
 
@@ -32,9 +30,9 @@ const UP_NEXT_ALERT_SECONDS = 60
 
 /**
  * The singer's next song: its queue id, the wait until it in seconds, and its
- * title. One lookup — the headline, the meter and the label all describe the
- * same song, and getWaits is recomputed from song durations and the live
- * playhead, so the wait ticks down every second the player reports.
+ * title. One lookup — the title, the time and the meter all describe the same
+ * song, and getWaits is recomputed from song durations and the live playhead,
+ * so the wait ticks down every second the player reports.
  */
 const getMyNext = createSelector(
   [getMyUpcoming, getWaits, (state: RootState) => ensureState(state.queue).entities, (state: RootState) => state.songs, (state: RootState) => state.artists],
@@ -51,42 +49,43 @@ const getMyNext = createSelector(
   },
 )
 
-const getIsUpNow = createSelector(
-  [getRoundRobinQueue, getQueueId, getIsAtQueueEnd, getUserId],
-  (queue, queueId, isAtQueueEnd, userId) => {
+/** The title on stage while it is this singer's, or undefined when it is not. */
+const getMyStageSong = createSelector(
+  [getRoundRobinQueue, getQueueId, getIsAtQueueEnd, getUserId, (state: RootState) => state.songs],
+  (queue, queueId, isAtQueueEnd, userId, songs) => {
     const curItem = queue.entities[queueId]
-    return curItem ? !isAtQueueEnd && curItem.userId === userId : false
+
+    return curItem && !isAtQueueEnd && curItem.userId === userId
+      ? songs.entities[curItem.songId]?.title ?? ''
+      : undefined
   },
 )
 
-// How far the faceplate is currently slid up, in px. Written to the DOM rather
-// than to state: this changes every scroll frame, and a re-render here would
-// re-render the virtualized library list with it. Set on the root element (not
-// just the faceplate) so other fixed chrome — e.g. the library's AlphaPicker
-// rail — can also track it via CSS var inheritance.
-const setChromeShift = (px: number) => {
-  document.documentElement.style.setProperty('--chrome-shift', `${px}px`)
-}
+const BATTLES_OFF = 'Singer battles are switched off for this room.'
 
 interface HeaderProps {
   /** Open the battle roster. Owned by CoreLayout because the key that opens it
    *  lives in here and the dialog it opens is mounted out there, beside the
-   *  trivia pad. Absent on any surface that has no dialog to open. */
+   *  trivia pad. */
   onBattle?: () => void
 }
 
-// component
+/**
+ * The phone's chrome, static above the route (only the route scrolls): the
+ * brand row — logo left, venue right — then the HUD block. /leaderboard (08b)
+ * draws the brand row alone. Nothing at all before sign-in, where onboarding
+ * draws its own HUD and logo, or on the player, which is a room fixture.
+ */
 const Header = React.forwardRef<HTMLDivElement, HeaderProps>(({ onBattle }, ref) => {
-  const isAdmin = useAppSelector(state => state.user.isAdmin)
-  const isScanning = useAppSelector(state => state.prefs.isScanning)
-  const scannerText = useAppSelector(state => state.prefs.scannerText)
-  const scannerPct = useAppSelector(state => state.prefs.scannerPct)
   const userId = useAppSelector(getUserId)
-  const isUpNow = useAppSelector(getIsUpNow)
+  const name = useAppSelector(state => state.user.name)
+  const avatarId = useAppSelector(state => state.user.avatarId)
+  const { points, rank } = useAppSelector(myStanding)
+  const nowSong = useAppSelector(getMyStageSong)
+  const isUpNow = nowSong !== undefined
   const { position, rotationSize } = useAppSelector(getMyRotation)
   const songCount = useAppSelector(getMyUpcoming).length
   const { queueId: nextQueueId, wait, title: nextSong, artist: nextArtist } = useAppSelector(getMyNext)
-  const avatarId = useAppSelector(state => state.user.avatarId)
   // the song whose alert was acknowledged; the next song alerts afresh
   const [ackedQueueId, setAckedQueueId] = useState<number>()
 
@@ -117,8 +116,8 @@ const Header = React.forwardRef<HTMLDivElement, HeaderProps>(({ onBattle }, ref)
   ))
 
   // Read off the room the way the QR overlay reads its own pref, and defaulted
-  // to off: a room whose prefs have never been saved has no battle key, so an
-  // upgraded install does not sprout a feature nobody switched on.
+  // to off: a room whose prefs have never been saved has no battles. The VS key
+  // is drawn regardless (the design always draws it); off, a press says so.
   const isBattleEnabled = useAppSelector(state => (
     state.user.roomId === null
       ? false
@@ -129,127 +128,65 @@ const Header = React.forwardRef<HTMLDivElement, HeaderProps>(({ onBattle }, ref)
     && nextQueueId !== ackedQueueId
 
   const location = useLocation()
-  const isPlayer = location.pathname.replace(/\/$/, '').endsWith('/player')
+  const path = location.pathname.replace(/\/$/, '')
+  const isPlayer = path.endsWith('/player')
+  const isScores = path.endsWith('/leaderboard')
 
   const dispatch = useAppDispatch()
-  const cancelScan = () => dispatch(requestScanStop())
+  const navigate = useNavigate()
 
-  const wordmarkRef = useRef<HTMLDivElement>(null)
-
-  // Slide the faceplate up with the scroll so the wordmark row reads as
-  // scrolling away, capped so YourTurn and the route header below it stay
-  // pinned (see Header.css). Every route is a separate full-viewport
-  // scroller — three plain divs and react-window's — so this listens on the
-  // capture phase at the document instead of being wired up four times; scroll
-  // does not bubble, but it does capture. Modals scroll on their own and must
-  // not move the chrome.
-  useEffect(() => {
-    const onScroll = (e: Event) => {
-      // A body-scrolling route (Account, Settings) reports the document as the
-      // target; an inner scroller reports itself.
-      const el = e.target === document ? document.documentElement : e.target
-      if (!(el instanceof HTMLElement) || el.closest('dialog')) return
-
-      const wordmark = wordmarkRef.current
-      const faceplate = wordmark?.parentElement
-      // On Account and Settings the wordmark is the whole faceplate and only
-      // the seam rule would be left pinned, so take the faceplate instead of
-      // the row. ponytail: a 1px slack test rather than asking each child
-      // whether it rendered anything; revisit if a hairline row is ever added
-      // below the wordmark.
-      const cap = !wordmark || !faceplate
-        ? 0
-        : faceplate.offsetHeight - wordmark.offsetHeight <= 1
-          ? faceplate.offsetHeight
-          : wordmark.offsetHeight
-
-      // clamped below at 0 for rubber-band overscroll, which reports negative
-      setChromeShift(Math.min(Math.max(el.scrollTop, 0), cap))
-    }
-
-    document.addEventListener('scroll', onScroll, true)
-    return () => document.removeEventListener('scroll', onScroll, true)
-  }, [])
-
-  // A route change swaps in a fresh scroller at the top; anything that restores
-  // a scroll position (Library, Queue) does it by scrolling, which fires above.
-  useEffect(() => {
-    setChromeShift(0)
-  }, [location.pathname])
+  const isChrome = userId !== null && !isPlayer
 
   return (
     <div className={styles.container} ref={ref}>
-      {/* the HUD and the wordmark. Not on the player, which is a room fixture
-          rather than a screen someone navigates. */}
-      {!isPlayer && (
-        <div ref={wordmarkRef}>
-          <Hud
-            room={roomName}
-            right={position ? `${position}/${rotationSize}` : undefined}
-          />
-          <div className={styles.wordmarkRow}>
-            <Logo withMark />
-          </div>
+      {isChrome && (
+        <div className={styles.brand}>
+          <Logo withMark />
+          <span className={styles.venue} translate='no'>{roomName}</span>
         </div>
       )}
 
-      {/* Every screen but the player, queued or not. This used to wait for a
-          song in the queue or a paused singer — nothing queued meant no status
-          to report — but the Battle key lives in this strip, and the moment
-          somebody most wants to challenge a friend is exactly the moment they
-          have nothing queued and are looking for a reason to sing. The strip
-          carries an idle state for that, so it is always there to be reached.
+      {isChrome && !isScores && (
+        <YourTurn
+          name={name}
+          avatarId={avatarId}
+          points={points}
+          rank={rank}
+          isUpNow={isUpNow}
+          nowSong={nowSong}
+          isPaused={isPaused}
+          wait={wait === undefined ? undefined : formatSeconds(wait, true)}
+          position={position}
+          rotationSize={rotationSize}
+          songCount={songCount}
+          nextSong={nextSong}
+          waitLevel={waitLevel}
+          onTogglePaused={() => {
+            dispatch(setPaused({ isPaused: !isPaused }))
+            // both ways land on the queue: II shows the hold there (07c),
+            // the play key and Resume show it running again (07)
+            navigate('/queue')
+          }}
+          onBattle={isBattleEnabled ? onBattle : () => dispatch(showErrorMessage(BATTLES_OFF))}
+        />
+      )}
 
-          Still not on the player: that screen is a fixture in the room, not a
-          phone somebody is holding. And not before sign-in, where there is no
-          turn to report and the design shows the HUD alone. */}
-      {!isPlayer && userId !== null
-        && (
-          <YourTurn
-            inHeader
-            isUpNow={isUpNow}
-            isPaused={isPaused}
-            wait={wait === undefined ? undefined : formatSeconds(wait, true)}
-            position={position}
-            rotationSize={rotationSize}
-            songCount={songCount}
-            nextSong={nextSong}
-            waitLevel={waitLevel}
-            onTogglePaused={() => dispatch(setPaused({ isPaused: !isPaused }))}
-            onBattle={onBattle}
-            isBattleEnabled={isBattleEnabled}
-          />
-        )}
-
-      {/* A battle takes one queue row and five minutes of everybody's evening,
-          and the phones used to say nothing at all for the whole of it. Under
-          Your Turn because it is the same kind of fact — what is happening on
-          stage right now — and inside this container so the header measures
-          itself with the strip in place and the screens below clear it.
-
-          Not on the player: that screen is drawing the fight. */}
-      {!isPlayer && <BattleStrip />}
-
-      {!isPlayer && isUpNext && (
+      {isChrome && isUpNext && (
         <UpNextAlert
           title={nextSong}
           artist={nextArtist}
           wait={wait}
           avatarId={avatarId}
-          onReady={() => setAckedQueueId(nextQueueId)}
-          onPause={() => dispatch(setPaused({ isPaused: true }))}
+          onReady={() => {
+            setAckedQueueId(nextQueueId)
+            navigate('/queue')
+          }}
+          onPause={() => {
+            dispatch(setPaused({ isPaused: true }))
+            navigate('/queue')
+          }}
         />
       )}
-
-      {isAdmin && !isPlayer
-        && (
-          <ProgressBar
-            isActive={isScanning}
-            onCancel={cancelScan}
-            pct={scannerPct}
-            text={scannerText}
-          />
-        )}
 
       {/* only these two routes add a header of their own. Without the
           catch-all, react-router logs "No routes matched" on every render

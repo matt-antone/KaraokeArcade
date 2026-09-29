@@ -11,6 +11,7 @@ import { RequireAuth } from './Routes'
 // running; the shipped eight are what it falls back to anyway.
 vi.mock('lib/fighterSets', () => ({
   useFighterListing: () => ({}),
+  useFighterSet: (_group: string, _slug: string, _loop: string, fallback: unknown) => fallback,
 }))
 
 /**
@@ -66,8 +67,8 @@ const renderAt = (path: string, user: Record<string, unknown>) => render(
 /** Whatever the gate was standing in front of. */
 const route = () => screen.queryByText('THE ROUTE')
 
-/** The picker's masthead, which no other screen shows. */
-const picker = () => screen.queryByText(/THIS IS WHO SINGS FOR YOU TONIGHT/)
+/** The picker's title, which no other screen shows. */
+const picker = () => screen.queryByText('Select your singer')
 
 describe('the sign-in avatar gate', () => {
   it('asks a signed-in account with no character who they are', () => {

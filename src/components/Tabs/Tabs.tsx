@@ -32,7 +32,12 @@ const Tabs = <T extends string>({ tabs, active, onChange, className }: TabsProps
         onClick={() => onChange?.(id)}
       >
         {label}
-        {typeof count === 'number' && <span className={styles.count}>{count}</span>}
+        {typeof count === 'number' && (
+          <>
+            {' '}
+            <span className={styles.count}>{count}</span>
+          </>
+        )}
       </button>
     ))}
   </div>

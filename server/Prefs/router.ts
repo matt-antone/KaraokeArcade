@@ -6,7 +6,7 @@ import { requireAdmin } from '../lib/util.js'
 import getFolders from '../lib/getFolders.js'
 import getWindowsDrives from '../lib/getWindowsDrives.js'
 import getServerUrl from '../lib/getServerUrl.js'
-import fighterSets from './fighterSets.js'
+import fighterSets, { type FighterListing } from './fighterSets.js'
 import Prefs from './Prefs.js'
 import Media from '../Media/Media.js'
 import pushQueuesAndLibrary from '../lib/pushQueuesAndLibrary.js'
@@ -45,9 +45,10 @@ router.get('/', (ctx) => {
   ctx.body = { roles: prefs.roles }
 })
 
-// Battle fighter groups as { group: { slug: { set: {frames, fps, columns} } } }:
-// every folder under assets/battle/fighters, every fighter folder in it that
-// has its key art, and how each of that fighter's sets is cut and played.
+// Battle fighter groups as { group: { slug: { sets: { set: {frames, fps,
+// columns} }, name?, height? } } }: every folder under assets/battle/fighters,
+// every fighter folder in it that has its key art, how each of that fighter's
+// sets is cut and played, and the name and height their manifest gives.
 //
 // The numbers ride along with the listing rather than being fetched per
 // fighter because this walk is already opening every fighter's folder, and
@@ -65,7 +66,7 @@ router.get('/fighters', async (ctx) => {
     .map(d => d.name)
     .sort()
 
-  const groups: Record<string, Record<string, Awaited<ReturnType<typeof fighterSets>>>> = {}
+  const groups: Record<string, Record<string, FighterListing>> = {}
 
   for (const group of await dirs(root)) {
     const slugs = (await dirs(path.join(root, group)))

@@ -1,103 +1,70 @@
-/* The three keys both negotiating phones are built from. See BattleKey.tsx.
-   Lifted from Arcade Flow v2, 13a/13b: a filled key is a flat face with a
-   lighter lip above and a darker one below, four hard pixels each, and never
-   a rounded corner or a blur. */
+/* The keys on every battle phone. See BattleKey.tsx. Lifted from Arcade Flow
+   v2 2d: Silkscreen on a flat face, a hard lip above and below, never a
+   rounded corner or a blur. */
 .key {
   display: block;
   width: 100%;
   border: none;
   border-radius: 0;
-  font: inherit;
+  font-family: var(--font-display);
+  line-height: normal;
   cursor: pointer;
 
   &:focus-visible {
     outline: var(--focus-outline);
-    outline-offset: 4px;
+    outline-offset: 6px;
   }
 }
 
-/* The lips are mixed from the key's own colour toward white and toward the
-   deep ground, so one declaration per tone lights the whole key. The margin
-   gives the lips back the room a box-shadow does not take up. */
+/* 13a/13a3/13j: Silkscreen 18px, padding 17px 0, 4px lips. */
 .primary {
-  --key-c: var(--arc-mine);
-  --key-ink: var(--arc-mine-ink);
-  min-height: 54px;
-  margin: 4px 0;
-  padding: 0 12px;
+  padding: 17px 0;
   background-color: var(--key-c);
-  box-shadow:
-    0 -4px 0 color-mix(in srgb, var(--key-c) 55%, var(--arc-white)),
-    0 4px 0 color-mix(in srgb, var(--key-c) 45%, var(--arc-deep));
-  font-family: var(--font-display);
+  box-shadow: 0 -4px 0 var(--key-hi), 0 4px 0 var(--key-lo);
   font-size: var(--text-2xl);
   color: var(--key-ink);
 
-  /* Pressed: the face drops into its lower lip. */
-  &:active {
-    transform: translateY(2px);
-    box-shadow:
-      0 -2px 0 color-mix(in srgb, var(--key-c) 55%, var(--arc-white)),
-      0 2px 0 color-mix(in srgb, var(--key-c) 45%, var(--arc-deep));
-  }
-
-  /* Flat, unlit and the same violet as an unselected tile: nothing about it
-     should read as a key waiting to be pressed harder. */
   &:disabled {
     background-color: var(--arc-surface-hover);
     box-shadow: none;
     color: var(--arc-muted);
     cursor: default;
-    transform: none;
   }
-}
-
-.mine {
-  --key-c: var(--arc-mine);
-  --key-ink: var(--arc-mine-ink);
-}
-
-.one {
-  --key-c: var(--arc-red);
-  --key-ink: var(--arc-on-amber);
 }
 
 .gold {
   --key-c: var(--arc-gold);
   --key-ink: var(--arc-ink-yellow);
+  --key-hi: var(--arc-gold-hi);
+  --key-lo: var(--arc-gold-lo);
 }
 
-/* Cancel, decline, back: no face at all, a 2px ring and quieter type. */
+.green {
+  --key-c: var(--arc-green);
+  --key-ink: var(--arc-ink-mint);
+  --key-hi: var(--arc-green-hi);
+  --key-lo: var(--arc-green-lo);
+}
+
+.red {
+  --key-c: var(--arc-red);
+  --key-ink: var(--arc-on-red);
+  --key-hi: var(--arc-red-hi);
+  --key-lo: var(--arc-red-lo);
+}
+
+/* 13h's Vote P1 / Vote P2: 16px, padding 16px 0, 3px lips. */
+.vote {
+  padding: 16px 0;
+  box-shadow: 0 -3px 0 var(--key-hi), 0 3px 0 var(--key-lo);
+  font-size: var(--text-l);
+}
+
+/* Decline, Cancel challenge, Back to songs: no face, a 2px ring, 14px. */
 .ghost {
-  min-height: 50px;
-  padding: 0 12px;
+  padding: 15px 0;
   background: none;
   box-shadow: var(--well-deep);
-  font-family: var(--font-display);
   font-size: var(--text-m);
   color: var(--arc-text-2);
-
-  &:active {
-    box-shadow: inset 0 0 0 2px var(--arc-muted);
-    color: var(--arc-text);
-  }
-}
-
-/* An edit, not a decision: no key face, because pressing it changes what is on
-   screen rather than what is agreed. */
-.link {
-  width: auto;
-  min-height: var(--target);
-  padding: 0 8px;
-  background: none;
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  text-decoration: underline;
-  color: var(--arc-mine);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .primary:active {
-    transform: none;
-  }
 }

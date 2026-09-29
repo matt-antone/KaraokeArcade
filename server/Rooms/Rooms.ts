@@ -3,6 +3,7 @@ import sql from 'sqlate'
 import { db } from '../lib/Database.js'
 import { ValidationError } from '../lib/Errors.js'
 import { ROOM_STATUSES } from '../../shared/types.js'
+import { ROOM_SINGERS_PUSH } from '../../shared/actionTypes.js'
 
 const NAME_MIN_LENGTH = 1
 const NAME_MAX_LENGTH = 50
@@ -301,6 +302,33 @@ class Rooms {
     }
 
     return false
+  }
+
+  /**
+   * How many people are in the room right now: distinct signed-in users with a
+   * socket in it, not counting the player display (spotted by _lastPlayerStatus,
+   * the same tell isPlayerPresent uses). One person on a phone and a tablet is
+   * one singer.
+   *
+   * ponytail: a player tab counts as a singer until its first status lands,
+   * which is why the status handler pushes again on that edge.
+   */
+  static countSingers (io, roomId: number): number {
+    const userIds = new Set<number>()
+
+    for (const sock of io.of('/').sockets.values()) {
+      if (sock.user?.roomId === roomId && !sock._lastPlayerStatus) userIds.add(sock.user.userId)
+    }
+
+    return userIds.size
+  }
+
+  /** Tell the room how many singers are in it (TV 10 crowd, trivia 12e0). */
+  static pushSingers (io, roomId: number): void {
+    io.to(Rooms.prefix(roomId)).emit('action', {
+      type: ROOM_SINGERS_PUSH,
+      payload: { roomId, count: Rooms.countSingers(io, roomId) },
+    })
   }
 
   /**

@@ -6,6 +6,8 @@ import Panel from 'components/Panel/Panel'
 import Button from 'components/Button/Button'
 import EditUser from './EditUser/EditUser'
 import getUsers from '../../selectors/getUsers'
+import UserAvatar from 'components/UserAvatar/UserAvatar'
+import { HeadSelect } from '../PanelHead/PanelHead'
 import styles from './Users.css'
 
 const Users = () => {
@@ -38,20 +40,19 @@ const Users = () => {
     const user = users.entities[userId]
 
     return (
-      <tr key={userId}>
-        {userId === curUserId && (
-          <td translate='no'>
-            <strong>{user.name}</strong>
-          </td>
-        )}
-        {userId !== curUserId && (
-          <td>
-            <a data-user-id={userId} onClick={handleOpen}>{user.name}</a>
-          </td>
-        )}
-        <td>{user.role}</td>
-        <td>{formatShortDate(new Date(user.dateCreated * 1000))}</td>
-      </tr>
+      <div key={userId} className={styles.row}>
+        <UserAvatar className={styles.portrait} avatarId={user.avatarId} />
+        {/* your own account is edited on the Me tab, not here */}
+        {userId === curUserId
+          ? <span className={styles.name} translate='no'>{user.name}</span>
+          : (
+              <button type='button' className={styles.name} translate='no' data-user-id={userId} onClick={handleOpen}>
+                {user.name}
+              </button>
+            )}
+        <span className={styles.role}>{user.role}</span>
+        <span className={styles.date}>{formatShortDate(new Date(user.dateCreated * 1000))}</span>
+      </div>
     )
   })
 
@@ -59,38 +60,35 @@ const Users = () => {
     .filter(roomId => !!rooms.entities[roomId].numUsers)
     .map(roomId => <option key={roomId} value={roomId}>{rooms.entities[roomId].name}</option>)
 
+  const filterText = filterOnline
+    ? 'Online'
+    : (typeof filterRoomId === 'number' && rooms.entities[filterRoomId]?.name) || 'All'
+
   const userFilter = (
-    <select className={styles.usersFilter} onChange={handleFilterChange} value={filterOnline ? 'online' : filterRoomId || 'all'}>
+    <HeadSelect
+      text={filterText}
+      aria-label='Show users'
+      onChange={handleFilterChange}
+      value={filterOnline ? 'online' : filterRoomId || 'all'}
+    >
       <option key='all' value='all'>All</option>
       <option key='online' value='online'>Online</option>
       <optgroup label='Online in...'>
         {roomOpts}
       </optgroup>
-    </select>
+    </HeadSelect>
   )
 
   return (
-    <Panel
-      title='Users'
-      titleComponent={userFilter}
-    >
+    <Panel title='Users' titleComponent={userFilter} contentClassName={styles.content}>
       <>
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Username</th>
-              <th>Role</th>
-              <th>Joined</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows}
-          </tbody>
-        </table>
+        {rows}
 
-        <Button className={styles.createBtn} onClick={handleOpen} variant='default'>
-          Create User
-        </Button>
+        <div className={styles.create}>
+          <Button onClick={handleOpen} variant='default'>
+            Create user
+          </Button>
+        </div>
 
         {isEditorOpen && (
           <EditUser onClose={handleClose} user={editorUser} />

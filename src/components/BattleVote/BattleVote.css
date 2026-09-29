@@ -1,380 +1,130 @@
-/* The room's phone during a battle: Arcade Flow v2, 13h (vote), 13h2 (vote
-   locked) and 13j3 (winner, for watchers). See BattleVote.tsx.
+/* The room's phone during the vote: Arcade Flow v2 13h and 13h2. The
+   verdict (13j3) is BattleFighter's BattleResult. */
 
-   Every colour is a variables.css token and src/styles/arcade-rules.test.ts
-   holds this file to the same rules as the rest of the app: square corners,
-   hard drops, no blur outside a keyframe, dimming by colour and never by
-   opacity. Challenger red, opponent green, battle gold. */
+/* --- 13h · vote --------------------------------------------------------- */
 
-.screen {
-  /* Where the last touch landed, in the screen's own coordinates. The iris and
-     every arriving screen grow out of it — see the handler. Centre until a
-     thumb says otherwise, which is what an arrival with no touch behind it
-     wants anyway. */
-  --fx-x: 50%;
-  --fx-y: 50%;
-
-  position: fixed;
-  inset: 0;
-  /* above the fixed bottom chrome (CoreLayout.css .footer, 99): this is a
-     modal over the karaoke interface, not a layer inside it */
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background-color: var(--arc-deep);
-  color: var(--arc-text);
-  font-family: var(--font-body);
-}
-
-/* 13j3's gold bar over a verdict; the disabled grey over a ballot missed. */
-.accent {
-  flex: none;
-  height: 4px;
-  background-color: var(--arc-gold);
-}
-
-.accentSpent {
-  background-color: var(--arc-disabled);
-}
-
-/* The HUD row every 13-series phone opens with. */
-.header {
-  flex: none;
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 20px 24px 0;
-  font-family: var(--font-display);
-  font-size: var(--text-m);
-}
-
-.wordmark {
-  flex: none;
-  color: var(--arc-gold);
-}
-
-.handle {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--arc-text-2);
-}
-
-.hudStatus {
-  flex: none;
-  color: var(--arc-mint);
-}
-
-.body {
+.half {
   flex: 1;
-  min-height: 0;
   position: relative;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
 }
 
-.slam {
-  transform-origin: var(--fx-x) var(--fx-y);
-  animation: battle-vote-slam 260ms steps(6, end) both;
-}
-
-/* The verdict arrives on its own rather than out of a thumb. */
-.slamCentre {
-  transform-origin: 50% 30%;
-}
-
-.centred {
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 0 32px;
-  text-align: center;
-}
-
-.gap {
-  flex: 1 1 auto;
-  min-height: 24px;
-}
-
-.tintOne {
-  color: var(--arc-red);
-}
-
-.tintTwo {
-  color: var(--arc-green);
-}
-
-/* --- waiting ------------------------------------------------------------- */
-
-.masthead {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 32px 24px 0;
-  text-align: center;
-}
-
-/* BATTLE IN PROGRESS, set like 13a2's CHALLENGE SENT. */
-.title {
-  --text-shadow-color: var(--arc-magenta);
-  font-family: var(--font-display);
-  font-size: 34px;
-  font-weight: var(--weight-bold);
-  line-height: 1.05;
-  color: var(--arc-gold);
-  text-shadow: 4px 4px 0 var(--text-shadow-color);
-}
-
-.lede {
-  font-family: var(--font-display);
-  font-size: 10px;
-  line-height: 1.8;
-  color: var(--arc-muted);
-}
-
-.roster {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 0 20px;
-}
-
-.rosterRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px;
-  background-color: var(--arc-surface);
-  box-shadow: var(--well);
-}
-
-.portrait {
-  flex: none;
-  width: 48px;
-  height: 48px;
-  background-color: var(--arc-surface-hover);
-  image-rendering: pixelated;
-}
-
-.ringOne {
-  box-shadow: 0 0 0 3px var(--arc-red);
-}
-
-.ringTwo {
-  box-shadow: 0 0 0 3px var(--arc-green);
-}
-
-.rosterText {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.rosterName {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-body);
-  font-size: var(--text-l);
-  font-weight: var(--weight-semibold);
-}
-
-.rosterSong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  color: var(--arc-muted);
-}
-
-.status {
-  flex: none;
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  color: var(--arc-muted);
-}
-
-.statusLive {
-  color: var(--arc-mint);
-  animation: battle-vote-blink 1.1s steps(1) infinite;
-}
-
-.footer {
-  flex: none;
-  padding: 16px 24px calc(32px + env(safe-area-inset-bottom));
-  font-family: var(--font-display);
-  font-size: var(--text-s);
-  color: var(--arc-muted);
-  text-align: center;
-}
-
-.footerCue {
-  color: var(--arc-text-2);
-}
-
-/* --- ballot -------------------------------------------------------------- */
-
-.keys {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
+.halfOne {
   margin-top: 16px;
+  background: var(--arc-stage-p1);
 }
 
-/* Each half of the fight is its own key: the fighter's room behind them,
-   their face, and their name set away from it. */
-.key {
-  position: relative;
-  flex: 1;
-  min-height: 120px;
-  overflow: hidden;
-  padding: 0;
-  border: none;
-  background-color: var(--arc-surface);
-  font: inherit;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-
-  &:focus-visible {
-    outline: var(--focus-outline);
-    outline-offset: -4px;
-  }
-
-  /* Press, not hover — the only two states a touch product has. */
-  &:active {
-    box-shadow: inset 0 0 0 4px var(--side);
-  }
+.halfTwo {
+  background: var(--arc-stage-p2);
 }
 
-.keyOne {
-  --side: var(--arc-red);
-  --side-ink: var(--arc-on-amber);
+.dimHalf {
+  opacity: .5; /* design-dim */
 }
 
-.keyTwo {
-  --side: var(--arc-green);
-  --side-ink: var(--arc-ink-mint);
+.spriteOne {
+  left: -70px;
+  bottom: -8px;
 }
 
-/* The room, dimmed by brightness rather than opacity so nothing behind the
-   key ghosts through. */
-.room {
+.spriteTwo {
+  right: -70px;
+  bottom: -8px;
+}
+
+.who {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 50% 80%;
-  filter: brightness(0.5);
-}
-
-/* Side one stands on the left with its name on the right, side two the other
-   way round, so the two faces sit either side of the VS between them. */
-.keyArt {
-  position: absolute;
-  bottom: 0;
-  height: 86%;
-  aspect-ratio: 1;
-  image-rendering: pixelated;
-}
-
-.keyOne .keyArt {
-  left: 12px;
-}
-
-.keyTwo .keyArt {
-  right: 12px;
-}
-
-.keyText {
-  position: absolute;
-  top: 20px;
+  right: 20px;
+  top: 24px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  max-width: 58%;
-}
-
-.keyOne .keyText {
-  right: 20px;
   align-items: flex-end;
-  text-align: right;
+  gap: 6px;
 }
 
-.keyTwo .keyText {
+.whoTwo {
+  right: auto;
   left: 20px;
   align-items: flex-start;
 }
 
-.keyLabel {
+.chip {
   padding: 4px 8px;
-  background-color: var(--side);
   font-family: var(--font-display);
   font-size: var(--text-m);
-  color: var(--side-ink);
 }
 
-.keyName {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.chipOne {
+  background: var(--arc-red);
+  color: var(--arc-on-amber);
+}
+
+.chipTwo {
+  background: var(--arc-green);
+  color: var(--arc-ink-mint);
+}
+
+.name {
   font-family: var(--font-display);
   font-size: 20px;
 }
 
-.keySong {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-body);
+.song {
   font-size: 15px;
   color: var(--arc-text-2);
 }
 
-/* 13h: a yellow band between the two halves, VS stamped on it in magenta. */
+.half .hp {
+  position: absolute;
+  bottom: 20px;
+  grid-template-columns: repeat(10, 14px);
+}
+
+.hpOne {
+  right: 20px;
+}
+
+.hpTwo {
+  left: 20px;
+}
+
 .vsBand {
-  --text-shadow-color: var(--arc-magenta);
   flex: none;
+  position: relative;
   height: 72px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--arc-yellow);
+  background: var(--arc-yellow);
+}
+
+/* 13h draws the band's VS tracked .04em, the one tracked word on a phone */
+.vs {
+  --text-shadow-color: var(--arc-magenta);
   font-family: var(--font-display);
   font-size: 52px;
   font-weight: var(--weight-bold);
+  letter-spacing: .04em;
   color: var(--arc-on-amber);
-  text-shadow: 4px 4px 0 var(--text-shadow-color);
+  text-shadow: var(--text-shadow-hard-4);
 }
 
-.askPanel {
+.ask {
   flex: none;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 16px 20px calc(28px + env(safe-area-inset-bottom));
+  padding: 16px 20px 0;
+  background: var(--arc-deep);
 }
 
-.clockRow {
+.askRow {
   display: flex;
-  align-items: baseline;
   justify-content: space-between;
+  align-items: baseline;
 }
 
-.ask {
+.askWord {
   font-family: var(--font-display);
   font-size: var(--text-2xl);
 }
@@ -382,244 +132,41 @@
 .clock {
   font-family: var(--font-display);
   font-size: var(--text-m);
-  font-variant-numeric: tabular-nums;
   color: var(--arc-gold);
-}
-
-.clockUrgent {
-  color: var(--arc-red);
 }
 
 .clockWell {
   height: 8px;
-  background-color: var(--arc-surface-hover);
+  background: var(--arc-surface-hover);
 }
 
 .clockFill {
   height: 100%;
-  background-color: var(--arc-gold);
+  background: var(--arc-gold);
 }
 
-/* --- cast ---------------------------------------------------------------- */
-
-.pick {
-  --pixel-border-color: var(--arc-red);
-  position: relative;
-  width: 200px;
-  height: 200px;
-  overflow: hidden;
-  background-color: var(--arc-surface);
-  box-shadow: var(--pixel-border);
-}
-
-.pickOne {
-  --pixel-border-color: var(--arc-red);
-}
-
-.pickTwo {
-  --pixel-border-color: var(--arc-green);
-}
-
-.pickArt {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  image-rendering: pixelated;
-}
-
-/* VOTE IN, 13h2's VOTE LOCKED: mint on a deep drop. */
-.castTitle {
-  --text-shadow-color: var(--arc-deep);
+.rule {
   font-family: var(--font-display);
-  font-size: 40px;
-  font-weight: var(--weight-bold);
-  line-height: 1.05;
-  color: var(--arc-mint);
-  text-shadow: 4px 4px 0 var(--text-shadow-color);
-}
-
-.pickText {
-  font-family: var(--font-body);
-  font-size: var(--text-xl);
-}
-
-.pickLabel {
-  color: var(--arc-text-2);
-}
-
-.pickName {
-  font-weight: var(--weight-bold);
-}
-
-/* One cell per phone in the room, every filled one identical: the room can
-   see that voting is happening and never which way it is going. */
-.tally {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.cells {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 3px;
-  max-width: 260px;
-}
-
-.cell {
-  width: 14px;
-  height: 14px;
-  background-color: var(--arc-surface-hover);
-}
-
-.cellIn {
-  background-color: var(--arc-gold);
-}
-
-.count {
-  font-family: var(--font-display);
-  font-size: var(--text-l);
-}
-
-.closes {
-  font-family: var(--font-display);
-  font-size: var(--text-s);
+  font-size: 10px;
   color: var(--arc-muted);
 }
 
-/* --- result -------------------------------------------------------------- */
-
-.hero {
-  flex: 1;
-  min-height: 0;
-  position: relative;
-  margin-top: 16px;
-  overflow: hidden;
-}
-
-.hero .room {
-  filter: brightness(0.55);
-}
-
-.heroArt {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  height: 80%;
-  aspect-ratio: 1;
-  transform: translateX(-50%);
-  image-rendering: pixelated;
-}
-
-.heroText {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 0 20px;
-  text-align: center;
-}
-
-.decided {
-  font-family: var(--font-display);
-  font-size: var(--display-s);
-}
-
-/* "<NAME> WINS", 13j3: yellow on a magenta drop. */
-.winner {
-  --text-shadow-color: var(--arc-magenta);
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-display);
-  font-size: 32px;
-  font-weight: var(--weight-bold);
-  line-height: 1.05;
-  color: var(--arc-yellow);
-  text-shadow: 4px 4px 0 var(--text-shadow-color);
-}
-
-.plates {
+.keys {
   flex: none;
   display: flex;
-  flex-direction: column;
   gap: 10px;
-  padding: 18px 24px 0;
+  padding: 14px 20px 28px;
+  background: var(--arc-deep);
+
+  > * {
+    flex: 1;
+  }
 }
 
-.plate {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+/* --- 13h2 · vote locked ------------------------------------------------- */
 
-.plateOne {
-  --side: var(--arc-red);
-}
-
-.plateTwo {
-  --side: var(--arc-green);
-}
-
-.plateName {
-  flex: none;
-  width: 92px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-display);
-  font-size: var(--text-s);
-  color: var(--side);
-}
-
-.plateBar {
+.centre {
   flex: 1;
-  height: 14px;
-  background-color: var(--arc-surface-hover);
-}
-
-.plateFill {
-  height: 100%;
-  background-color: var(--side);
-}
-
-.plateScore {
-  flex: none;
-  width: 28px;
-  font-family: var(--font-display);
-  font-size: var(--text-m);
-  text-align: right;
-}
-
-.called {
-  flex: none;
-  padding: 16px 24px calc(32px + env(safe-area-inset-bottom));
-  font-family: var(--font-display);
-  font-size: var(--text-m);
-  color: var(--arc-muted);
-  text-align: center;
-}
-
-.calledRight {
-  color: var(--arc-mint);
-}
-
-.calledWrong {
-  color: var(--arc-red);
-}
-
-/* --- missed -------------------------------------------------------------- */
-
-.missed {
-  flex: 1;
-  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -629,101 +176,65 @@
   text-align: center;
 }
 
-/* The one non-pixel asset in the set, drained rather than faded. */
-.lockup {
-  width: 100%;
-  max-width: 250px;
-  height: auto;
-  image-rendering: auto;
-  filter: grayscale(1) brightness(0.5);
+.pick {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  overflow: hidden;
+  box-shadow: var(--pixel-border);
+
+  img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 }
 
-.missedTitle {
+.pickOne {
+  --pixel-border-color: var(--arc-red);
+  background: var(--arc-stage-p1);
+}
+
+.pickTwo {
+  --pixel-border-color: var(--arc-green);
+  background: var(--arc-stage-p2);
+}
+
+.locked {
   --text-shadow-color: var(--arc-deep);
   font-family: var(--font-display);
-  font-size: 38px;
+  font-size: 40px;
   font-weight: var(--weight-bold);
   line-height: 1.05;
-  color: var(--arc-red);
-  text-shadow: 4px 4px 0 var(--text-shadow-color);
+  color: var(--arc-mint);
+  text-align: center;
+  text-shadow: var(--text-shadow-hard-4);
 }
 
-.missedNote {
+.youVoted {
+  font-size: var(--text-xl);
+}
+
+.one {
+  color: var(--arc-red);
+}
+
+.two {
+  color: var(--arc-green);
+}
+
+.results {
   font-family: var(--font-display);
   font-size: var(--text-s);
-  line-height: 2;
   color: var(--arc-muted);
 }
 
-/* --- over everything ----------------------------------------------------- */
-
-.scanlines {
-  position: absolute;
-  inset: 0;
-  z-index: 40;
-  pointer-events: none;
-  background: var(--scanlines);
-}
-
-.fx {
-  position: absolute;
-  inset: 0;
-  z-index: 45;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-/* A square iris, like every other corner in the cabinet. */
-.iris,
-.ring {
-  position: absolute;
-  left: var(--fx-x);
-  top: var(--fx-y);
-  width: 24px;
-  height: 24px;
-  margin: -12px 0 0 -12px;
-}
-
-.iris {
-  animation: battle-vote-irisout 460ms steps(8, end) forwards;
-}
-
-.ring {
-  border: 3px solid;
-  animation: battle-vote-ringout 460ms steps(8, end) forwards;
-}
-
-@keyframes battle-vote-irisout {
-  0% { transform: scale(0); opacity: 1; }
-  55% { opacity: 1; }
-  100% { transform: scale(58); opacity: 0; }
-}
-
-@keyframes battle-vote-ringout {
-  0% { transform: scale(0.2); opacity: 1; }
-  100% { transform: scale(26); opacity: 0; }
-}
-
-@keyframes battle-vote-slam {
-  0% { transform: scale(1.9); opacity: 0; }
-  40% { transform: scale(1); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-@keyframes battle-vote-blink {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .slam,
-  .statusLive {
-    animation: none;
-  }
-
-  .iris,
-  .ring {
-    animation: none;
-    opacity: 0;
-  }
+.footer {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 24px 32px;
 }

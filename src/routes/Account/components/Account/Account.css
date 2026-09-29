@@ -1,86 +1,164 @@
-/* 08 My account: the signed-in card, then points tonight, then Profile. */
+/* 08 My account: the hero card, then points tonight, then Profile. */
+
+/* A fixed card framed in amber: the singer's own stage, faded to the ground on
+   the left under the text, and their key pose standing off the right edge. */
 .hero {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  padding: var(--gap-4);
+  position: relative;
+  flex: none;
+  height: 230px;
+  overflow: hidden;
   background: var(--arc-surface);
   --pixel-border-color: var(--arc-amber);
   box-shadow: var(--pixel-border);
 }
 
-.portrait {
-  width: 56px;
-  flex: none;
+.location {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 80%;
+}
+
+.fade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--arc-ground) 94%, transparent) 0 40%,
+    color-mix(in srgb, var(--arc-ground) 0%, transparent) 70%
+  );
+}
+
+.keyArt {
+  position: absolute;
+  right: -50px;
+  bottom: -6px;
+  width: 264px;
 }
 
 .who {
-  flex: 1;
-  min-width: 0;
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   font-family: var(--font-display);
 }
 
 .label {
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--arc-muted);
 }
 
 .name {
   font-size: 20px;
+  color: var(--arc-text);
   overflow-wrap: anywhere;
 }
 
 .singer {
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--arc-mint);
 }
 
-/* its own row under the card: beside the name it took the width a
-   username needs and broke it mid-word */
+/* the yellow key, sized to its label */
 .change {
-  flex: 1 0 100%;
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: var(--radius-key);
+  font-family: var(--font-display);
   font-size: 13px;
+  color: var(--arc-on-amber);
+  background: var(--arc-yellow);
+  box-shadow: 0 -3px 0 var(--arc-ring), 0 3px 0 var(--arc-yellow-lo);
+  cursor: pointer;
+}
+
+/* 03 over everything: the screen the sign-in gate draws */
+.picker {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--arc-ground);
+
+  /* a dialog sits in the top layer, over the global scanlines */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    background: var(--scanlines);
+  }
+}
+
+/* the magenta section labels: Points tonight, Profile */
+.heading {
+  font-family: var(--font-display);
+  font-size: var(--text-m);
+  color: var(--arc-magenta);
 }
 
 .points {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pointsHead {
+  display: flex;
+  justify-content: space-between;
   align-items: baseline;
-  gap: 10px;
-  padding: var(--gap-3) 12px;
-  background: var(--arc-surface);
-  box-shadow: inset 0 0 0 2px var(--arc-surface-hover);
-  font-family: var(--font-display);
-}
-
-.pointsLabel {
-  flex: 1;
-  font-size: 14px;
-  color: var(--arc-magenta);
-}
-
-.pointsRank {
-  font-size: 14px;
-  color: var(--arc-mint);
 }
 
 .pointsTotal {
-  font-size: 18px;
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
   color: var(--arc-yellow);
 }
 
-.btnContainer {
+.ledgerRow {
   display: flex;
-  flex-direction: column;
-  gap: var(--gap-2);
-  margin-top: var(--gap-3);
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 2px solid var(--arc-surface);
 }
 
-/* the same room the sign-in grid is given */
-.modal {
-  width: min(560px, 96vw);
-  height: min(760px, 90vh);
+.ledgerLabel {
+  flex: 1;
+  font-size: 15px;
+}
+
+.ledgerDetail {
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  color: var(--arc-muted);
+}
+
+.ledgerPts {
+  width: 56px;
+  text-align: right;
+  font-family: var(--font-display);
+  font-size: var(--text-m);
+  color: var(--arc-text);
+}
+
+.profile {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  /* the wells sit at the design's 10px, like the label above them */
+  & > form {
+    gap: 10px;
+  }
 }

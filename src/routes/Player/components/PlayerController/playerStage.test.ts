@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { NO_MEDIA, getBattleSide, getIsMediaVisible, getIsRowOnStage, resolveMedia } from './playerStage'
+import { NO_MEDIA, getBattleSide, getIsMediaVisible, getIsRowOnStage, resolveMedia, songVideoRect } from './playerStage'
 import type { QueueItem } from 'shared/types'
 
 /**
@@ -118,7 +118,7 @@ describe('getIsMediaVisible', () => {
     battleSide: null,
   }
 
-  it('covers the stage for an ordinary song', () => {
+  it('shows an ordinary song', () => {
     expect(getIsMediaVisible(playing)).toBe(true)
   })
 
@@ -159,5 +159,12 @@ describe('getIsRowOnStage', () => {
   it('never gives it to an ordinary song row', () => {
     expect(getIsRowOnStage(false, false)).toBe(false)
     expect(getIsRowOnStage(false, true)).toBe(false)
+  })
+})
+
+describe('songVideoRect', () => {
+  // 11b: the design's 764x430 frame at (168, 84) on its 960x540 TV
+  it('places the video in the design\'s frame, scaled to the display', () => {
+    expect(songVideoRect(1920, 1080)).toEqual({ left: 336, top: 168, width: 1528, height: 860 })
   })
 })

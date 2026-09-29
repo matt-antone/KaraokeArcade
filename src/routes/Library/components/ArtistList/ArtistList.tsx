@@ -1,19 +1,27 @@
 import React, { useCallback, useEffect, useRef } from 'react'
-import { ensureState } from 'redux-optimistic-ui'
 import type { RootState } from 'store/store'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
 import { scrollArtists, toggleArtistExpanded } from '../../modules/library'
-import getAlphaPickerMap from '../../selectors/getAlphaPickerMap'
-import getSongsStatus from '../../selectors/getSongsStatus'
 import PaddedList from 'components/PaddedList/PaddedList'
-import AlphaPicker from '../AlphaPicker/AlphaPicker'
 import ArtistItem from '../ArtistItem/ArtistItem'
 import type { ListImperativeAPI, RowComponentProps } from 'react-window'
 
-// estimates only: rows are measured once rendered (see PaddedList), because a
-// song title always shows in full and a wrapped title makes the row taller
-const ROW_HEIGHT_ARTIST = 46 // --row-artist, seam rule included
-const ROW_HEIGHT_SONG = 56 // --row-song, seam rule included
+// estimates only: rows are measured once rendered (see PaddedList)
+const ROW_HEIGHT_ARTIST = 48 // 12 + 17px name + 12, plus the 2px seam
+const ROW_HEIGHT_LETTER = 31 // 12 + 12px Silkscreen + 4
+const ROW_HEIGHT_SONG = 67 // see SongResults
+
+// the design's groups: "#" for anything that does not open with a letter
+const letterOf = (name: string) => /^[a-z]/i.test(name) ? name[0].toUpperCase() : '#'
+
+/** The letter row `index` opens, or undefined when it continues its group. */
+const letterAt = (artists: RootState['artists'], index: number) => {
+  const letter = letterOf(artists.entities[artists.result[index]].name)
+
+  return index === 0 || letterOf(artists.entities[artists.result[index - 1]].name) !== letter
+    ? letter
+    : undefined
+}
 
 interface ArtistListProps {
   ui: RootState['ui']
@@ -35,23 +43,16 @@ const RowComponent = ({
   artists,
   expandedArtists,
 }: RowComponentProps<CustomRowProps>) => {
-  const starredArtistCounts = useAppSelector(state => state.starCounts.artists)
-  const { starredSongs } = useAppSelector(state => ensureState(state.userStars))
-  const { upcoming, current } = useAppSelector(getSongsStatus)
-
   const artist = artists.entities[artists.result[index]]
-  if (current) upcoming.push(current)
 
   return (
     <ArtistItem
       artistSongIds={artist.songIds} // "children"
       isExpanded={expandedArtists.includes(artist.artistId)}
       key={artist.artistId}
+      letter={letterAt(artists, index)}
       name={artist.name}
-      numStars={starredArtistCounts[artist.artistId] || 0}
       onArtistClick={() => dispatch(toggleArtistExpanded(artist.artistId))}
-      upcomingSongs={upcoming}
-      starredSongs={starredSongs}
       style={style}
     />
   )
@@ -63,7 +64,6 @@ const ArtistList = ({
   const dispatch = useAppDispatch()
   const { expandedArtists } = useAppSelector(state => state.library)
   const scrollRow = useAppSelector(state => state.library.scrollRow)
-  const alphaPickerMap = useAppSelector(getAlphaPickerMap)
   const artists = useAppSelector(state => state.artists)
 
   const lastScrollRow = useRef(scrollRow)
@@ -80,6 +80,8 @@ const ArtistList = ({
     const artistId = artists.result[index]
     let height = ROW_HEIGHT_ARTIST
 
+    if (letterAt(artists, index)) height += ROW_HEIGHT_LETTER
+
     if (expandedArtists.includes(artistId)) {
       height += artists.entities[artistId].songIds.length * ROW_HEIGHT_SONG
     }
@@ -88,16 +90,7 @@ const ArtistList = ({
   }, [artists, expandedArtists])
 
   const handleRowsRendered = ({ startIndex }: { startIndex: number }) => {
-    // console.log('rendered rows: ', { startIndex })
     lastScrollRow.current = startIndex
-  }
-
-  const handleAlphaPick = (char: string) => {
-    const row = alphaPickerMap[char]
-
-    if (typeof row !== 'undefined' && list.current) {
-      list.current.scrollToRow({ index: row > 0 ? row - 1 : row, align: 'start' })
-    }
   }
 
   const handleRef = (ref: ListImperativeAPI | null) => {
@@ -105,7 +98,6 @@ const ArtistList = ({
       list.current = ref
 
       if (lastScrollRow.current) {
-      // console.log(`handleRef: scrolling to ${lastScrollRow.current}`)
         list.current.scrollToRow({ index: lastScrollRow.current, align: 'start', behavior: 'instant' })
       }
     }
@@ -113,28 +105,22 @@ const ArtistList = ({
 
   if (artists.result.length === 0) return null
 
+  // full-bleed rows; the header's own 8px band sits between them and the tabs (06)
   return (
-    <div>
-      <PaddedList
-        rowComponent={RowComponent}
-        rowProps={{ dispatch, artists, expandedArtists }}
-        rowHeight={rowHeight}
-        numRows={artists.result.length}
-        onRowsRendered={handleRowsRendered}
-        onRef={handleRef}
-        paddingTop={ui.headerHeight + 14}
-        paddingRight={30} // width of AlphaPicker
-        paddingBottom={ui.footerHeight + 20}
-        paddingLeft={14}
-        width={ui.innerWidth}
-        height={ui.innerHeight}
-      />
-      <AlphaPicker
-        onPick={handleAlphaPick}
-        height={ui.innerHeight - ui.headerHeight - ui.footerHeight}
-        top={ui.headerHeight}
-      />
-    </div>
+    <PaddedList
+      rowComponent={RowComponent}
+      rowProps={{ dispatch, artists, expandedArtists }}
+      rowHeight={rowHeight}
+      numRows={artists.result.length}
+      onRowsRendered={handleRowsRendered}
+      onRef={handleRef}
+      paddingTop={ui.headerHeight}
+      paddingRight={0}
+      paddingBottom={ui.footerHeight + 20}
+      paddingLeft={0}
+      width={ui.innerWidth}
+      height={ui.innerHeight}
+    />
   )
 }
 

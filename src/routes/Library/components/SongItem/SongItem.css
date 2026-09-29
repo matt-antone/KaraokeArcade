@@ -1,12 +1,11 @@
-/* A song row is flat type on the ground, ruled off from the next by a surface
-   seam. Queued songs sit in a mint standby well; played ones lose their ink up
-   the disabled ramp. State is colour, never opacity. */
+/* A song row (04): flat type on the ground, ruled off from the next by a
+   surface seam. Your own queued song sits in the mint well with a mint
+   duration; played ones lose their ink down the disabled ramp. State is
+   colour, never opacity. The row's padding lives on its keys, so every pixel
+   of it is a tap target. */
 .container {
   display: flex;
-  align-items: center;
-  gap: var(--gap-4);
   min-height: var(--row-song);
-  padding: var(--gap-3) var(--gutter);
   background-color: transparent;
   border-bottom: 2px solid var(--arc-surface);
 
@@ -14,19 +13,16 @@
     background-color: var(--arc-surface);
   }
 
-  &.upcoming {
-    background-color: var(--standby-well);
+  &.mine {
+    background-color: var(--arc-mint-well);
 
-    .title {
-      color: var(--standby);
+    .duration {
+      color: var(--arc-mint);
     }
   }
 
-  &.played:not(.upcoming) {
-    .title {
-      color: var(--ink-4);
-    }
-
+  &.played {
+    .title,
     .meta,
     .duration {
       color: var(--ink-4);
@@ -37,7 +33,7 @@
      The whole list is like this at once, so it dims by colour and quietly: the
      reason is printed once above the list rather than on every row, and the
      star keeps its full ink because starring still works. */
-  &.blocked:not(.upcoming):not(.played) {
+  &.blocked {
     .title {
       color: var(--ink-3);
     }
@@ -53,24 +49,14 @@
   }
 }
 
-.duration {
-  flex-shrink: 0;
-  align-self: center;
-  width: 36px;
-  font-family: var(--font-display);
-  font-size: var(--text-s);
-  color: var(--ink-3);
-}
-
+/* the row key: duration, title over meta, and the tag, 12px apart */
 .primary {
   flex: 1;
   min-width: 0;
-  align-self: stretch;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 2px;
-  padding: 0;
+  align-items: center;
+  gap: 12px;
+  padding: 12px var(--gutter);
   font: inherit;
   text-align: left;
   color: inherit;
@@ -78,46 +64,62 @@
   border: none;
   cursor: pointer;
 
+  /* the star key takes over the right gutter */
+  &:not(:last-child) {
+    padding-right: 0;
+  }
+
   &:disabled {
     cursor: default;
   }
 }
 
-/* titles always show in full: they wrap, and the row grows to fit */
+.duration {
+  flex-shrink: 0;
+  width: 36px;
+  font-family: var(--font-display);
+  font-size: var(--text-s);
+  color: var(--arc-muted);
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* one line: a long title ellipsises, as the design draws it */
 .title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--font-body);
   font-size: var(--text-xl);
   font-weight: var(--weight-semibold);
-  line-height: 1.3;
-  overflow-wrap: break-word;
-  color: var(--ink);
+  color: var(--arc-text);
 }
 
-/* counts ride inline, mono, quiet — never a coloured badge */
-.numMedia {
-  font-family: var(--font-display);
-  font-size: var(--text-xs);
-  opacity: .75;
-}
-
-/* artist + tags, joined; ellipsises on one line — only titles wrap */
 .meta {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-family: var(--font-body);
   font-size: 13px;
-  color: var(--ink-3);
+  color: var(--arc-muted);
 }
 
 .queued {
   flex-shrink: 0;
   font-family: var(--font-display);
   font-size: var(--text-xs);
-  color: var(--standby);
+  color: var(--arc-mint);
 }
 
+/* the drawn tag is an 11px star, 12px after the title; the hit area takes the
+   row's height and runs out to the edge without moving the glyph */
 .btn {
   flex-shrink: 0;
-  align-self: center;
+  padding: 0 var(--gutter) 0 12px;
 }

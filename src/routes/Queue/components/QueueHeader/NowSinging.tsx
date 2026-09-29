@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import clsx from 'clsx'
-import { BATTLE_STAGE_PLATE, battleSingerFrontArt, battleSingerOrDefault, battleSingerStage } from 'lib/battleSingers'
+import SpriteLoop from 'components/SpriteLoop/SpriteLoop'
+import { BATTLE_STAGE_PLATE, battleSingerOrDefault, battleSingerStage } from 'lib/battleSingers'
 import styles from './QueueHeader.css'
 
 export interface NowSingingProps {
@@ -14,7 +15,7 @@ export interface NowSingingProps {
 }
 
 /**
- * The stage, at a glance: whoever is singing, standing on their own location
+ * The stage, at a glance: whoever is singing, singing on their own location
  * with the song beside them. An empty stage says so instead of vanishing, so
  * the header keeps its height and the list under it does not jump when the
  * first song starts.
@@ -43,7 +44,7 @@ const NowSinging = ({ isEmpty, avatarId, singer, title, artist }: NowSingingProp
         alt=''
       />
       <div className={styles.scrim} />
-      <img className={styles.figure} src={battleSingerFrontArt(who).url} alt='' />
+      <SpriteLoop singer={who} loop='sing' size='168px' facing='left' className={styles.figure} />
       <div className={styles.now} translate='no'>
         <span className={styles.nowLegend}>Now singing</span>
         <span className={styles.nowName}>{singer}</span>

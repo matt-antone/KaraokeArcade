@@ -9,12 +9,19 @@ afterEach(cleanup)
 describe('ConnectionScreen', () => {
   it('names the attempt and retries on demand when the connection is lost', () => {
     const onRetry = vi.fn()
-    render(<ConnectionScreen variant='lost' room='Loveshack' attempt={2} onRetry={onRetry} />)
+    // the first connection was try 1, so the first reconnect attempt is try 2
+    render(<ConnectionScreen variant='lost' room='Loveshack' attempt={1} onRetry={onRetry} />)
 
-    expect(screen.getByText(/Reconnecting · try 2/)).toBeTruthy()
+    expect(screen.getByText('Reconnecting · try 2')).toBeTruthy()
     expect(screen.getByText('Loveshack')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Retry now' }))
     expect(onRetry).toHaveBeenCalledOnce()
+  })
+
+  it('always names the try, even before the first reconnect attempt', () => {
+    render(<ConnectionScreen variant='lost' />)
+
+    expect(screen.getByText('Reconnecting · try 1')).toBeTruthy()
   })
 
   it('shows the loading spinner and no retry before the socket has answered', () => {

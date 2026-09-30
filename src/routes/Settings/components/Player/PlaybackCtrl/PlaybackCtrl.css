@@ -1,4 +1,4 @@
-/* Fixed order: play/pause, skip, volume knob + level meter, display. The keys
+/* Fixed order: play/pause, skip, volume slider + level meter, display. The keys
    are square so the strip reads as a transport rather than a row of buttons. */
 
 .container {
@@ -27,14 +27,30 @@
   color: var(--vu);
 }
 
-/* the knob is the input, the meter is the readout — never a number */
+/* Volume is the meter: the slider lies over it at the same width with its own
+   rail and track cleared, so the lit cells are the track and dragging the cap
+   stretches them. Never a number. */
 .volume {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--gap-3);
   flex: 1;
   min-width: 0;
-  padding: 0 var(--gap-2);
+  height: var(--target-l);
+  margin: 0 var(--gap-2);
+}
+
+/* doubled to outrank Slider's own .container (position: relative) */
+.slider.slider {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+
+  & :global(.rc-slider-rail),
+  & :global(.rc-slider-track) {
+    background: transparent;
+    box-shadow: none;
+  }
 }
 
 /* no player to drive: the strip stays in place, dead, until one connects */

@@ -17,7 +17,7 @@
       var() onto the palette. Wanting a new colour means adding a palette
       entry first, deliberately — palette.test.ts counts them.
 
-   Shape: radius is 0 everywhere; the one circle is the Knob (--radius-round).
+   Shape: radius is 0 everywhere; the one circle is the StartButton (02).
    Depth is hard-edged: a raised key is a light top edge and a dark bottom
    edge (--bevel), an outline is the four-shadow pixel border
    (--pixel-border), and type drops a hard 3px offset (--text-shadow-hard).
@@ -161,7 +161,6 @@
   --radius-key: 0;
   --radius-panel: 0;
   --radius-tab: 0;
-  --radius-round: 50%;    /* the Knob, and nothing else */
 
   /* a raised key or row: light top edge, dark bottom edge, no blur */
   --bevel: 0 -2px 0 var(--arc-line), 0 2px 0 var(--arc-deep);

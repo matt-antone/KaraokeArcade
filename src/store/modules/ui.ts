@@ -57,16 +57,33 @@ export const windowResize = createAction(UI_WINDOW_RESIZE, window => ({
   },
 }))
 
+// the document's scroll when the lock went on, so it can be put back
+let lockedScrollY: number | null = null
+
 // does not dispatch anything (only affects the DOM)
+// scroll-lock pins the body (position: fixed), which is the only way to stop
+// a touch drag scrolling the page in mobile Safari — and a fixed body forgets
+// where the page was. On a route the document scrolls (Settings, since every
+// route scrolls as one page) that threw the page to the top on every touch of
+// a slider, so the body is pinned at the offset it had and the scroll is
+// restored when the lock comes off.
 export const lockScrolling = (lock: boolean) => {
   if (lock) {
     clearTimeout(scrollLockTimer)
     scrollLockTimer = null
-    document.body.classList.add('scroll-lock')
+
+    if (lockedScrollY === null) {
+      lockedScrollY = window.scrollY
+      document.body.style.top = `-${lockedScrollY}px`
+      document.body.classList.add('scroll-lock')
+    }
   } else if (!scrollLockTimer) {
     scrollLockTimer = setTimeout(() => {
       scrollLockTimer = null
       document.body.classList.remove('scroll-lock')
+      document.body.style.top = ''
+      if (lockedScrollY !== null) window.scrollTo(0, lockedScrollY)
+      lockedScrollY = null
     }, 200)
   }
 }

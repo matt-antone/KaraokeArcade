@@ -28,6 +28,9 @@ export default function useCarryHeader (headerRef: React.RefObject<HTMLElement |
     const carry = (e: Event) => {
       const target = e.target
 
+      // a slider's scroll lock pins the body and zeroes the document's scroll
+      // for the length of the drag; that is not the page moving (lockScrolling)
+      if (target === document && document.body.classList.contains('scroll-lock')) return
       if (target === document) setCarry(window.scrollY, headerRef.current)
       else if (target instanceof HTMLElement && target.dataset.pageScroll !== undefined) setCarry(target.scrollTop, headerRef.current)
     }

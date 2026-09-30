@@ -2,7 +2,7 @@ import crypto from '../lib/crypto.js'
 import sql from 'sqlate'
 import { db } from '../lib/Database.js'
 import { ValidationError } from '../lib/Errors.js'
-import { ROOM_STATUSES } from '../../shared/types.js'
+import { ROOM_STATUSES, type RoomSinger } from '../../shared/types.js'
 import { ROOM_SINGERS_PUSH } from '../../shared/actionTypes.js'
 
 const NAME_MIN_LENGTH = 1
@@ -305,29 +305,55 @@ class Rooms {
   }
 
   /**
-   * How many people are in the room right now: distinct signed-in users with a
-   * socket in it, not counting the player display (spotted by _lastPlayerStatus,
-   * the same tell isPlayerPresent uses). One person on a phone and a tablet is
-   * one singer.
+   * Who is in the room right now: distinct signed-in users with a socket in
+   * it, not counting the player display (spotted by _lastPlayerStatus, the
+   * same tell isPlayerPresent uses). One person on a phone and a tablet is one
+   * singer.
+   *
+   * In the order they first came into the room since the server started
+   * (trackUser), so a TV that reloads seats its crowd (10) the way it was
+   * rather than in whatever order the sockets happen to sit.
+   *
+   * avatarId rides the JWT (createUserCtx), as it does for Battle.getSingers:
+   * a session signed before the column shipped has none and is drawn as the
+   * default until it refreshes.
    *
    * ponytail: a player tab counts as a singer until its first status lands,
    * which is why the status handler pushes again on that edge.
    */
-  static countSingers (io, roomId: number): number {
-    const userIds = new Set<number>()
+  static getSingers (io, roomId: number): RoomSinger[] {
+    const singers = new Map<number, RoomSinger>()
 
     for (const sock of io.of('/').sockets.values()) {
-      if (sock.user?.roomId === roomId && !sock._lastPlayerStatus) userIds.add(sock.user.userId)
+      const user = sock.user
+
+      if (user?.roomId !== roomId || sock._lastPlayerStatus || singers.has(user.userId)) continue
+      singers.set(user.userId, { userId: user.userId, avatarId: user.avatarId ?? null })
     }
 
-    return userIds.size
+    const seen = [...(roomUsers.get(roomId) ?? [])]
+    const firstSeen = (userId: number) => {
+      const i = seen.indexOf(userId)
+      return i === -1 ? Infinity : i
+    }
+
+    return [...singers.values()].sort((a, b) => firstSeen(a.userId) - firstSeen(b.userId))
   }
 
-  /** Tell the room how many singers are in it (TV 10 crowd, trivia 12e0). */
+  /** How many people are in the room right now; see getSingers. */
+  static countSingers (io, roomId: number): number {
+    return Rooms.getSingers(io, roomId).length
+  }
+
+  /** Tell the room who is in it (TV 10 crowd) and how many (10's join line,
+   *  trivia 12e0). `singers` is additive: `count` stays so nothing that only
+   *  wants the number has to learn the list. */
   static pushSingers (io, roomId: number): void {
+    const singers = Rooms.getSingers(io, roomId)
+
     io.to(Rooms.prefix(roomId)).emit('action', {
       type: ROOM_SINGERS_PUSH,
-      payload: { roomId, count: Rooms.countSingers(io, roomId) },
+      payload: { roomId, count: singers.length, singers },
     })
   }
 

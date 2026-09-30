@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import clsx from 'clsx'
+import Button from 'components/Button/Button'
 import UserAvatar from 'components/UserAvatar/UserAvatar'
+import { useAppSelector } from 'store/hooks'
 import type { LeaderboardEntry } from 'shared/types'
+import PlayerQR from '../PlayerQR/PlayerQR'
+import getRoomPrefs from '../../selectors/getRoomPrefs'
 import styles from './PlayerScores.css'
 
 /** Cards per row, and the rows the viewport holds without scrolling. */
@@ -59,9 +63,44 @@ const useBoardRow = (steps: number) => {
   return pos
 }
 
+/** The column right of the board: the room's join code when the room shows
+ *  one, and 10's Start key while the TV is idle. Neither, no column. */
+const JoinColumn = ({ onPlay }: { onPlay?: () => void }) => {
+  const qrPrefs = useAppSelector(getRoomPrefs).qr
+  // the vh basis the rest of this screen is laid out in: 10's code, same size
+  const innerHeight = useAppSelector(state => state.ui.innerHeight)
+
+  if (!qrPrefs?.isEnabled && !onPlay) return null
+
+  return (
+    <div className={styles.join}>
+      {qrPrefs?.isEnabled && (
+        <>
+          <div className={styles.joinHead}>
+            <span className={styles.joinLabel}>Scan to play</span>
+            <span className={styles.tagline}>No singing necessary</span>
+          </div>
+          <PlayerQR height={innerHeight} prefs={qrPrefs} />
+          <span className={styles.blink}>Insert token</span>
+        </>
+      )}
+      {/* undesigned and needed (U-23), as on 10: browsers won't autoplay without a tap */}
+      {onPlay && (
+        <Button variant='primary' cta className={styles.playKey} onClick={onPlay}>
+          Start
+        </Button>
+      )}
+    </div>
+  )
+}
+
 interface PlayerScoresProps {
   leaderboard: LeaderboardEntry[]
   venue?: string
+  /** 10's Play key, on this half of the idle cycle too: a host who walks up
+   *  to start the night should not wait twenty seconds for the other screen.
+   *  Absent once something has been asked to play. */
+  onPlay?: () => void
 }
 
 /**
@@ -69,8 +108,13 @@ interface PlayerScoresProps {
  * cards, best first, in the server's order. A board taller than the screen
  * scrolls as a seamless loop — the list, a blank row, then the list again, so
  * the snap back to the top lands on the same picture.
+ *
+ * Undesigned and asked for: the room's join code, in a column right of the
+ * board. The TV spends half its idle time on this screen, and a code that
+ * vanished every twenty seconds would strand whoever was mid-scan. Shown only
+ * when the room has "Show QR code" on (room.prefs.qr.isEnabled).
  */
-const PlayerScores = ({ leaderboard, venue }: PlayerScoresProps) => {
+const PlayerScores = ({ leaderboard, venue, onPlay }: PlayerScoresProps) => {
   const rows = Math.ceil(leaderboard.length / COLS)
   const isLooping = rows > ROWS_SHOWN
   const pos = useBoardRow(isLooping ? rows + 1 : 0)
@@ -99,15 +143,18 @@ const PlayerScores = ({ leaderboard, venue }: PlayerScoresProps) => {
         <span className={styles.title}>Tonight</span>
         <span className={styles.count}>{`${leaderboard.length} singers`}</span>
       </div>
-      <div className={styles.viewport}>
-        <ol
-          className={clsx(styles.grid, pos.isSnap && styles.snap)}
-          style={{ '--row': row } as React.CSSProperties}
-        >
-          {leaderboard.map((entry, i) => card(entry, i, ''))}
-          {isLooping && Array.from({ length: spacers }, (_, k) => <li key={`spacer${k}`} className={styles.spacer} aria-hidden />)}
-          {isLooping && leaderboard.map((entry, i) => card(entry, i, 'again'))}
-        </ol>
+      <div className={styles.board}>
+        <div className={styles.viewport}>
+          <ol
+            className={clsx(styles.grid, pos.isSnap && styles.snap)}
+            style={{ '--row': row } as React.CSSProperties}
+          >
+            {leaderboard.map((entry, i) => card(entry, i, ''))}
+            {isLooping && Array.from({ length: spacers }, (_, k) => <li key={`spacer${k}`} className={styles.spacer} aria-hidden />)}
+            {isLooping && leaderboard.map((entry, i) => card(entry, i, 'again'))}
+          </ol>
+        </div>
+        <JoinColumn onPlay={onPlay} />
       </div>
     </div>
   )

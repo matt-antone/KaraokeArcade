@@ -10,6 +10,7 @@ import {
   TRIVIA_ANSWER_COUNT,
   TRIVIA_COUNTDOWN_DEFAULT,
   triviaPoints,
+  type TriviaPodium,
   type TriviaResult,
   type TriviaRound,
   type TriviaScore,
@@ -98,6 +99,22 @@ function getStandings (tally: ActiveRound['tally']): TriviaStanding[] {
   return db.all<{ userId: number, name: string, avatarId: string | null }>(String(query), query.parameters)
     .map(u => ({ ...u, ...tally.get(u.userId)! }))
     .sort((a, b) => b.points - a.points || a.name.localeCompare(b.name))
+}
+
+/** Who stands on the TV's podiums: the round so far, best first. With the
+ *  question just closed, each is marked with how they did on it, which is what
+ *  the reveal (12c) lands them on — a victory or a knockdown. */
+function getPodiums (active: ActiveRound, closed?: ActiveQuestion): TriviaPodium[] {
+  // before anyone has answered there is nobody to look up
+  if (!active.tally.size) return []
+
+  const standings = getStandings(active.tally)
+  if (!closed) return standings
+
+  return standings.map((s) => {
+    const answerIdx = closed.answered.get(s.userId)
+    return { ...s, isCorrect: answerIdx === undefined ? null : answerIdx === closed.correctIdx }
+  })
 }
 
 /** A round played is a round on the ledger, whatever it paid. */
@@ -309,6 +326,7 @@ class Trivia {
       difficulty: question.difficulty,
       endsAt: Date.now() + countdownSeconds * 1000,
       sentAt: Date.now(),
+      podiums: getPodiums(active),
     }
 
     active.current = {
@@ -361,6 +379,7 @@ class Trivia {
       boardFrom,
       endsAt: (boardFrom ?? scoresFrom) + SCOREBOARD_MS * (isFinal ? FINAL_SCOREBOARD_FACTOR : 1),
       sentAt: Date.now(),
+      podiums: getPodiums(active, current),
     }
 
     active.current = null

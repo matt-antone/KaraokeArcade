@@ -2,6 +2,7 @@ import React from 'react'
 import CDGraphics from 'cdgraphics'
 import HttpApi from 'lib/HttpApi'
 import styles from './CDGPlayer.css'
+import playMedia from '../playMedia'
 
 const api = new HttpApi('media')
 const BACKDROP_PADDING = 10 // px at 1:1 scale
@@ -20,6 +21,8 @@ interface CDGPlayerProps {
   // media events
   onEnd(): void
   onError(error: string): void
+  /** play() was refused for want of a user gesture on this page */
+  onBlocked?(): void
   onLoad(): void
   onPlay(): void
   onStatus(status: { position: number, duration: number }): void
@@ -149,8 +152,7 @@ class CDGPlayer extends React.Component<CDGPlayerProps> {
     if (!this.audio.current) return
 
     if (this.props.isPlaying) {
-      this.audio.current.play()
-        .catch(err => this.props.onError(err.message))
+      playMedia(this.audio.current, this.props)
     } else {
       this.audio.current.pause()
       this.stopCDG()

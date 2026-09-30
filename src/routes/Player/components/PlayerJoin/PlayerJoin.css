@@ -57,12 +57,22 @@
   filter: brightness(calc(1 - var(--row) * 0.06));
   transform-origin: 50% 100%;
   transition: opacity .2s steps(2), transform .3s cubic-bezier(.3, 1.6, .5, 1);
+  /* a figure is only drawn once somebody takes its spot: a joiner pops in */
+  animation: join .3s cubic-bezier(.3, 1.6, .5, 1) backwards;
 }
 
-/* a slot nobody has filled yet: a joiner pops in from here */
+/* somebody who left: they sink out where they stood, and the next one into
+   the spot pops back up from here */
 .away {
   opacity: 0;
   transform: translateY(3.7vh) scale(.5);
+}
+
+@keyframes join {
+  from {
+    opacity: 0;
+    transform: translateY(3.7vh) scale(.5);
+  }
 }
 
 /* No z-index, as in the design: the crowd's figures and the scanlines both
@@ -79,6 +89,19 @@
 .logo {
   display: block;
   width: 55.56vh;
+}
+
+.headlineGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1.48vh;
+}
+
+/* small beside the headline, and quiet: a footnote, not a second headline */
+.tagline {
+  font-family: var(--font-display);
+  font-size: 2.22vh;
+  color: var(--arc-text-2);
 }
 
 .headline {
@@ -109,9 +132,21 @@
   color: var(--arc-muted);
 }
 
+/* held to the panel's width (46%, less .join's inset) so it wraps before it
+   can reach the crowd */
+.room {
+  display: flex;
+  flex-direction: column;
+  gap: 1.48vh;
+  max-width: calc(46vw - 8.89vh * 2);
+  font-family: var(--font-display);
+}
+
 .codeValue {
-  font-size: 8.15vh;
+  font-size: 4.44vh;
   letter-spacing: 0.08em;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
   color: var(--arc-mint);
 }
 
@@ -132,7 +167,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .blink {
+  .blink,
+  .member {
     animation: none;
   }
 }

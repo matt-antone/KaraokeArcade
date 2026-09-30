@@ -16,7 +16,7 @@
   }
 }
 
-/* logo left at 30px, the venue right */
+/* logo left (46px, see Header.tsx), the venue right */
 .brand {
   display: flex;
   justify-content: space-between;

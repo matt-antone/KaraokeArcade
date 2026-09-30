@@ -41,6 +41,12 @@ let config = {
   module: { rules: [] },
   plugins: [
     new CaseSensitivePathsPlugin(),
+    new webpack.DefinePlugin({
+      // dev only: the player ends each song this many seconds in, so a test
+      // night gets through a queue in minutes. KES_DEV_SONG_SECONDS=0 in .env
+      // plays songs in full; a production build is always 0.
+      __DEV_SONG_SECONDS__: __DEV__ ? (parseInt(process.env.KES_DEV_SONG_SECONDS ?? '30', 10) || 0) : 0,
+    }),
     new MiniCssExtractPlugin({
       filename: __DEV__ ? '[name].css' : '[name].[fullhash].css',
       chunkFilename: __DEV__ ? '[id].css' : '[id].[fullhash].css',

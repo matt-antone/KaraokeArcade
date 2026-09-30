@@ -22,6 +22,8 @@ export default defineConfig({
         : null),
     },
   ],
+  // webpack's DefinePlugin constants; tests play songs in full
+  define: { __DEV_SONG_SECONDS__: 0 },
   // mirrors webpack's resolve.modules/alias so client code is importable in tests
   resolve: {
     alias: ['components', 'lib', 'routes', 'store', 'styles', 'types'].reduce(

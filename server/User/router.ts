@@ -7,6 +7,7 @@ import { requireAdmin } from '../lib/util.js'
 import Prefs from '../Prefs/Prefs.js'
 import Queue from '../Queue/Queue.js'
 import Rooms from '../Rooms/Rooms.js'
+import Points from '../Points/Points.js'
 import User from '../User/User.js'
 import mountDevLogin from './devLogin.js'
 import {
@@ -235,12 +236,14 @@ router.delete('/user/:userId', async (ctx) => {
     }
   }
 
-  // emit (potentially) updated queues to each room
+  // emit (potentially) updated queues and boards to each room: User.remove
+  // clears their points, but every screen keeps the board it was last sent
   for (const { room, roomId } of Rooms.getActive(ctx.io)) {
     ctx.io.to(room).emit('action', {
       type: QUEUE_PUSH,
       payload: Queue.get(roomId),
     })
+    Points.push(ctx.io, roomId)
   }
 
   // success
@@ -471,7 +474,7 @@ router.post('/setup', async (ctx) => {
     // create default room
     const fields = new Map()
     fields.set('name', 'Room 1')
-    fields.set('status', 'open')
+    fields.set('status', 'play') // 'open' predates the transport statuses (schema 015)
     fields.set('dateCreated', Math.floor(Date.now() / 1000))
 
     const roomQuery = sql`

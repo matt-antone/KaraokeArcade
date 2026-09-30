@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react'
+import clsx from 'clsx'
 import AnswerKey, { type AnswerKeyState } from 'components/AnswerKey/AnswerKey'
 import CountUp from 'components/CountUp/CountUp'
 import Logo from 'components/Logo/Logo'
-import SpriteLoop from 'components/SpriteLoop/SpriteLoop'
+import SpriteLoop, { SpriteBox } from 'components/SpriteLoop/SpriteLoop'
 import TriviaRail from 'components/TriviaRail/TriviaRail'
 import TriviaTally from 'components/TriviaTally/TriviaTally'
 import UserAvatar from 'components/UserAvatar/UserAvatar'
 import WordArt from 'components/WordArt/WordArt'
 import {
   BATTLE_STAGE_PLATE,
+  battleSingerFrontArt,
   battleSingerOrDefault,
   battleSingerSet,
   battleSingerStage,
@@ -19,8 +21,15 @@ import { useFighterSet } from 'lib/fighterSets'
 import useNow from 'lib/useNow'
 import { useAppSelector } from 'store/hooks'
 import serverNow from 'lib/serverNow'
-import { TRIVIA_QUESTIONS_PER_ROUND, type TriviaResult, type TriviaRound } from 'shared/types'
+import {
+  TRIVIA_QUESTIONS_PER_ROUND,
+  triviaPoints,
+  type TriviaPodium,
+  type TriviaResult,
+  type TriviaRound,
+} from 'shared/types'
 import { CHEER, GROAN, playCue, soundCue } from 'lib/soundCue'
+import { PODIUM_HEIGHTS, podiumsOf } from './podiums'
 import styles from './PlayerTrivia.css'
 
 /** The design's stage. Every trivia screen is laid out at this size and scaled
@@ -33,6 +42,14 @@ const SPLASH_LEADERS = 5
 
 /** Runners-up beside the winner: second and third. */
 const RUNNERS_UP = 2
+
+/** 12c: the podiums rise one after another, 180ms apart, once the answer has
+ *  had half a second to itself. The numeral bursts and the character lands
+ *  as each one arrives. */
+const RISE_AFTER_MS = 500
+const RISE_STAGGER_MS = 180
+const NUMERAL_AFTER_MS = 650
+const LAND_AFTER_MS = 700
 
 /* OpenTDB is CC BY-SA 4.0. The attribution is a licence obligation: one
    small line on the splash and in the floor under every question and its
@@ -229,6 +246,77 @@ const TriviaWinner = ({ result }: { result: TriviaResult }) => {
   )
 }
 
+/** A knockdown, played once from when the podium lands and held on the
+ *  floor — ko is a one-shot, so it is handed the time into the sheet. */
+const Knockdown = ({ singer, delayMs }: { singer: RosterSinger, delayMs: number }) => {
+  const set = useFighterSet(singer.group, singer.slug, 'ko', battleSingerSet(singer, 'ko'))
+  const now = useNow(setFrameMs(set))
+  const [start] = useState(now)
+
+  return (
+    <SpriteLoop
+      className={styles.podiumSprite}
+      singer={singer}
+      loop='ko'
+      size='196px'
+      facing='left'
+      elapsedMs={now - start - delayMs}
+    />
+  )
+}
+
+/** Who a podium's character is, and what they are doing: standing to face
+ *  the question (12b), then on the reveal (12c) a victory for a right answer,
+ *  a knockdown for a wrong one, and still standing for one sat out. */
+const PodiumCharacter = ({ podium, isReveal, delayMs }: { podium: TriviaPodium, isReveal: boolean, delayMs: number }) => {
+  const singer = battleSingerOrDefault(podium.avatarId)
+
+  if (isReveal && podium.isCorrect === true) {
+    return <SpriteLoop className={styles.podiumSprite} singer={singer} loop='victory' size='196px' facing='left' />
+  }
+
+  if (isReveal && podium.isCorrect === false) return <Knockdown singer={singer} delayMs={delayMs} />
+
+  return <SpriteBox className={styles.podiumFront} src={battleSingerFrontArt(singer)} facing='left' />
+}
+
+/**
+ * 12b and 12c: the round's players on podiums under the answers, first on
+ * the left. On the question they stand facing it; on the reveal they drop
+ * away and rise again, each with what this question paid them.
+ */
+const TriviaPodiums = ({ podiums, round, isReveal }: { podiums: TriviaPodium[], round: TriviaRound, isReveal: boolean }) => (
+  <div className={clsx(styles.podiums, isReveal && styles.podiumsRise)}>
+    {podiums.map((podium, i) => {
+      const riseMs = RISE_AFTER_MS + i * RISE_STAGGER_MS
+
+      return (
+        <div key={podium.userId} className={styles.podium} style={isReveal ? { animationDelay: `${riseMs}ms` } : undefined}>
+          <div className={styles.podiumTop}>
+            <div
+              className={styles.podiumRank}
+              style={isReveal ? { animationDelay: `${riseMs + NUMERAL_AFTER_MS}ms` } : undefined}
+            >
+              {i + 1}
+            </div>
+            <PodiumCharacter podium={podium} isReveal={isReveal} delayMs={riseMs + LAND_AFTER_MS} />
+          </div>
+          <div className={styles.podiumLedge} />
+          <div className={styles.podiumBase} style={{ height: PODIUM_HEIGHTS[i] }}>
+            {isReveal && (
+              <span className={clsx(styles.podiumGain, podium.isCorrect && styles.podiumGained)}>
+                {`+${podium.isCorrect ? triviaPoints(round.difficulty) : 0}`}
+              </span>
+            )}
+            <span className={styles.podiumScore}>{podium.points}</span>
+            <span className={styles.podiumName} translate='no'>{podium.name}</span>
+          </div>
+        </div>
+      )
+    })}
+  </div>
+)
+
 interface PlayerTriviaProps {
   round: TriviaRound
   /** Set once answering has closed; switches the screen to the reveal. */
@@ -245,8 +333,32 @@ interface PlayerTriviaProps {
  * to play — but this is where they are big enough to read together, and where
  * the reveal happens for everyone at once.
  */
+/** The ground under the answers on 12b/12c: the podiums (the round so far on
+ *  the question, with this one counted in on the reveal), or the count on its
+ *  own beat (tally), and OpenTDB's credit wherever the podiums leave room. */
+const QuestionStage = ({ round, podiums, isReveal, tally }: {
+  round: TriviaRound
+  podiums: TriviaPodium[]
+  isReveal: boolean
+  tally: number | null
+}) => (
+  <div className={styles.stage}>
+    {tally !== null && <TriviaTally numCorrect={tally} variant='player' />}
+    <div className={styles.floor}>{!podiums.length && attribution}</div>
+    {podiums.length > 0 && (
+      <>
+        {/* keyed on the beat, so the reveal drops them and raises them again */}
+        <TriviaPodiums key={`${round.roundId}:${isReveal ? 'answer' : 'ask'}`} podiums={podiums} round={round} isReveal={isReveal} />
+        {/* the podiums stand on the floor, so the credit goes up top */}
+        <div className={styles.credit}>{attribution}</div>
+      </>
+    )}
+  </div>
+)
+
 const PlayerTrivia = ({ round, result, width, height }: PlayerTriviaProps) => {
   const tick = useNow()
+  const leaderboard = useAppSelector(state => state.points.leaderboard)
   const numCorrect = result?.numCorrect ?? 0
 
   // One beat at a time: the question (12b), then the answer (12c), then how
@@ -300,12 +412,14 @@ const PlayerTrivia = ({ round, result, width, height }: PlayerTriviaProps) => {
           ))}
         </div>
 
-        {/* where the design stands the podiums; the round's standings wait
-            for the winner, so between questions this holds the count */}
-        <div className={styles.stage}>
-          {isTally && <TriviaTally numCorrect={numCorrect} variant='player' />}
-          <div className={styles.floor}>{attribution}</div>
-        </div>
+        {/* the podiums, under the question and again under its answer; the
+            count takes their place for its own beat */}
+        <QuestionStage
+          round={round}
+          podiums={isTally ? [] : podiumsOf(result ? result.podiums : round.podiums, leaderboard)}
+          isReveal={!!result}
+          tally={isTally ? numCorrect : null}
+        />
       </div>
     </Stage>
   )

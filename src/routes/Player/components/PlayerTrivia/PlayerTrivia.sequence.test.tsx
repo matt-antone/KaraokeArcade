@@ -1,5 +1,6 @@
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { Provider } from 'react-redux'
 import { afterEach, describe, it, expect, vi } from 'vitest'
 import PlayerTrivia from './PlayerTrivia'
 import triviaReducer from 'store/modules/trivia'
@@ -43,8 +44,17 @@ const result: TriviaResult = {
   sentAt: SERVER_T0 + 20000,
 }
 
+// the podiums fill from the night's board, which is empty here
+const store = {
+  getState: () => ({ points: { leaderboard: [] as never[] } }),
+  subscribe: () => () => {},
+  dispatch: () => {},
+} as never
+
 const screen = (state: ReturnType<typeof triviaReducer>) => renderToStaticMarkup(
-  <PlayerTrivia round={state.round!} result={state.result} width={1280} height={720} />,
+  <Provider store={store}>
+    <PlayerTrivia round={state.round!} result={state.result} width={1280} height={720} />
+  </Provider>,
 )
 
 afterEach(() => {

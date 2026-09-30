@@ -11,10 +11,12 @@ import PlayerBattle from '../PlayerBattle/PlayerBattle'
 import type { BattleUpNext } from '../PlayerBattle/battleBeats'
 import battleVideoRect from '../PlayerBattle/battleVideoRect'
 import PlayerFrame from './PlayerFrame'
+import SoundGate from './SoundGate'
 import frameStyles from './PlayerFrame.css'
 import getRoundRobinQueue from 'routes/Queue/selectors/getRoundRobinQueue'
 import { playerLeave, playerError, playerLoad, playerPlay, playerStatus, type PlayerState } from '../../modules/player'
 import getRoomPrefs from '../../selectors/getRoomPrefs'
+import { scoredLeaderboard } from 'store/selectors/points'
 import useTriviaStage from 'lib/useTriviaStage'
 import useBattleStage from 'lib/useBattleStage'
 import { requestTriviaRound } from 'store/modules/trivia'
@@ -144,7 +146,8 @@ const PlayerController = (props: PlayerControllerProps) => {
   const prefs = useAppSelector(state => state.prefs)
   const roomPrefs = useAppSelector(getRoomPrefs)
   const roomName = useAppSelector(state => state.rooms.entities[state.user.roomId]?.name)
-  const leaderboard = useAppSelector(state => state.points.leaderboard)
+  // 14 lists, and cycles in for, only people who have scored
+  const leaderboard = useAppSelector(scoredLeaderboard)
   const singerCount = useAppSelector(state => state.rooms.singerCount)
   // Two views of the same round, and they are not interchangeable. The live
   // one expires with the countdown and drives *when* the player moves on; the
@@ -250,7 +253,18 @@ const PlayerController = (props: PlayerControllerProps) => {
 
   const handleStatus = useCallback((status?: Partial<PlayerState>) => dispatch(playerStatus(status)), [dispatch])
   const handleLoad = () => dispatch(playerLoad())
-  const handlePlay = () => dispatch(playerPlay())
+  // play() refused for want of a tap on this page (see SoundGate). Cleared by
+  // the media actually starting, which the tap is what allows.
+  const [isSoundBlocked, setSoundBlocked] = useState(false)
+  const handleBlocked = () => setSoundBlocked(true)
+  const handleSoundTap = () => {
+    playerRef.current?.resumeFromGesture(document.getElementById('player-fs-container') ?? document)
+    setSoundBlocked(false)
+  }
+  const handlePlay = () => {
+    setSoundBlocked(false)
+    dispatch(playerPlay())
+  }
   const handleError = (msg: string) => {
     dispatch(playerError(msg))
     handleStatus()
@@ -390,6 +404,22 @@ const PlayerController = (props: PlayerControllerProps) => {
       replayTime: player._lastReplayTime,
     })
   }, [battleSide, dispatch, handleLoadNext, nextQueueItem, player.queueId, player._lastReplayTime])
+
+  // Dev only: end the song early, exactly as if it had run out, so intermission,
+  // points and battles all see a normal ending. Its own ref rather than
+  // endedRunRef, which a battle half never sets: once per run and per half,
+  // and a replay gets its own cut.
+  const devCutRef = useRef('')
+
+  useEffect(() => {
+    if (!__DEV_SONG_SECONDS__ || !player.isPlaying || player.position < __DEV_SONG_SECONDS__) return
+
+    const run = `${player.queueId}:${player._lastReplayTime}:${battleSide}`
+    if (devCutRef.current === run) return
+
+    devCutRef.current = run
+    handleMediaEnd()
+  }, [battleSide, handleMediaEnd, player.isPlaying, player.position, player.queueId, player._lastReplayTime])
 
   // Reached a trivia row: ask the room's question. The server decides whether
   // there is one to ask — it owns the shuffle and the countdown, so two
@@ -684,6 +714,7 @@ const PlayerController = (props: PlayerControllerProps) => {
           mp4Alpha={player.mp4Alpha}
           onEnd={handleMediaEnd}
           onError={handleError}
+          onBlocked={handleBlocked}
           onLoad={handleLoad}
           onPlay={handlePlay}
           onStatus={handleStatus}
@@ -734,6 +765,7 @@ const PlayerController = (props: PlayerControllerProps) => {
           getAnalyser,
         }}
       />
+      {isSoundBlocked && <SoundGate onTap={handleSoundTap} />}
     </>
   )
 }

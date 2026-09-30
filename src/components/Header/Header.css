@@ -10,6 +10,8 @@
   width: 100%;
   background: var(--arc-ground);
   z-index: 1;
+  /* a route that scrolls as one page (07) carries the chrome up with it */
+  transform: translateY(calc(-1 * var(--header-scroll, 0px)));
 
   &:empty {
     display: none;

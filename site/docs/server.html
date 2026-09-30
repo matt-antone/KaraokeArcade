@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The server · KaraokeArcade</title>
+<link rel="icon" href="../favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Chakra+Petch:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="docs.css">
+</head>
+<body>
+<header class="top">
+<div class="wrap">
+<a class="logo" href="../"><img src="../assets/logo.svg" alt="KaraokeArcade"></a>
+<nav>
+<a href="../#roster">SINGERS</a>
+<a href="../#night">THE NIGHT</a>
+<a href="./" aria-current="page">DOCS</a>
+<a class="git" href="https://github.com/matt-antone/KaraokeArcade">GITHUB</a>
+</nav>
+</div>
+</header>
+<div class="wrap docs">
+<nav class="side" aria-label="Docs">
+<p class="kicker">MANUAL</p>
+<a href="index.html">Getting started</a>
+<a href="app.html">The app</a>
+<a href="server.html" aria-current="page">The server</a>
+<a href="faq.html">FAQ</a>
+</nav>
+<article>
+<h1>The server</h1>
+<p>The server hosts the web app and your media files, and can run on pretty much anything including a Raspberry Pi, NAS or Windows/Mac/Linux desktop. Since the <a href="app.html#player">player</a> is fully browser-based, it doesn&#39;t need to run on the same system as the server, but it can.</p>
+<h2 id="installation">Installation</h2>
+<p>KaraokeArcade Server is installed from source.</p>
+<h3 id="from-source">From source</h3>
+<ol>
+<li><p>Install <a href="https://nodejs.org">Node.js</a><svg class="icon external" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg> v24 or later and <a href="https://bun.sh">Bun</a><svg class="icon external" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg> if they&#39;re not already installed.</p>
+</li>
+<li><p>Clone the repository and install dependencies:</p>
+</li>
+</ol>
+<pre><code class="language-shell">git clone https://github.com/matt-antone/KaraokeArcade.git
+cd KaraokeArcade
+bun install
+</code></pre>
+<ol start="3">
+<li>Build and start the server:</li>
+</ol>
+<pre><code class="language-shell">npm run build
+npm run serve
+</code></pre>
+<aside class="info" role="note">
+  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 17h2v-6h-2v6zm1-15C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM11 9h2V7h-2v2z"/></svg>
+  <p>The server chooses a random port at startup unless <a href="#cli--env">otherwise specified</a>. For example, to use port 8888, run <code>npm run serve -- --port 8888</code></p>
+</aside><ol start="4">
+<li>Look for &quot;Web server running at...&quot; and browse to that <strong>server URL</strong>.</li>
+</ol>
+<p>See <a href="index.html">Getting Started</a> if you&#39;re new to KaraokeArcade.</p>
+<h2 id="media-files">Media Files</h2>
+<p>The following file types are supported:</p>
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/MP3%2BG">MP3+G</a><svg class="icon external" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg> (including zipped; also supports .m4a instead of .mp3)</li>
+<li>MP4 video (codec support can vary depending on the browser running the <a href="app.html#player">player</a>)</li>
+</ul>
+<p>A loose <code>.mp3</code>/<code>.m4a</code> file needs a same-name <code>.cdg</code> file next to it (case-insensitive); a <code>.zip</code> needs its <code>.cdg</code> file at the root of the archive.</p>
+<p>KaraokeArcade Server expects your media files to be named in <strong>&quot;Artist - Title&quot;</strong> format by default (you can <a href="#metadata-parser">configure this</a>). Media with filenames that couldn&#39;t be parsed won&#39;t appear in the library, so check the <a href="#file-locations">scanner log</a> or console output for these. A trailing <code>[Tag, Tag]</code> group in the filename becomes song tags (tags containing &quot;karaoke&quot; or &quot;vocal&quot; are ignored).</p>
+<h2 id="metadata-parser">Metadata Parser</h2>
+<p>You can customize the metadata parser by creating a file named <code>_kes.v2.json</code> in a media folder. It will apply to all media files in the folder, including subfolders. If any subfolders contain their own <code>_kes.v2.json</code> file, that will take precedence instead. These files can be in JSON or JSON5 format - JSON5 is used in the examples below since it&#39;s friendlier for humans.</p>
+<h3 id="basic-configuration">Basic Configuration</h3>
+<p>At the most basic, your <code>_kes.v2.json</code> file can alter some or all of the parser&#39;s default configuration, which is:</p>
+<pre><code class="language-js">{
+  // used to normalize artist/title; set false to disable
+  articles: [&#39;A&#39;, &#39;An&#39;, &#39;The&#39;],
+
+  // assumes filenames are in &quot;Artist - Title&quot; format
+  artistOnLeft: true,
+
+  // assumes a hyphen separates the artist and title 
+  delimiter: &#39;-&#39;,
+}
+</code></pre>
+<p>For example, if you had a folder with filenames in the format &quot;Title - Artist&quot; instead, you could create this <code>_kes.v2.json</code> file in it:</p>
+<pre><code class="language-js">{
+  artistOnLeft: false, // override default
+}
+</code></pre>
+<p>If a filename contains &quot; in the style of &quot; (case-insensitive), that phrase is used as the delimiter automatically and the artist is assumed to be on the right, e.g. &quot;Some Song in the style of Some Artist&quot;.</p>
+<h3 id="advanced-templating">Advanced Templating</h3>
+<p>If changing the parser&#39;s default configuration doesn&#39;t yield the desired results, you can also define your own &quot;template&quot; to override the result for one or more of these fields:</p>
+<ul>
+<li><code>artist</code> (string) artist&#39;s name as it will be shown in the library</li>
+<li><code>artistNorm</code> (string) normalized version of the artist&#39;s name; used for matching and sorting (<code>artist</code> if not set)</li>
+<li><code>title</code> (string) song&#39;s title as it will be shown in the library</li>
+<li><code>titleNorm</code> (string) normalized version of the song&#39;s title; used for matching and sorting (<code>title</code> if not set)</li>
+</ul>
+<p>For each media file encountered, KaraokeArcade makes a &quot;context&quot; available to your field template(s). This context includes the fields above (that is, the results from the built-in parser) in addition to:</p>
+<ul>
+<li><code>name</code> (string) media filename (without extension)</li>
+<li><code>meta</code> (object) media file&#39;s <a href="https://github.com/Borewit/music-metadata/blob/master/doc/common_metadata.md">metadata fields</a><svg class="icon external" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg></li>
+<li><code>dir</code> (string) full path of the containing folder</li>
+<li><code>dirSep</code> (string) path separator used by the current OS (<code>/</code> or <code>\</code>)</li>
+</ul>
+<p>Field templates are defined using <a href="https://json-e.js.org">JSON-e syntax</a><svg class="icon external" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>. In addition to JSON-e&#39;s <a href="https://json-e.js.org/built-ins.html">built-in methods</a><svg class="icon external" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>, a <code>replace</code> method is also provided for simple text replacement. Here are a few examples of how one might use field templates in their <code>_kes.v2.json</code> file:</p>
+<pre><code class="language-js">// explicitly set the artist field
+{
+  artist: &quot;My Artist&#39;s Name&quot;,
+}
+</code></pre>
+<pre><code class="language-js">// remove &quot;junk&quot; from anywhere in the parsed artist field
+{
+  artist: {
+    $eval: &#39;replace(artist, &quot;junk&quot;, &quot;&quot;)&#39;
+  },
+}
+</code></pre>
+<pre><code class="language-js">// remove &quot;junk&quot; case-insensitively from the start of the parsed artist field (regex syntax)
+// note: double backslash escapes to a single backslash
+{
+  artist: {
+    $eval: &#39;replace(artist, &quot;^junk\\s&quot;, &quot;i&quot;, &quot;&quot;)&#39;
+  },
+}
+</code></pre>
+<pre><code class="language-js">// set artist and title using the media file&#39;s metadata tags
+{
+  artist: &#39;${meta.artist}&#39;,
+  title: &#39;${meta.title}&#39;,
+}
+</code></pre>
+<aside class="info" role="note">
+  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 17h2v-6h-2v6zm1-15C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM11 9h2V7h-2v2z"/></svg>
+  <p><strong>Tip: </strong>Setting the media scanner log or console level to "debug" (see below) can be helpful in troubleshooting your field templates.
+</p>
+</aside><h2 id="cli-amp-env">CLI &amp; ENV</h2>
+<p>KaraokeArcade Server supports the following CLI options and environment variables. The numeric values used for log/console levels are: <strong>0</strong>=off, <strong>1</strong>=error, <strong>2</strong>=warn, <strong>3</strong>=info, <strong>4</strong>=verbose, <strong>5</strong>=debug.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>ENV</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><span style="white-space: nowrap;"><code>--data &lt;string&gt;</code></span></td>
+<td><span style="white-space: nowrap;"><code>KES_PATH_DATA</code></span></td>
+<td>Absolute path of folder for database files</td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>-p, --port &lt;number&gt;</code></span></td>
+<td><span style="white-space: nowrap;"><code>KES_PORT</code></span></td>
+<td>Web server port</td>
+<td>auto</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>--rotateKey</code></span></td>
+<td><span style="white-space: nowrap;"><code>KES_ROTATE_KEY</code></span></td>
+<td>Rotate the session key at startup</td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>--scan</code></span></td>
+<td><span style="white-space: nowrap;"><code>KES_SCAN</code></span></td>
+<td>Run the media scanner at startup. Accepts a comma-separated list of pathIds, or &quot;all&quot;</td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>--scannerConsoleLevel &lt;number&gt;</code></span></td>
+<td><code>KES_SCANNER_CONSOLE_LEVEL</code></td>
+<td>Media scanner console output level (default=4)</td>
+<td>4</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>--scannerLogLevel &lt;number&gt;</code></span></td>
+<td><span style="white-space: nowrap;"><code>KES_SCANNER_LOG_LEVEL</code></span></td>
+<td>Media scanner log file level</td>
+<td>3</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>--serverConsoleLevel &lt;number&gt;</code></span></td>
+<td><span style="white-space: nowrap;"><code>KES_SERVER_CONSOLE_LEVEL</code></span></td>
+<td>Web server console output level</td>
+<td>4</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>--serverLogLevel &lt;number&gt;</code></span></td>
+<td><span style="white-space: nowrap;"><code>KES_SERVER_LOG_LEVEL</code></span></td>
+<td>Web server log file level</td>
+<td>3</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>--serverUrl &lt;string&gt;</code></span></td>
+<td><span style="white-space: nowrap;"><code>KES_SERVER_URL</code></span></td>
+<td>Absolute <code>http(s)</code> URL guests reach the server at, used for join QR codes. See <a href="#stable-addresses">Stable addresses</a></td>
+<td>current LAN IP</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>--urlPath &lt;string&gt;</code></span></td>
+<td><span style="white-space: nowrap;"><code>KES_URL_PATH</code></span></td>
+<td>Web server base URL path (must begin with a forward slash)</td>
+<td>/</td>
+</tr>
+<tr>
+<td></td>
+<td><span style="white-space: nowrap;"><code>KES_CONSOLE_COLORS</code></span></td>
+<td>Set to <code>0</code> or <code>false</code> to disable colors in console output</td>
+<td>enabled</td>
+</tr>
+<tr>
+<td></td>
+<td><span style="white-space: nowrap;"><code>PUID</code></span></td>
+<td>User ID to run as</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td><span style="white-space: nowrap;"><code>PGID</code></span></td>
+<td>Group ID to run as</td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>-v, --version</code></span></td>
+<td></td>
+<td>Show version and exit</td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>-h, --help</code></span></td>
+<td></td>
+<td>Show help and exit</td>
+<td></td>
+</tr>
+</tbody></table>
+<h3 id="stable-addresses">Stable addresses</h3>
+<p>By default the join QR encodes the server&#39;s current LAN IP. That works for a one-off party, but an IP is an address rather than an identity: it changes when you take the server to a different venue, and it can change at the same venue when the DHCP lease renews.</p>
+<p>This matters if guests add the app to their home screen. An install freezes whatever URL it was added from, and a standalone window has no address bar to correct it, so a changed IP leaves a dead icon. Worse, private ranges are heavily reused, so the old address may reach some unrelated device on the new network.</p>
+<p>Set <code>--serverUrl</code> to a name that follows the server between networks and the QR, the install and the icon all agree:</p>
+<pre><code>npm run serve -- --serverUrl http://karaokearcade.local:8080
+</code></pre>
+<p>A Bonjour <code>.local</code> name is the simplest option, and iOS and macOS resolve it with no setup on the guest&#39;s phone. macOS hosts already answer <code>&lt;computer-name&gt;.local</code>; on Linux this needs Avahi, and on Windows the Bonjour service. A tunnel or reverse proxy hostname works too, and an <code>https</code> one additionally unlocks the browser features that require a secure context.</p>
+<p>The value is normalized rather than used verbatim, so include the port and any base path. It is ignored (with a warning, falling back to the LAN IP) unless it parses as an <code>http</code> or <code>https</code> URL — note that <code>karaokearcade.local:8080</code> is <em>not</em> one, since it has no scheme.</p>
+<p>The home-screen install hint (iOS Safari only) shows when a guest reaches the server by hostname or a private LAN IP, and is suppressed for a public IP or an IPv6 literal — guests in the suppressed case are left on the QR-and-browser flow, which keeps working no matter how the address moves.</p>
+<h2 id="file-locations">File Locations</h2>
+<p>The default locations for the database (<code>database.sqlite3</code>), web server log (<code>server.log</code>) and media scanner log (<code>scanner.log</code>) are as follows:</p>
+<p>These folders keep the pre-rebrand <code>Karaoke Eternal Server</code> name so existing installs keep their database. Set <code>--data</code> or <code>KES_PATH_DATA</code> to put the database somewhere else.</p>
+<h3 id="windows">Windows</h3>
+<ul>
+<li>Database: <code>%APPDATA%\Karaoke Eternal Server</code> (usually <code>%USERPROFILE%\AppData\Roaming\Karaoke Eternal Server</code>)</li>
+<li>Logs: <code>%USERPROFILE%\AppData\Roaming\Karaoke Eternal Server\logs</code></li>
+</ul>
+<h3 id="macos">macOS</h3>
+<ul>
+<li>Database: <code>~/Library/Application Support/Karaoke Eternal Server</code></li>
+<li>Logs: <code>~/Library/Logs/Karaoke Eternal Server</code></li>
+</ul>
+<h3 id="linux">Linux</h3>
+<ul>
+<li>Database: <code>$XDG_CONFIG_HOME/Karaoke Eternal Server</code> if <code>XDG_CONFIG_HOME</code> is set, otherwise <code>~/.config/Karaoke Eternal Server</code></li>
+<li>Logs: <code>~/.config/Karaoke Eternal Server/logs</code></li>
+</ul>
+<p>Older versions put <code>database.sqlite3</code> directly in <code>%APPDATA%</code> or <code>$XDG_CONFIG_HOME</code> when those were set, without the <code>Karaoke Eternal Server</code> folder. If a database is still there and none is in the new folder, the server keeps using the old one. To switch, stop the server and move <code>database.sqlite3</code> (and any <code>database.sqlite3-wal</code> / <code>-shm</code> files next to it) into the new folder.</p>
+
+
+</article>
+<nav class="toc" aria-label="On this page">
+<p class="kicker">ON THIS PAGE</p>
+<a href="#installation" class="l2">Installation</a>
+<a href="#media-files" class="l2">Media Files</a>
+<a href="#metadata-parser" class="l2">Metadata Parser</a>
+<a href="#cli-amp-env" class="l2">CLI &amp;amp; ENV</a>
+<a href="#file-locations" class="l2">File Locations</a>
+</nav>
+</div>
+<footer>
+<div class="wrap">
+<span>Self-hosted. No ads. No tracking. ISC license. A fork of Karaoke Eternal.</span>
+<a href="https://github.com/matt-antone/KaraokeArcade">github.com/matt-antone/KaraokeArcade</a>
+</div>
+</footer>
+</body>
+</html>

@@ -3,93 +3,99 @@ title: Getting Started
 description: Getting started with KaraokeArcade and KaraokeArcade Server
 ---
 
-You'll want to have a few things to get started with KaraokeArcade:
+You need three things to start with KaraokeArcade:
 
-- **Songs**: KaraokeArcade supports MP4 video files, as well as MP3 or M4A audio files that have lyrics in an accompanying CDG file (commonly known as [MP3+G](https://en.wikipedia.org/wiki/MP3%2BG){{% icon-external %}}), loose or zipped. See the <a href='{{< ref "faq#where-can-i-download-karaoke-songs" >}}'>F.A.Q.</a> if you're looking for songs!
+- **Songs**: KaraokeArcade plays MP4 video files, and MP3 or M4A audio files with the lyrics in a CDG file next to them ([MP3+G](https://en.wikipedia.org/wiki/MP3%2BG){{% icon-external %}}), loose or zipped. See the <a href='{{< ref "faq#where-can-i-download-karaoke-songs" >}}'>F.A.Q.</a> for places to get songs.
 
-- **Server**: This can be a Windows PC, Mac, or a dedicated server like a Raspberry Pi or NAS. KaraokeArcade Server runs on pretty much anything to serve the web app and your media files.
+- **Server**: a Windows PC, a Mac, a Raspberry Pi or a NAS. KaraokeArcade Server runs on almost anything. It serves the app and your media files.
 
-- **Player**: This will be the system that is connected to your display and speakers, running KaraokeArcade's player in a browser. It could be the same system as the server, but because the player is fully browser-based it doesn't need to be.
+- **Player**: the machine connected to your TV and speakers. It runs the player in a browser. It can be the server machine, but it does not have to be.
 
-Microphones are *not* required since the player itself only outputs music - this allows your audio setup to be as simple or complex as you like. The one exception is crowd-noise battle scoring, which listens through the player machine's own microphone if you switch it on. See the <a href='{{< ref "faq#recommended-audio-microphone-setup" >}}'>F.A.Q.</a> for more information.
+You do not need a microphone. The player only outputs music, so your audio setup can be as simple or as complex as you like. The one exception is crowd-noise battle scoring. See the <a href='{{< ref "faq#recommended-audio-microphone-setup" >}}'>F.A.Q.</a>.
 
 ## 1. Install KaraokeArcade Server
 
-On the system that will serve the web app and your media files, <a href='{{< ref "docs/karaokearcade-server#installation" >}}'>install and run KaraokeArcade Server</a>, then head back here and continue.
+On the machine that serves the app and your media files, <a href='{{< ref "docs/karaokearcade-server#installation" >}}'>install and run KaraokeArcade Server</a>. Then come back here.
 
-## 2. Browse to the Server URL
+## 2. Open the server URL
 
-Once the server is running, browse to the web app at the **server URL**.
+When the server runs, open the app at the **server URL** in a browser.
 
 <aside class="info" role="note">
   {{% icon-info %}}
-  <p>Since the app is designed for mobile, it's recommended to use your phone for the best experience once you're finished with the initial setup here.</p>
+  <p>The app is made for a phone. Use your phone for everything after this first setup.</p>
 </aside>
 
-## 3. Create Admin Account
+## 3. Create the admin account
 
-Since this is your first time with KaraokeArcade, you'll be asked to create your **admin** account.
+The first screen is **First run**. Type a name and a strong password, pick a security question and answer it, then push the start button.
 
-Make sure you use a strong password and store it someplace safe, since admins can manage users, rooms, preferences and more. You'll also pick a security question, which lets you reset the password from the sign-in screen if you forget it.
+<div class="row">
+  {{% img "new/first-run.jpg" "First run" /%}}
+  {{% img "new/select-singer.jpg" "Select your singer" /%}}
+</div>
+
+Store the password somewhere safe. Admins manage users, rooms, the player and the media folders. The security question lets you reset the password from the sign-in screen.
+
+Next, **select your singer**. This is the character the room sees as you. Then read **How to score** and push **Continue**.
 
 <aside class="info" role="note">
   {{% icon-info %}}
   <p>KaraokeArcade Server stores all data on <strong>your server only</strong>.</p>
 </aside>
 
-## 4. Add Media Folders
+## 4. Add a media folder
 
-Once signed in, you'll see an (unsurprisingly) empty library. Head to the Settings view by following the "Add media folders" link or tapping the sliders icon in the bottom navigation area (it's there because you're an admin):
-
-<div class="row">
-  {{% img "app-settings.png" "Settings view" /%}}
-</div>
-
-In the **Preferences** panel, select **Media Folders** and add the folder(s) containing your songs.
-
-## 5. Queue a Song
-
-Once the media scanner is finished, you should see your artists/songs back over in the Library view. If they aren't appearing, make sure your media files are named using the **"Artist - Title"** convention and are a <a href='{{< ref "docs/karaokearcade-server#media-files" >}}'>supported format</a>.
+The library is empty. Push **Add media folders**, or open the **Admin** tab.
 
 <div class="row">
-  {{% img "app-library.png" "Library view" /%}}
+  {{% img "new/library-empty.jpg" "An empty library" /%}}
+  {{% img "new/admin.jpg" "The Admin tab" /%}}
 </div>
 
-In the Library view, queue a song by tapping an artist, then tapping a song. Go ahead and queue a few - each one sinks into a teal standby state to show it's queued, and tapping one of yours again takes it back out. Pretty simple, right?
+In the **Media folders** panel, push **Add folder** and pick the folder that holds your songs. The scanner starts at once.
 
-You can do a lot more in the Library view, but for now let's play some music!
+## 5. Queue a song
 
-## 6. Start the Player
+When the scan is done, the **Songs** tab lists your artists and songs. If they do not appear, make sure the files are named **"Artist - Title"** and are a <a href='{{< ref "docs/karaokearcade-server#media-files" >}}'>supported format</a>.
 
-KaraokeArcade's player is just another part of the browser app, but it's meant to run fullscreen on the system connected to your display and speakers. If you aren't using the system you intend to use as the player, go to it now, browse to the **server URL**, and sign in with your admin account.
+<div class="row">
+  {{% img "new/library.jpg" "The library" /%}}
+  {{% img "new/queue.jpg" "The queue" /%}}
+</div>
 
-Go to **Settings**, where the **Player** panel reports **"no player in room"**. Press **Open Player Here** to start one in a new tab.
+Tap a song to queue it. Your turn card at the top shows your place. Tap the song again to take it back out.
+
+## 6. Start the player
+
+The player is part of the app. It runs fullscreen on the machine connected to your TV and speakers. On that machine, open the **server URL** and sign in with your admin account.
+
+Open the **Admin** tab. The **Player** panel says **No player in room**. Push **Open player here**.
+
+<div class="row">
+  {{% img "new/tv-join.jpg" "The TV before the first song" "1x" /%}}
+</div>
 
 <aside class="info" role="note">
   {{% icon-info %}}
-  <p>You can also navigate to <code>/player</code> directly. Browsers without fullscreen support can still run a player, they just won't fill the screen.</p>
+  <p>You can also go to <code>/player</code>. A browser without fullscreen support still runs a player. It just does not fill the screen.</p>
 </aside>
 
+The TV shows **Scan to play** with the room's QR code. Push **Start** on the TV. The first song plays.
+
 <div class="row">
-  {{% img "app-player.jpg" "Player view" /%}}
+  {{% img "new/tv-playing.jpg" "A song on the TV" "1x" /%}}
 </div>
-
-The **Display** and **Show Join Code** buttons are always there in that same **Settings > Player** panel; now that there's a player in the room, playback controls appear there too.
-
-Go ahead and press play in the player to start the party!
 
 <aside class="info" role="note">
   {{% icon-info %}}
-  <p>Starting playback inside the player (rather than on a remote device) helps avoid browser auto-play restrictions. See the <a href="{{< ref "faq#enabling-autoplay" >}}">F.A.Q.</a> for more on how to enable auto-play in your browser.</p>
+  <p>Push Start on the player itself, not on a phone. A browser does not play sound until somebody taps the page. See the <a href="{{< ref "faq#enabling-autoplay" >}}">F.A.Q.</a> to allow autoplay.</p>
 </aside>
 
+## 7. Next steps
 
-## 7. Next Steps
-
-To get the most out of KaraokeArcade, continue with the <a href="{{< ref "docs/karaokearcade-app" >}}">app documentation</a>. Seriously, there's quite a bit going on beneath the surface!
+Guests scan the QR code on the TV to join. Read the <a href="{{< ref "docs/karaokearcade-app" >}}">app documentation</a> for the turn card, trivia, singer battles, points and the admin panels.
 
 Found a bug or have a request? Open an <a href="https://github.com/matt-antone/KaraokeArcade/issues" rel="noopener">issue</a>{{% icon-external %}}.
 
-KaraokeArcade is a fork of <a href="https://github.com/bhj/KaraokeEternal" rel="noopener">Karaoke Eternal</a>{{% icon-external %}}; if you are able, please consider [sponsoring the upstream project](https://www.karaoke-eternal.com/sponsor) that made this possible.
-
-Now, go get singing!
+KaraokeArcade is a fork of <a href="https://github.com/bhj/KaraokeEternal" rel="noopener">Karaoke Eternal</a>{{% icon-external %}}. If you can, please [sponsor the upstream project](https://www.karaoke-eternal.com/sponsor).

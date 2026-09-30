@@ -1,19 +1,16 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React from 'react'
 import clsx from 'clsx'
 import screenfull from 'screenfull'
 import Button from 'components/Button/Button'
 import Icon from 'components/Icon/Icon'
 import { useAppDispatch } from 'store/hooks'
 import { requestPlay } from 'store/modules/status'
-import { BATTLE_SINGERS, BATTLE_STAGE_PLATE, battleSingerAt, battleSingerFrontArt, battleSingerStage } from 'lib/battleSingers'
-import { useFighterListing } from 'lib/fighterSets'
+import { BATTLE_SINGERS, BATTLE_STAGE_PLATE, battleSingerFrontArt, battleSingerStage } from 'lib/battleSingers'
 import type { LeaderboardEntry } from 'shared/types'
 import PlayerScores from '../PlayerScores/PlayerScores'
-import { CROWD_MAX, crowdOf, joinCountOf } from './crowd'
+import { joinCountOf } from './crowd'
+import { useCrowd, useIsScoresTurn } from './useJoinScreen'
 import styles from './PlayerJoin.css'
-
-/** How long each of the two idle screens holds before handing to the other. */
-const SWAP_MS = 20000
 
 /** The stage the room stands on once anybody is in: the design's. */
 const JOIN_STAGE = battleSingerStage(BATTLE_SINGERS.find(s => s.slug === 'screamer') ?? BATTLE_SINGERS[0])
@@ -37,7 +34,9 @@ const handleFullscreen = () => {
 
 /**
  * 10 · The TV between songs: how to join on the left, the room on the right —
- * one figure per singer in, up to forty.
+ * one figure per singer in, as the fighter they picked, up to forty. The
+ * design fills the room with random picks; ours is the people actually in it
+ * (see seatsFor).
  *
  * Once anyone is on tonight's board the screen takes turns with 14 · Tonight's
  * scores — the idle stage is the one slot where the leaderboard interrupts
@@ -45,29 +44,18 @@ const handleFullscreen = () => {
  */
 const PlayerJoin = ({ roomName, qr, leaderboard, singerCount, isIdle }: PlayerJoinProps) => {
   const dispatch = useAppDispatch()
-  // Drawn once per mount, so the crowd holds still across every re-render.
-  const [seeds] = useState(() => Array.from({ length: CROWD_MAX }, () => Math.random()))
-  const [isScores, setIsScores] = useState(false)
-  const listing = useFighterListing()
-  const hasScores = leaderboard.length > 0
-  const shown = Math.min(CROWD_MAX, singerCount)
+  const crowd = useCrowd()
+  const isScoresTurn = useIsScoresTurn(leaderboard.length > 0)
 
-  // every fighter on disk, once the listing lands; the shipped eight until then
-  const crowd = useMemo(() => {
-    const roster = Object.entries(listing)
-      .flatMap(([group, slugs]) => Object.keys(slugs).map(slug => battleSingerAt(group, slug)))
-
-    return crowdOf(seeds, roster.length ? roster : BATTLE_SINGERS)
-  }, [listing, seeds])
-
-  useEffect(() => {
-    if (!hasScores) return
-
-    const intervalID = setInterval(() => setIsScores(is => !is), SWAP_MS)
-    return () => clearInterval(intervalID)
-  }, [hasScores])
-
-  if (hasScores && isScores) return <PlayerScores leaderboard={leaderboard} venue={roomName} />
+  if (isScoresTurn) {
+    return (
+      <PlayerScores
+        leaderboard={leaderboard}
+        venue={roomName}
+        onPlay={isIdle ? () => dispatch(requestPlay()) : undefined}
+      />
+    )
+  }
 
   return (
     <div className={styles.container}>
@@ -79,10 +67,10 @@ const PlayerJoin = ({ roomName, qr, leaderboard, singerCount, isIdle }: PlayerJo
       )}
       <div className={styles.panel} />
       <div className={styles.crowd} aria-hidden>
-        {crowd.map((member, k) => (
+        {crowd.map(member => (
           <img
-            key={k}
-            className={clsx(styles.member, k >= shown && styles.away)}
+            key={member.seat}
+            className={clsx(styles.member, !member.isHere && styles.away)}
             src={battleSingerFrontArt(member.singer).url}
             alt=''
             style={{ '--row': member.row, '--x': member.x } as React.CSSProperties}
@@ -91,24 +79,31 @@ const PlayerJoin = ({ roomName, qr, leaderboard, singerCount, isIdle }: PlayerJo
       </div>
       <div className={styles.join}>
         <img className={styles.logo} src='assets/arcade/logo.svg' alt='KaraokeArcade' />
-        <span className={styles.headline}>Scan to sing</span>
+        {/* the reassurance is undesigned and asked for: trivia and battle
+            votes need nobody at the mic */}
+        <div className={styles.headlineGroup}>
+          <span className={styles.headline}>Scan to play</span>
+          <span className={styles.tagline}>No singing necessary</span>
+        </div>
         <div className={styles.codeRow}>
           {qr}
           <div className={styles.code}>
-            {roomName && (
-              <>
-                <span className={styles.codeLabel}>Room code</span>
-                <span className={styles.codeValue} translate='no'>{roomName}</span>
-              </>
-            )}
             <span className={styles.blink}>Insert token</span>
             <span className={styles.joinCount}>{joinCountOf(singerCount)}</span>
           </div>
         </div>
+        {/* under the code rather than beside it: a venue name is as long as
+            the venue likes, and beside the QR it ran out into the crowd */}
+        {roomName && (
+          <div className={styles.room}>
+            <span className={styles.codeLabel}>Room code</span>
+            <span className={styles.codeValue} translate='no'>{roomName}</span>
+          </div>
+        )}
         {/* undesigned and needed (U-23): browsers won't autoplay without a tap */}
         {isIdle && (
           <Button variant='primary' cta className={styles.playKey} onClick={() => dispatch(requestPlay())}>
-            Play
+            Start
           </Button>
         )}
       </div>

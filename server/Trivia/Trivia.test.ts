@@ -750,6 +750,37 @@ describe('a round of several questions', () => {
     expect(last.emitted.map(e => e.type)).toContain(POINTS_PUSH)
   })
 
+  /** 12b stands the round so far on the podiums as each question goes up;
+   *  12c raises them again on the reveal, each landing on how they did. */
+  it('stands the round so far on the podiums, question by question', async () => {
+    pool.push(...['q2', 'q3'].map(q => ({ question: q, correctAnswer: 'right', incorrectAnswers: ['w1', 'w2', 'w3'], difficulty: 'easy' })))
+    const first = await start()
+
+    // nobody has answered anything yet
+    expect(first.podiums).toEqual([])
+
+    answerAll(first, [ALICE], [BOB])
+    const closed = io()
+    Trivia.closeQuestion(closed, ROOM_ID)
+
+    expect((closed.emitted[0].payload as TriviaResult).podiums).toEqual([
+      { userId: ALICE, name: 'Alice', avatarId: null, points: 100, numCorrect: 1, isCorrect: true },
+      { userId: BOB, name: 'Bob', avatarId: null, points: 0, numCorrect: 0, isCorrect: false },
+    ])
+
+    // the next question carries them unmarked: nobody's answer shows early
+    const second = Trivia.askQuestion(io(), ROOM_ID)!
+    expect(second.podiums?.map(p => [p.name, p.points, p.isCorrect])).toEqual([['Alice', 100, undefined], ['Bob', 0, undefined]])
+
+    // a player who sits a question out stays up, marked as having done so
+    answerAll(second, [CAROL])
+    const next = io()
+    Trivia.closeQuestion(next, ROOM_ID)
+
+    expect((next.emitted[0].payload as TriviaResult).podiums?.map(p => [p.name, p.points, p.isCorrect]))
+      .toEqual([['Alice', 100, null], ['Carol', 100, true], ['Bob', 0, null]])
+  })
+
   it('ties on points by name, and starts every round from nothing', async () => {
     const first = await start()
     answerAll(first, [CAROL, ALICE])

@@ -359,6 +359,10 @@ export interface TriviaRound {
    *  stamped lets a client subtract the difference out; without it a player
    *  whose clock is a few seconds off silently skips whole beats. */
   sentAt: number
+  /** The round so far, as the question goes up: who stands on the TV's
+   *  podiums (12b), best first. [] on the first question, before anyone has
+   *  answered. Optional only so a payload from before podiums still parses. */
+  podiums?: TriviaPodium[]
 }
 
 /** The server's answer to "put this row's round on".
@@ -416,6 +420,14 @@ export interface TriviaStanding {
   numCorrect: number
 }
 
+/** One character on the TV's podiums: a player's round so far (12b), and on
+ *  the reveal how they did on the question just closed (12c). */
+export interface TriviaPodium extends TriviaStanding {
+  /** Reveal only: right, wrong, or null for sat this one out. Absent while
+   *  the question is still open — nobody's answer is shown before the room's. */
+  isCorrect?: boolean | null
+}
+
 export interface TriviaResult {
   roundId: number
   queueId: number
@@ -447,6 +459,10 @@ export interface TriviaResult {
   endsAt: number
   /** Epoch ms this payload was sent. See TriviaRound.sentAt. */
   sentAt: number
+  /** The round so far with this question counted in, best first, each
+   *  marked with how they did on it: the podiums rising on the reveal (12c).
+   *  Every question, unlike standings. See TriviaRound.podiums. */
+  podiums?: TriviaPodium[]
 }
 
 // How long each beat of a battle holds the stage, in ms: the numbers that
@@ -620,6 +636,11 @@ export interface BattleSinger {
    *  by reading a list of names in a dark room. */
   avatarId: string | null
 }
+
+/** Somebody in the room, as the TV's crowd (10) draws them: which fighter,
+ *  and whose, so a figure keeps its spot as others come and go. No name: the
+ *  design's crowd carries no usernames. Pushed with ROOM_SINGERS_PUSH. */
+export type RoomSinger = Pick<BattleSinger, 'userId' | 'avatarId'>
 
 /** A challenge that has been thrown and not yet answered. The challenger holds
  *  one of these to know it is waiting; the opponent holds one to know it is

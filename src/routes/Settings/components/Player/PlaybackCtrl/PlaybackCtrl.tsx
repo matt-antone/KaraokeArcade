@@ -16,25 +16,30 @@ import styles from './PlaybackCtrl.css'
  * pausing. The knob is the input and the meter beside it is the readout; there
  * is no volume number.
  *
- * Display options are not here: they belong to the Player panel itself, so they
- * stay reachable when no player is connected and the transport cannot render.
+ * Display options are not here: they belong to the Player panel itself.
+ *
+ * With no player in the room it still draws, dimmed and inert, so the host
+ * learns where the transport lives before the night rather than during it.
  */
-const PlaybackCtrl = () => {
+const PlaybackCtrl = ({ isDisabled = false }: { isDisabled?: boolean }) => {
   const status = useAppSelector(state => state.status)
 
   const dispatch = useAppDispatch()
   const handlePause = () => dispatch(requestPause())
   const handlePlay = () => dispatch(requestPlay())
   const handlePlayNext = () => dispatch(requestPlayNext())
-  const handleVolume = (val: number) => dispatch(requestVolume(val))
+  const handleVolume = (val: number) => {
+    if (!isDisabled) dispatch(requestVolume(val))
+  }
 
   return (
-    <div className={styles.container}>
+    <div className={clsx(styles.container, isDisabled && styles.disabled)} aria-disabled={isDisabled}>
       <Button
         className={clsx(styles.key, styles.transport)}
         variant='primary'
         icon={status.isPlaying ? 'PAUSE' : 'PLAY'}
         onClick={status.isPlaying ? handlePause : handlePlay}
+        disabled={isDisabled}
         aria-label={status.isPlaying ? 'Pause' : 'Play'}
       />
 
@@ -43,6 +48,7 @@ const PlaybackCtrl = () => {
         variant='default'
         icon='PLAY_NEXT'
         onClick={handlePlayNext}
+        disabled={isDisabled}
         aria-label='Play Next'
       />
 

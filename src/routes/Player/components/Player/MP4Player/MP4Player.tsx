@@ -1,5 +1,6 @@
 import React from 'react'
 import styles from './MP4Player.css'
+import playMedia from '../playMedia'
 
 interface MP4PlayerProps {
   isPlaying: boolean
@@ -12,6 +13,8 @@ interface MP4PlayerProps {
   // media events
   onEnd(): void
   onError(error: string): void
+  /** play() was refused for want of a user gesture on this page */
+  onBlocked?(): void
   onLoad(): void
   onPlay(): void
   onStatus(status: { position: number, duration: number }): void
@@ -71,8 +74,7 @@ class MP4Player extends React.Component<MP4PlayerProps> {
     if (!this.video.current) return
 
     if (this.props.isPlaying) {
-      this.video.current.play()
-        .catch(err => this.props.onError(err.message))
+      playMedia(this.video.current, this.props)
     } else {
       this.video.current.pause()
     }

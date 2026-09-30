@@ -36,3 +36,9 @@
   min-width: 0;
   padding: 0 var(--gap-2);
 }
+
+/* no player to drive: the strip stays in place, dead, until one connects */
+.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}

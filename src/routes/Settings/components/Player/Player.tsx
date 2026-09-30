@@ -16,8 +16,8 @@ import { PlaybackOptions } from 'shared/types'
 
 /**
  * Everything about the player lives here and nowhere else: its status, the key
- * that opens it, and — behind Manage — its display options and the room
- * transport. It is a room
+ * that opens it, the room transport whenever a player is connected, and —
+ * behind Manage — its display options. It is a room
  * fixture the host sets up once on the machine driving the audio, not a place
  * anyone navigates to — so there is no Player tab, no player entry in the
  * bottom nav, and no transport in the app header.
@@ -82,13 +82,16 @@ const Player = () => {
           />
         )}
 
-        {/* The admin extras the design leaves out, behind Manage: the room
-            transport (only with a player to drive), ReplayGain, and the
-            display options, which stay reachable with no player connected. */}
+        {/* the room transport and volume: out in the open, because a host
+            reaching for them mid-song should not have to find Manage first.
+            Dead until a player connects; the status line says when it hasn't */}
+        <PlaybackCtrl isDisabled={!isPlayerPresent} />
+
+        {/* The admin extras the design leaves out, behind Manage: ReplayGain
+            and the display options, which stay reachable with no player
+            connected. */}
         {isManaging && (
           <>
-            {isPlayerPresent && <PlaybackCtrl />}
-
             <InputCheckbox
               label='ReplayGain (clip-safe)'
               name='isReplayGainEnabled'

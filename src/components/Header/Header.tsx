@@ -70,6 +70,21 @@ interface HeaderProps {
   onBattle?: () => void
 }
 
+/** 07d's "You're up next": under a minute out, not already singing or paused,
+ *  and not yet acknowledged for this song. Not over Settings, for the reason
+ *  CoreLayout keeps every popover off it: it is where the host runs the room
+ *  from, and a full-screen heads-up there covers the transport — the one
+ *  thing an admin with a song queued needs. */
+const isUpNextAlerting = ({ wait, isUpNow, isPaused, nextQueueId, ackedQueueId, pathname }: {
+  wait?: number
+  isUpNow: boolean
+  isPaused: boolean
+  nextQueueId?: number
+  ackedQueueId?: number
+  pathname: string
+}) => wait !== undefined && wait <= UP_NEXT_ALERT_SECONDS && !isUpNow && !isPaused
+  && nextQueueId !== ackedQueueId && pathname !== '/settings'
+
 /**
  * The phone's chrome, static above the route (only the route scrolls): the
  * brand row — logo left, venue right — then the HUD block. /leaderboard (08b)
@@ -124,10 +139,9 @@ const Header = React.forwardRef<HTMLDivElement, HeaderProps>(({ onBattle }, ref)
       : state.rooms.entities[state.user.roomId]?.prefs?.battle?.isEnabled === true
   ))
 
-  const isUpNext = wait !== undefined && wait <= UP_NEXT_ALERT_SECONDS && !isUpNow && !isPaused
-    && nextQueueId !== ackedQueueId
-
   const location = useLocation()
+
+  const isUpNext = isUpNextAlerting({ wait, isUpNow, isPaused, nextQueueId, ackedQueueId, pathname: location.pathname })
   const path = location.pathname.replace(/\/$/, '')
   const isPlayer = path.endsWith('/player')
   const isScores = path.endsWith('/leaderboard')
@@ -141,7 +155,9 @@ const Header = React.forwardRef<HTMLDivElement, HeaderProps>(({ onBattle }, ref)
     <div className={styles.container} ref={ref}>
       {isChrome && (
         <div className={styles.brand}>
-          <Logo withMark />
+          {/* 46px, not the design's 30: the lockup's wordmark could not be
+              read at 30 on a real phone. The venue gives way (ellipsis) first */}
+          <Logo withMark markSize={46} />
           <span className={styles.venue} translate='no'>{roomName}</span>
         </div>
       )}

@@ -1,7 +1,7 @@
 import React from 'react'
 import clsx from 'clsx'
 import { useAppSelector } from 'store/hooks'
-import { myStanding } from 'store/selectors/points'
+import { myStanding, scoredLeaderboard } from 'store/selectors/points'
 import { ordinal } from 'lib/ordinal'
 import UserAvatar from 'components/UserAvatar/UserAvatar'
 import styles from './LeaderboardView.css'
@@ -13,7 +13,7 @@ import styles from './LeaderboardView.css'
  * the You strip stay put; only the board scrolls.
  */
 const LeaderboardView = () => {
-  const leaderboard = useAppSelector(state => state.points.leaderboard)
+  const leaderboard = useAppSelector(scoredLeaderboard)
   const userId = useAppSelector(state => state.user.userId)
   const { points, rank } = useAppSelector(myStanding)
 

@@ -11,6 +11,14 @@ export const nightPointsByUser = createSelector(
   (board): Record<number, number> => Object.fromEntries(board.map(e => [e.userId, e.points])),
 )
 
+/** The board as the leaderboards draw it (08b, 14): only people who have
+ *  scored. Joining puts everyone on the board at 0 so ranks and podiums have
+ *  someone to show, but a list of zeros is a guest list, not a leaderboard. */
+export const scoredLeaderboard = createSelector(
+  [getLeaderboard],
+  board => board.filter(e => e.points > 0),
+)
+
 /** Where this device's user stands tonight: their place in the board's order
  *  (the design's `ord(findIndex + 1)`), so a tie still gets its own row
  *  number; null when not on the board. */

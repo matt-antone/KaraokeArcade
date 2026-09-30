@@ -24,6 +24,10 @@ const RETRIES = 12
 export default async function claimDataDir (dataDir: string): Promise<() => void> {
   const lockFile = path.join(dataDir, 'server.pid')
 
+  // first run on a machine: nothing has created the data dir yet, and the lock
+  // is claimed before the database that would otherwise create it
+  fs.mkdirSync(dataDir, { recursive: true })
+
   for (let attempt = 0; ; attempt++) {
     try {
       // 'wx' fails rather than truncates when the file is already there, which

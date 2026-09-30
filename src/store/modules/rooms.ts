@@ -1,6 +1,6 @@
 import { createAction, createAsyncThunk, createReducer } from '@reduxjs/toolkit'
 import type { AppThunk, RootState } from 'store/store'
-import type { IRoomPrefs, Room, RoomStatus } from 'shared/types'
+import type { IRoomPrefs, Room, RoomSinger, RoomStatus } from 'shared/types'
 import {
   ROOMS_RECEIVE,
   ROOMS_REQUEST,
@@ -90,7 +90,7 @@ export const closeRoomEditor = createAction(ROOM_EDITOR_CLOSE)
 export const filterByStatus = createAction<boolean | string>(ROOM_FILTER_STATUS)
 const roomPrefsPush = createAction<{ roomId: number, prefs: IRoomPrefs }>(ROOM_PREFS_PUSH)
 const roomStatusPush = createAction<{ roomId: number, status: RoomStatus }>(ROOM_STATUS_PUSH)
-const roomSingersPush = createAction<{ roomId: number, count: number }>(ROOM_SINGERS_PUSH)
+const roomSingersPush = createAction<{ roomId: number, count: number, singers?: RoomSinger[] }>(ROOM_SINGERS_PUSH)
 
 export function requestPrefsPush (roomId: number, prefs: IRoomPrefs): AppThunk {
   return (dispatch) => {
@@ -156,6 +156,9 @@ export interface RoomsState {
   /** How many singers (phones, not the TV) are in this device's room right
    *  now, as the server last counted them. */
   singerCount: number
+  /** Who those singers are, for the TV's crowd (10): one figure each, in the
+   *  order they first came in. */
+  singers: RoomSinger[]
 }
 
 const initialState: RoomsState = {
@@ -170,6 +173,7 @@ const initialState: RoomsState = {
   isEditorOpen: false,
   myRoomStatus: null,
   singerCount: 0,
+  singers: [],
 }
 
 const roomsReducer = createReducer(initialState, (builder) => {
@@ -210,6 +214,8 @@ const roomsReducer = createReducer(initialState, (builder) => {
     })
     .addCase(roomSingersPush, (state, { payload }) => {
       state.singerCount = payload.count
+      // a server from before the list only sends the count
+      state.singers = payload.singers ?? []
     })
     .addCase(LOGOUT, () => ({
       ...initialState,

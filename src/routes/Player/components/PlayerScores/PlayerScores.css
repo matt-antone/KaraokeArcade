@@ -65,13 +65,80 @@
   color: var(--arc-muted);
 }
 
+/* the board, and the join column beside it when the room shows its code */
+.board {
+  display: flex;
+  gap: 5.93vh;
+  margin: 2.96vh 5.19vh 0;
+}
+
 /* three rows' worth of board; the grid slides up through it */
 .viewport {
   position: relative;
-  flex: none;
+  flex: 1;
+  min-width: 0;
   height: 72.59vh;
-  margin: 2.96vh 5.19vh 0;
   overflow: hidden;
+}
+
+/* Undesigned: 10's join code, lifted whole — the same 150px plate and 8px
+   ring, the same Silkscreen labels — so the code the room has been scanning
+   doesn't change size or look as the TV swaps between the two screens. The
+   right margin keeps the ring, drawn outside the plate, off the screen edge. */
+.join {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4.07vh;
+  margin-right: 1.48vh;
+  font-family: var(--font-display);
+}
+
+/* 10's Play key at this column's width: the QR's (27.78vh) rather than 10's
+   55.56vh, which would push the board off the screen */
+.playKey.playKey {
+  width: 100%;
+  min-width: 27.78vh;
+  padding: 3.15vh 0;
+  font-size: 3.33vh;
+  box-shadow: 0 -0.74vh 0 var(--arc-amber-hi), 0 0.74vh 0 var(--arc-gold-shadow);
+}
+
+/* the label and 10's reassurance under it, kept together against the
+   column's wide gap */
+.joinHead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.74vh;
+}
+
+.tagline {
+  font-size: 1.67vh;
+  color: var(--arc-text-2);
+}
+
+.joinLabel {
+  font-size: 2.59vh;
+  color: var(--arc-yellow);
+}
+
+/* the arcade's attract-mode blink: on, off, no fade */
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+.blink {
+  font-size: 2.59vh;
+  color: var(--arc-amber);
+  animation: blink 1.1s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blink {
+    animation: none;
+  }
 }
 
 /* --row is the row scrolled to: a pitch of one 124px row and its 10px gap */

@@ -3,8 +3,9 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { Provider } from 'react-redux'
 import { describe, it, expect } from 'vitest'
 import PlayerTrivia, { PlayerTriviaSplash } from './PlayerTrivia'
+import { podiumsOf } from './podiums'
 import { triviaResult, triviaRound } from 'lib/triviaFixtures'
-import type { LeaderboardEntry, TriviaStanding } from 'shared/types'
+import type { LeaderboardEntry, TriviaPodium, TriviaStanding } from 'shared/types'
 
 const entry = (userId: number, name: string, points: number): LeaderboardEntry => (
   { userId, name, avatarId: null, points, sings: 0, battleWins: 0, battlePlays: 0, triviaPoints: 0, triviaRounds: 0 }
@@ -38,7 +39,70 @@ const STANDINGS = [
   standing(4, 'Lone Starr', 100, 1),
 ]
 
+const podium = (userId: number, name: string, points: number, isCorrect?: boolean | null): TriviaPodium => (
+  { ...standing(userId, name, points, 0), avatarId: 'default/screamer', isCorrect }
+)
+
+describe('podiumsOf', () => {
+  /** The round's own players first, as sent; then whoever else is in tonight,
+   *  at 0, until the five podiums are full. */
+  it('stands the round\'s players first and fills from the night\'s board', () => {
+    const board = [entry(9, 'Night Leader', 2000), entry(1, 'Dot Matrix', 900), entry(8, 'Barf', 0)]
+
+    expect(podiumsOf([podium(1, 'Dot Matrix', 300), podium(2, 'Vespa', 100)], board).map(p => [p.name, p.points]))
+      .toEqual([['Dot Matrix', 300], ['Vespa', 100], ['Night Leader', 0], ['Barf', 0]])
+  })
+
+  it('stands five and no more', () => {
+    const board = Array.from({ length: 8 }, (_, i) => entry(i, `P${i}`, 800 - i * 100))
+
+    expect(podiumsOf([], board).map(p => p.name)).toEqual(['P0', 'P1', 'P2', 'P3', 'P4'])
+    expect(podiumsOf(undefined, [])).toEqual([])
+  })
+})
+
 describe('PlayerTrivia', () => {
+  /** 12b: the round so far on podiums under the question, a numeral each,
+   *  and the character facing the question. */
+  it('stands the round\'s players on podiums under the question', () => {
+    const markup = render({ round: triviaRound({ podiums: [podium(1, 'Dot Matrix', 300), podium(2, 'Barf', 100)] }) })
+
+    expect(markup).toContain('>Dot Matrix<')
+    expect(markup).toContain('>300<')
+    expect(markup).toContain('>Barf<')
+    expect(markup).toContain('default/screamer/views/front.png')
+    // nobody's answer is shown before the room's
+    expect(markup).not.toContain('>+')
+    expect(markup).toContain('Questions from opentdb.com')
+  })
+
+  /** 12c: raised again on the reveal, each with what the question paid them —
+   *  a victory for right, a knockdown for wrong, still standing for sat out. */
+  it('raises the podiums on the reveal with how each did', () => {
+    const markup = render({
+      round: triviaRound({ difficulty: 'medium' }),
+      result: triviaResult({
+        scoresFrom: Date.now() + 5000,
+        podiums: [podium(1, 'Dot Matrix', 400, true), podium(2, 'Barf', 200, false), podium(3, 'Vespa', 0, null)],
+      }),
+    })
+
+    expect(markup).toContain('>+200<')
+    expect(markup.match(/>\+0</g)).toHaveLength(2)
+    expect(markup).toContain('victory-sheet.png')
+    expect(markup).toContain('ko-sheet.png')
+    expect(markup).toContain('views/front.png')
+    expect(markup).toContain('Answer')
+  })
+
+  /** The count takes the podiums' place for its own beat. */
+  it('gives the count the stage on its own', () => {
+    const markup = render({ result: triviaResult({ podiums: [podium(1, 'Dot Matrix', 400, true)] }) })
+
+    expect(markup).toContain('got it')
+    expect(markup).not.toContain('Dot Matrix')
+  })
+
   /**
    * Between questions the room wants to know how it did, not where the night
    * stands — the standings still have four questions to settle, and this beat

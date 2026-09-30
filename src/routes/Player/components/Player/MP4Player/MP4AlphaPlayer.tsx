@@ -1,6 +1,7 @@
 import React from 'react'
 import GLChroma from 'gl-chromakey'
 import styles from './MP4Player.css'
+import playMedia from '../playMedia'
 
 const BACKDROP_PADDING = 10 // px at 1:1 scale
 const BORDER_RADIUS = parseInt(getComputedStyle(document.body).getPropertyValue('--border-radius'))
@@ -17,6 +18,8 @@ interface MP4AlphaPlayerProps {
   // media events
   onEnd(): void
   onError(error: string): void
+  /** play() was refused for want of a user gesture on this page */
+  onBlocked?(): void
   onLoad(): void
   onPlay(): void
   onStatus(status: { position: number }): void
@@ -156,8 +159,7 @@ class MP4AlphaPlayer extends React.Component<MP4AlphaPlayerProps> {
 
   updateIsPlaying = () => {
     if (this.props.isPlaying) {
-      this.video.play()
-        .catch(err => this.props.onError(err.message))
+      playMedia(this.video, this.props)
     } else {
       this.video.pause()
       this.stopChroma()

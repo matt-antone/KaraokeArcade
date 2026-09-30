@@ -32,6 +32,8 @@ interface PlayerProps {
   // media events
   onEnd(): void
   onError(error: string): void
+  /** The browser refused to start playback until this page is tapped. */
+  onBlocked?(): void
   onLoad(): void
   onPlay(): void
   onStatus(status: Partial<PlayerState>): void
@@ -204,6 +206,18 @@ class Player extends React.Component<PlayerProps> {
     // handleAudioElement may have torn things down while the module loaded
     if (this.pitchNode || !this.audioCtx) return
     this.pitchNode = new SoundTouchNode({ context: this.audioCtx })
+  }
+
+  /**
+   * Called from inside a tap on the TV. Both the audio graph and the element
+   * are gated on a user gesture, and each has to be started within it: an
+   * element playing into a suspended context is silent.
+   */
+  resumeFromGesture = (root: ParentNode = document) => {
+    this.audioCtx?.resume()
+    root.querySelectorAll('audio, video').forEach((el: HTMLMediaElement) => {
+      el.play().catch(() => {}) // the next status push reports anything real
+    })
   }
 
   handlePlay = () => {

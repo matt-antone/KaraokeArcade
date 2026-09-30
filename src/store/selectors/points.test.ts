@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { RootState } from 'store/store'
 import type { LeaderboardEntry } from 'shared/types'
-import { myStanding, nightPointsByUser } from './points'
+import { myStanding, nightPointsByUser, scoredLeaderboard } from './points'
 
 const row = (userId: number, points: number): LeaderboardEntry => ({
   userId,
@@ -20,6 +20,11 @@ const state = (userId: number | null, board: LeaderboardEntry[]) =>
 
 describe('points selectors', () => {
   const board = [row(1, 1200), row(2, 900), row(3, 900), row(4, 0)]
+
+  it('leaves people on 0 off the drawn leaderboard, in the same order', () => {
+    expect(scoredLeaderboard(state(1, board)).map(e => e.userId)).toEqual([1, 2, 3])
+    expect(scoredLeaderboard(state(1, [row(4, 0)]))).toEqual([])
+  })
 
   it('maps every userId on the board to tonight\'s points', () => {
     expect(nightPointsByUser(state(1, board))).toEqual({ 1: 1200, 2: 900, 3: 900, 4: 0 })

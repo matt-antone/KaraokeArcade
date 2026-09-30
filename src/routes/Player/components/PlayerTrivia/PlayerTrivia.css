@@ -220,6 +220,133 @@
   background: var(--arc-deep);
 }
 
+/* the credit, over the podiums rather than behind them: they stand on the
+   floor it otherwise sits in */
+.credit {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 6px;
+  text-align: center;
+}
+
+/* ---- podiums (12b, 12c) ---------------------------------------------- */
+
+/* Five columns across the stage, standing on its floor, first on the left.
+   Fewer players keep the same column width and gather in the middle rather
+   than stretching one podium across the screen. */
+.podiums {
+  position: absolute;
+  left: 40px;
+  right: 40px;
+  bottom: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - 4 * 16px) / 5);
+  justify-content: center;
+  gap: 16px;
+  align-items: end;
+}
+
+.podium {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+/* the character's space: the rank behind, the character over it */
+.podiumTop {
+  position: relative;
+  width: 100%;
+  height: 170px;
+}
+
+.podiumRank {
+  position: absolute;
+  left: -6px;
+  top: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 120px;
+  line-height: 1;
+  color: var(--arc-podium-numeral);
+  transform-origin: 30% 60%;
+}
+
+/* 12b: the front view, standing to face the question */
+.podiumFront {
+  left: calc(50% - 155px);
+  bottom: -4px;
+  z-index: 4;
+  width: 310px;
+  height: 310px;
+}
+
+/* 12c: the victory or the knockdown */
+.podiumSprite {
+  left: calc(50% - 98px);
+  bottom: -6px;
+  z-index: 4;
+}
+
+.podiumLedge {
+  width: 100%;
+  height: 10px;
+  background: var(--arc-line);
+}
+
+.podiumBase {
+  width: 86%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: var(--arc-surface-hover);
+  box-shadow: inset 0 0 0 3px var(--arc-line);
+  font-family: var(--font-display);
+}
+
+.podiumsRise .podiumBase {
+  gap: 3px;
+}
+
+.podiumGain {
+  font-size: 11px;
+  color: var(--arc-disabled);
+}
+
+.podiumGained {
+  color: var(--arc-mint);
+}
+
+.podiumScore {
+  font-size: 22px;
+  color: var(--arc-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.podiumName {
+  max-width: 100%;
+  padding: 0 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--arc-text-2);
+}
+
+/* 12c: each podium springs up from under the floor, and its numeral bursts
+   as it arrives. The delays are per podium, inline. */
+.podiumsRise .podium {
+  animation: podiumrise .7s cubic-bezier(.2, 1.25, .4, 1) both;
+}
+
+.podiumsRise .podiumRank {
+  animation: burst .9s ease-out both;
+}
+
 /* ---- winner (12d) ---------------------------------------------------- */
 
 /* The winner's stage, washed to the ground across the right where the words
@@ -401,8 +528,23 @@
   100% { transform: scale(1); color: var(--arc-yellow); text-shadow: 3px 3px 0 var(--arc-magenta); }
 }
 
+@keyframes podiumrise {
+  from { transform: translateY(460px); }
+  to { transform: translateY(0); }
+}
+
+/* the design's burst: the numeral flares yellow to pink and settles back */
+@keyframes burst {
+  0% { transform: scale(.3); opacity: 0; color: var(--arc-ring); text-shadow: 0 0 0 var(--arc-yellow); }
+  35% { transform: scale(1.3); opacity: 1; color: var(--arc-ring); text-shadow: var(--glow-burst); }
+  100% { transform: scale(1); opacity: 1; color: var(--arc-podium-numeral); text-shadow: 0 0 0 transparent; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ready { animation: none; }
+
+  .podiumsRise .podium,
+  .podiumsRise .podiumRank { animation: none; }
 
   .tonightTotal {
     animation: none;

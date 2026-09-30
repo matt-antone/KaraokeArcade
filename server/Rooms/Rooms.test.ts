@@ -185,7 +185,7 @@ describe('validating a room', () => {
  */
 describe('counting the room', () => {
   const sockets = [
-    { id: 'a', user: { userId: 1, roomId: 1 } },
+    { id: 'a', user: { userId: 1, roomId: 1, avatarId: 'halloween/deb' } },
     { id: 'b', user: { userId: 2, roomId: 1 } },
     { id: 'b2', user: { userId: 2, roomId: 1 } },
     { id: 'tv', user: { userId: 1, roomId: 1 }, _lastPlayerStatus: { isPlaying: false } },
@@ -212,6 +212,30 @@ describe('counting the room', () => {
     const io = fakeIo()
     Rooms.pushSingers(io, 1)
 
-    expect(io.emitted).toEqual([{ target: 'ROOM_ID_1', type: 'rooms/ROOM_SINGERS_PUSH', payload: { roomId: 1, count: 2 } }])
+    expect(io.emitted).toEqual([{
+      target: 'ROOM_ID_1',
+      type: 'rooms/ROOM_SINGERS_PUSH',
+      payload: {
+        roomId: 1,
+        count: 2,
+        // who, for the crowd: each person once, with their fighter or null
+        singers: [{ userId: 1, avatarId: 'halloween/deb' }, { userId: 2, avatarId: null }],
+      },
+    }])
+  })
+
+  it('lists people in the order they first came in, not socket order', () => {
+    // room 1 is shared with other tests' trackUser calls; this one is its own
+    const io = { of: () => ({ sockets: new Map([
+      ['x', { user: { userId: 7, roomId: 9 } }],
+      ['y', { user: { userId: 8, roomId: 9 } }],
+      ['z', { user: { userId: 6, roomId: 9 } }],
+    ]) }) }
+
+    Rooms.trackUser(9, 8)
+    Rooms.trackUser(9, 6)
+
+    // 7 was never tracked: after everyone who was
+    expect(Rooms.getSingers(io, 9).map(s => s.userId)).toEqual([8, 6, 7])
   })
 })

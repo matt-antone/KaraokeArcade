@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router'
 import { useAppSelector } from 'store/hooks'
 import ArtistList from '../components/ArtistList/ArtistList'
@@ -8,6 +8,7 @@ import getSearchResults from '../selectors/getSearchResults'
 import Button from 'components/Button/Button'
 import TextOverlay from 'components/TextOverlay/TextOverlay'
 import Spinner from 'components/Spinner/Spinner'
+import useIsHeaderSettled from './useIsHeaderSettled'
 import styles from './LibraryView.css'
 
 const LibraryView = () => {
@@ -21,17 +22,11 @@ const LibraryView = () => {
   const isSearching = !!filterStr.trim().length || filterStarred
   const hasNoMatches = isSearching && songsResult.length > 0
     && (tab === 'songs' ? filteredSongsResult.length === 0 : artistsResult.length === 0)
-  const [initialHeaderHeight] = useState(ui.headerHeight)
-  const [finalHeaderHeight, setFinalHeaderHeight] = useState(null)
-
   // don't render ArtistList until headerHeight is stable; otherwise
   // scroll position restoration does not work well (appears OBO)
-  // @todo - this is hacky
-  if (finalHeaderHeight === null && ui.headerHeight > initialHeaderHeight) {
-    setFinalHeaderHeight(ui.headerHeight)
-  }
+  const isHeaderSettled = useIsHeaderSettled(ui.headerHeight)
 
-  if (!finalHeaderHeight) return null
+  if (!isHeaderSettled) return null
 
   return (
     <>

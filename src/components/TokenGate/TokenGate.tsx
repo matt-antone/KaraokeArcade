@@ -141,7 +141,7 @@ const TokenGate = ({ room, onUnlock }: TokenGateProps) => {
 
       <div className={styles.prompt} aria-live='polite'>
         {isInserted
-          ? <span className={styles.accepted}>Token accepted</span>
+          ? <span className={styles.accepted}>Credit accepted</span>
           : (
               <>
                 <span className={styles.insert}>Insert token</span>

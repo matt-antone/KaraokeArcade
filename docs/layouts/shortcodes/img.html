@@ -1,23 +1,20 @@
-{{ $img := .Get 0 }}
-{{ $density := default "2x" (.Get 2) }}
-{{ range where .Site.Pages ".Section" "docs" }}
-  {{ with .Page.Resources.GetMatch $img }}
-    {{ $img = . }}
-  {{ end }}
-{{ end }}
-{{/* not in a docs bundle: fall back to the site's assets/ dir */}}
-{{ with and (eq (printf "%T" $img) "string") (resources.Get $img) }}
-  {{ $img = . }}
-{{ end }}
-<figure>
-  <a href="#{{ anchorize $img.RelPermalink }}">
-    <img srcset="{{ $img.RelPermalink }} {{ $density }}" src="{{ $img.RelPermalink }}" alt="{{ (.Get 1) }}" width="{{ $img.Width }}" height="{{ $img.Height }}" loading="lazy" />
-  </a>
-  <a href="#_" class="overlay" id="{{ anchorize $img.RelPermalink }}">
-    <img srcset="{{ $img.RelPermalink }} {{ $density }}" src="{{ $img.RelPermalink }}" alt="{{ (.Get 1) }}" width="{{ $img.Width }}" height="{{ $img.Height }}" loading="lazy" />
-  </a>
-  <figcaption>
-    <p>{{ (.Get 1) }}</p>
-  </figcaption>
-</figure>
-{{ .Inner }}
+{{- /* A screenshot: {{% img "new/queue.jpg" "The queue" /%}} draws a phone shot;
+     a third argument ("1x") marks a TV shot, drawn wide. The file lives in
+     assets/screenshots/; Hugo publishes it as WebP in two widths and never
+     the original. */ -}}
+{{- $name := .Get 0 -}}
+{{- $alt := .Get 1 -}}
+{{- $wide := .Get 2 -}}
+{{- with resources.Get (printf "screenshots/%s" (path.Base $name)) -}}
+  {{- $full := .Process "webp q82" -}}
+  {{- $half := .Resize (printf "%dx webp q82" (div .Width 2)) -}}
+  <figure{{ if $wide }} class="wide"{{ end }}>
+    <img src="{{ $half.RelPermalink }}" srcset="{{ $half.RelPermalink }} {{ $half.Width }}w, {{ $full.RelPermalink }} {{ $full.Width }}w"
+      sizes="{{ if $wide }}(max-width: 60rem) 100vw, 46rem{{ else }}(max-width: 60rem) 50vw, 16rem{{ end }}"
+      width="{{ $full.Width }}" height="{{ $full.Height }}" alt="{{ $alt }}" loading="lazy">
+    <figcaption>{{ $alt }}</figcaption>
+  </figure>
+{{- else -}}
+  {{- errorf "img shortcode: no assets/screenshots file named %q" $name -}}
+{{- end -}}
+{{- .Inner -}}

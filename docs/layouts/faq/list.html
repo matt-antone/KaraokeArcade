@@ -3,12 +3,10 @@
   {{ .Content }}
 
   {{ range .Pages.GroupByParam "category" }}
-    <h2>{{ .Key }}</h2>
+    <h2 id="{{ anchorize .Key }}">{{ .Key }}</h2>
     {{ range .Pages.ByWeight }}
-      <details id="{{ .File.TranslationBaseName }}">
-        <summary><span>{{ .Title }}</span></summary>
-        {{ .Content }}
-      </details>
+      <h3 id="{{ .File.TranslationBaseName }}">{{ .Title }}</h3>
+      {{ .Content }}
     {{ end }}
   {{ end }}
 {{ end }}

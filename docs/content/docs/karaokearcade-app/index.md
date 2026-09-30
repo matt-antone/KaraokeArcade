@@ -1,5 +1,5 @@
 ---
-title: KaraokeArcade (the app)
+title: The app
 description: Documentation for KaraokeArcade (the app)
 ---
 

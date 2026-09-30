@@ -1,0 +1,261 @@
+/* KaraokeArcade site: the docs pages and, under body.home, the home page. */
+:root {
+  --ground: #120a24; --deep: #0b0618; --surface: #1b1330; --key: #2a1f48; --line: #3a2d5c;
+  --text: #e9e2ff; --text-2: #d8ccff; --muted: #a08fd0;
+  --amber: #ff8a1e; --amber-lo: #7a4310; --on-amber: #20130a; --yellow: #ffd600; --magenta: #ff2e88; --magenta-hi: #ff7ab4;
+  --mint: #7ef9d0; --mint-well: #04241c; --mint-dim: #3f7c68;
+  --display: Silkscreen, monospace; --body: 'Chakra Petch', system-ui, sans-serif; --mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--ground); color: var(--text); font: 18px/1.6 var(--body); overflow-x: hidden; }
+html { scroll-behavior: smooth; }
+a { color: var(--amber); } a:hover { color: var(--yellow); }
+.wrap { max-width: 80rem; margin: 0 auto; padding-inline: 24px; }
+.kicker { font-family: var(--display); font-size: 13px; color: var(--muted); margin: 0 0 8px; }
+
+.top { background: var(--deep); border-bottom: 2px solid var(--line); }
+.top .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 32px; padding-block: 16px; }
+.top .logo { height: 36px; margin-right: auto; }
+.top .logo img { height: 100%; display: block; }
+.top nav { display: flex; gap: 28px; }
+.top nav a { font-family: var(--display); font-size: 13px; color: var(--text); text-decoration: none; }
+.top nav a[aria-current] { color: var(--amber); }
+.top nav a.git { color: var(--mint); }
+.hero-top nav { display: flex; gap: 28px; }
+.hero-top nav a { font-family: var(--display); font-size: 13px; color: var(--text); text-decoration: none; }
+.hero-top nav a[aria-current] { color: var(--amber); }
+.hero-top nav a.git { color: var(--mint); }
+
+.docs { display: flex; flex-wrap: wrap; gap: 48px; align-items: flex-start; padding-block: 40px 96px; }
+.side { flex: 1 1 14rem; max-width: 17rem; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 24px; }
+.side a { color: var(--text-2); text-decoration: none; padding: 6px 12px; }
+.side a[aria-current] { color: var(--on-amber); background: var(--amber); font-weight: 600; box-shadow: inset 0 -3px 0 var(--amber-lo); }
+.toc { flex: 1 1 12rem; max-width: 15rem; display: flex; flex-direction: column; gap: 6px; border-left: 2px solid var(--line); padding-left: 20px; position: sticky; top: 24px; }
+.toc a { color: var(--text-2); text-decoration: none; font-size: 15px; }
+
+.docs main { flex: 999 1 30rem; min-width: 0; max-width: 46rem; }
+.skip-link { position: absolute; left: -9999px; }
+.skip-link:focus { left: 16px; top: 16px; z-index: 9; background: var(--amber); color: var(--on-amber); padding: 8px 12px; }
+article h1 { font-family: var(--display); font-weight: 700; font-size: 40px; line-height: 1.1; margin: 0 0 24px; text-shadow: 4px 4px 0 var(--deep); }
+article h2 { font-family: var(--display); font-weight: 400; font-size: 24px; line-height: 1.2; color: var(--amber); margin: 48px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--line); }
+article h3 { font-family: var(--display); font-weight: 400; font-size: 17px; color: var(--yellow); margin: 32px 0 12px; }
+article h4 { font-family: var(--display); font-weight: 400; font-size: 14px; color: var(--text-2); margin: 24px 0 8px; }
+article p, article ul, article ol { margin: 0 0 16px; }
+article li { margin-bottom: 6px; }
+article code { font-family: var(--mono); font-size: .85em; background: var(--deep); padding: 2px 6px; }
+article pre { background: var(--deep); border: 2px solid var(--line); padding: 16px 20px; overflow-x: auto; margin: 0 0 20px; }
+article pre code { background: none; padding: 0; font-size: 15px; color: var(--text-2); }
+article table { border-collapse: collapse; width: 100%; margin: 0 0 20px; font-size: 16px; }
+article th, article td { text-align: left; padding: 10px 12px; border-top: 2px solid var(--line); vertical-align: top; }
+article th { font-family: var(--display); font-weight: 400; font-size: 12px; color: var(--muted); border-top: 0; }
+article .icon { width: 1em; height: 1em; fill: currentColor; vertical-align: -.15em; }
+article .icon.external { width: .8em; height: .8em; margin-left: 2px; color: var(--muted); }
+article aside { display: flex; gap: 14px; padding: 16px 20px; margin: 0 0 20px; background: var(--mint-well); border: 2px solid var(--mint-dim); }
+article aside .icon { flex: none; width: 24px; height: 24px; color: var(--mint); margin-top: 4px; }
+article aside p { margin: 0; }
+article aside.warn { background: var(--deep); border-color: var(--magenta); }
+article aside.warn .icon { color: var(--magenta); }
+article .row { display: flex; flex-wrap: wrap; gap: 16px; margin: 0 0 20px; }
+article figure { margin: 0; flex: 1 1 12rem; max-width: 16rem; }
+article figure.wide { flex: 1 1 20rem; max-width: 100%; }
+article figure img { width: 100%; height: auto; display: block; border: 3px solid var(--line); }
+article figcaption { font-family: var(--display); font-size: 11px; color: var(--muted); margin-top: 6px; }
+article .button-descriptions svg { width: 24px; height: 24px; fill: var(--amber); }
+article .button-descriptions svg.danger { fill: var(--magenta); }
+
+footer { border-top: 2px solid var(--line); background: var(--deep); }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding-block: 24px; font-size: 14px; color: var(--muted); }
+
+@media (max-width: 60rem) {
+  .side, .toc { position: static; max-width: none; flex-basis: 100%; }
+  .toc { display: none; }
+  .side { flex-direction: row; flex-wrap: wrap; gap: 8px; }
+  .side .kicker { flex-basis: 100%; }
+  .top nav { gap: 16px; }
+}
+
+/* ---- home page ---- */
+
+/* Colours are the app's palette (src/styles/variables.css). Singers are drawn
+   from the app's own sprite sheets: one element shows one 560px cell of the
+   sheet and steps across its eight columns and down its rows at the set's fps
+   from manifest.json. */
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; line-height: 1; }
+.wrap { max-width: 76rem; margin: 0 auto; padding-inline: 24px; }
+.kicker { font-family: var(--display); font-size: 13px; color: var(--mint); letter-spacing: .1em; }
+.sub { font-family: var(--display); font-size: 13px; color: var(--text); }
+
+.key { display: inline-block; font-family: var(--display); font-size: 20px; text-decoration: none; padding: 18px 36px;
+  color: var(--on-amber); background: var(--amber);
+  box-shadow: inset 0 3px 0 var(--amber-hi), inset 0 -5px 0 var(--amber-lo), 6px 6px 0 var(--deep); transition: transform .08s; }
+.key:hover { color: var(--on-amber); }
+.key:active { transform: translateY(3px); }
+.key.plain { color: var(--text); background: var(--key); box-shadow: inset 0 3px 0 var(--line), inset 0 -5px 0 var(--deep), 6px 6px 0 var(--deep); }
+.key.plain:hover { color: var(--text); }
+
+.scan { position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(11,6,24,.35) 0, rgba(11,6,24,.35) 1px, transparent 1px, transparent 3px); }
+
+/* --h: the drawn cell. --fx: one row's period (8 / fps). --fy: the sheet's (frames / fps). */
+.singer { width: var(--h); height: var(--h); background-repeat: no-repeat; background-size: calc(var(--h) * 8) auto; background-position: 0 0; }
+.rows2 { animation: sx var(--fx) steps(8, jump-none) infinite, sy2 var(--fy) steps(2, jump-none) infinite; }
+.once  { animation: sx 1s steps(8, jump-none) 2 forwards, sy2 2s steps(2, jump-none) 1 forwards; }
+@keyframes sx  { to { background-position-x: calc(var(--h) * -7); } }
+@keyframes sy2 { to { background-position-y: calc(var(--h) * -1); } }
+.flip { transform: scaleX(-1); }
+
+.hero-top { position: absolute; inset: 0 0 auto 0; z-index: 2; }
+.hero-top .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 32px; padding-block: 20px; }
+.hero-top .logo { height: 40px; margin-right: auto; }
+.hero-top .logo img { height: 100%; display: block; }
+.hero-top nav { display: flex; gap: 28px; }
+.hero-top nav a { font-family: var(--display); font-size: 13px; color: var(--text); text-decoration: none; }
+.hero-top nav a.git { color: var(--mint); }
+
+/* attract mode: the dive bar, two singers on it, the title between them */
+.hero { position: relative; overflow: hidden; min-height: 100vh; display: flex; align-items: flex-end;
+  background: var(--deep) url('/assets/stage-dive-bar.webp') center 30% / cover no-repeat; }
+.hero::before { content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(11,6,24,.7) 0%, rgba(11,6,24,.15) 40%, rgba(11,6,24,.2) 70%, var(--ground) 100%); }
+/* The singers set the size: each cell is the hero's own height, standing on
+   its foot at the two sides. A figure is the middle quarter of its cell, so
+   the cell centres sit at 14% and 86% of the width. The copy takes the middle. */
+.hero .wrap { position: relative; width: 100%; display: flex; justify-content: center; align-items: flex-start; padding-top: 120px; min-height: 100vh; }
+.hero .left, .hero .right { position: absolute; bottom: 0; }
+.hero .left { left: 14%; transform: translateX(-50%) scaleX(-1); }
+.hero .right { left: 86%; transform: translateX(-50%); }
+.hero .singer { --h: 96vh; margin-bottom: -10px; }
+.hero .copy { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; padding-bottom: 0; max-width: 38rem; }
+.hero h1 { font-size: clamp(56px, 8.5vw, 112px); line-height: .95; color: var(--yellow);
+  text-shadow: 6px 6px 0 var(--magenta-lo), 12px 12px 0 var(--deep); animation: slam .6s cubic-bezier(.2, 1.6, .4, 1) both; }
+@keyframes slam { from { transform: scale(3); opacity: 0; } }
+.hero .sub { font-size: clamp(14px, 1.6vw, 20px); text-shadow: 3px 3px 0 var(--deep); }
+.hero .sub2 { font-family: var(--display); font-size: 13px; color: var(--text-2); text-shadow: 2px 2px 0 var(--deep); }
+.hero .key { margin-top: 16px; font-size: 22px; padding: 20px 40px; }
+.hero .fine { font-family: var(--display); font-size: 12px; color: var(--muted); }
+.blink { animation: blink 1.2s steps(2, jump-none) infinite; }
+@keyframes blink { to { opacity: 0; } }
+
+.ticker { background: var(--magenta); color: #fff; font-family: var(--display); font-size: 18px; padding: 12px 0; overflow: hidden;
+  box-shadow: inset 0 3px 0 var(--magenta-hi), inset 0 -3px 0 var(--magenta-lo); }
+.ticker div { display: flex; gap: 48px; white-space: nowrap; width: max-content; animation: marquee 28s linear infinite; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+
+section.band { padding-block: 64px; text-align: center; }
+section.band h2 { font-size: clamp(36px, 5vw, 64px); text-shadow: 4px 4px 0 var(--magenta-lo), 8px 8px 0 var(--deep); margin: 8px 0 16px; }
+section.band .lead { max-width: 34rem; margin: 0 auto 48px; color: var(--text-2); font-size: 20px; }
+#roster { padding-top: 112px; }
+
+/* The join screen. The app sizes it in vh of a 540-tall design; here the
+   screen is a 16:9 box and cqh is its own height, so the numbers carry over. */
+.tv { position: relative; overflow: hidden; isolation: isolate; aspect-ratio: 16 / 9; container-type: size; background: var(--ground); text-align: left; }
+.tv-stage { position: absolute; inset: 0; background: url('/assets/singers/screamer/location.webp') center / cover, url('/assets/stage-dive-bar.webp') center / cover; opacity: .5; }
+.tv-panel { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(18,10,36,.95) 0 46%, rgba(18,10,36,.25)); }
+.crowd { position: absolute; top: 0; bottom: 0; left: 22%; right: 0; pointer-events: none; }
+.member { position: absolute;
+  left: calc(var(--x) * 1% - 20.37cqh * (1 - var(--row) * 0.06));
+  bottom: calc((var(--row) * 22 + 8) / 5.4 * 1%);
+  height: calc((1 - var(--row) * 0.06) * 85.19%);
+  aspect-ratio: 1; z-index: calc(10 - var(--row));
+  filter: brightness(calc(1 - var(--row) * 0.06)); }
+.join { position: absolute; left: 8.89cqh; top: 8.15cqh; display: flex; flex-direction: column; gap: 4.07cqh; }
+.tv-logo { display: block; width: 55.56cqh; }
+.headline-group { display: flex; flex-direction: column; gap: 1.48cqh; }
+.headline { font-family: var(--display); font-weight: 700; font-size: 7.41cqh; line-height: 1.1; color: var(--yellow); text-shadow: .74cqh .74cqh 0 var(--magenta); }
+.tagline { font-family: var(--display); font-size: 2.22cqh; color: var(--text-2); }
+.code { display: flex; flex-direction: column; gap: 1.48cqh; font-family: var(--display); }
+.tv-blink { font-size: 2.59cqh; color: var(--amber); animation: tvblink 1.1s steps(1) infinite; }
+@keyframes tvblink { 50% { opacity: 0; } }
+.join-count { font-size: 2.59cqh; color: var(--yellow); }
+.tv-scan { position: absolute; inset: 0; z-index: 9; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0,0,0,.3) 0 .1852cqh, transparent .1852cqh .5556cqh); }
+.more { margin-top: 24px; font-family: var(--display); font-size: 13px; color: var(--magenta-hi); }
+.more + p { margin-top: 8px; font-size: 15px; color: var(--muted); }
+
+.panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 20px; text-align: left; }
+.panel { position: relative; overflow: hidden; min-height: 520px; display: flex; flex-direction: column; justify-content: flex-end;
+  background: var(--deep); border: 4px solid var(--line); box-shadow: 8px 8px 0 var(--deep); }
+.panel .tag { position: absolute; top: 16px; left: 16px; z-index: 1; font-family: var(--display); font-size: 12px; padding: 4px 8px; color: var(--on-amber); background: var(--amber); }
+.panel .text { position: relative; padding: 24px; background: linear-gradient(180deg, transparent, var(--deep) 30%); display: flex; flex-direction: column; gap: 8px; }
+.panel h3 { font-size: 32px; color: var(--amber); text-shadow: 3px 3px 0 var(--amber-lo); }
+.panel .text p:last-child { color: var(--text-2); font-size: 16px; }
+.panel .singer { position: absolute; left: 50%; bottom: 140px; transform: translateX(-50%); --h: 340px; }
+.panel.karaoke { background: var(--deep) url('/assets/stage-dive-bar.webp') center / cover; }
+.panel.karaoke::before { content: ''; position: absolute; inset: 0; background: rgba(11,6,24,.35); }
+.panel.trivia .tag { color: #1a0b33; background: var(--violet); }
+.panel.trivia h3 { color: var(--violet); text-shadow: 3px 3px 0 #1a0b33; }
+.panel.trivia .keys { position: absolute; top: 60px; left: 24px; right: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.panel.trivia .keys span { font-family: var(--display); font-size: 12px; padding: 10px; color: #fff; }
+.panel.trivia .floor { position: absolute; left: 0; right: 0; bottom: 150px; height: 28px; background: var(--key); border-top: 4px solid var(--line); }
+.panel.trivia .singer { bottom: 150px; --h: 300px; }
+.panel.battle { border-color: var(--gold); box-shadow: 8px 8px 0 var(--amber-lo); background: linear-gradient(100deg, #1a0f2e 50%, #0f1f2a 50%); }
+.panel.battle .tag { background: var(--gold); }
+.panel.battle h3 { color: var(--gold); }
+.panel.battle .singer { --h: 300px; bottom: 150px; }
+.panel.battle .p1 { left: 24%; transform: translateX(-50%) scaleX(-1); }
+.panel.battle .p2 { left: 76%; }
+.panel.battle .vs { position: absolute; left: 50%; top: 150px; transform: translate(-50%, -50%); font-family: var(--display); font-weight: 700; font-size: 72px; color: var(--gold);
+  text-shadow: 5px 5px 0 var(--amber-lo), 10px 10px 0 var(--deep); animation: bob 2.4s ease-in-out infinite; }
+@keyframes bob { 50% { transform: translate(-50%, -50%) translateY(-8px); } }
+.panel.soon { border-style: dashed; box-shadow: none; }
+.panel.soon .tag { color: var(--text); background: var(--line); }
+.panel.soon h3 { font-size: 26px; color: var(--muted); text-shadow: 3px 3px 0 var(--deep); }
+.panel.soon .q { position: absolute; left: 50%; top: 150px; transform: translate(-50%, -50%); font-family: var(--display); font-weight: 700; font-size: 120px; color: var(--dead); text-shadow: 5px 5px 0 var(--deep); }
+
+.board { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 48px; align-items: center; text-align: left; padding-block: 64px; }
+.board h2 { color: var(--yellow); text-shadow: 4px 4px 0 var(--yellow-lo), 8px 8px 0 var(--deep); }
+.board .lead { margin: 0; }
+.scores { background: var(--deep); border: 4px solid var(--line); box-shadow: 8px 8px 0 #000; padding: 24px; font-family: var(--display); }
+.scores header { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); padding-bottom: 12px; border-bottom: 2px solid var(--line); }
+.scores ol { list-style: none; margin: 0; padding: 0; }
+.scores li { display: grid; grid-template-columns: 3rem 1fr auto; gap: 12px; padding: 12px 0; border-bottom: 2px solid var(--surface); }
+.scores li:first-child { color: var(--yellow); }
+.scores li:nth-child(4) { color: var(--muted); }
+.scores li:last-child { color: var(--amber); border: 0; }
+
+.plays { background: var(--deep); border-block: 4px solid var(--line); }
+.plays .wrap { display: flex; flex-wrap: wrap; justify-content: center; gap: 24px 56px; padding-block: 40px; font-family: var(--display); font-size: 13px; color: var(--text-2); }
+.plays span { display: flex; align-items: center; gap: 12px; }
+.plays svg { stroke: var(--mint); }
+
+.closer { padding: 120px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+.closer h2 { font-size: clamp(40px, 6vw, 80px); color: var(--yellow); text-shadow: 5px 5px 0 var(--yellow-lo), 10px 10px 0 var(--deep); }
+.closer .sub { color: var(--text-2); font-size: 14px; }
+.closer .keys { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-top: 12px; }
+
+footer { border-top: 2px solid var(--line); background: var(--deep); }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding-block: 24px; font-size: 14px; color: var(--muted); }
+
+@media (max-width: 60rem) {
+  /* phone: the copy up top, the two singers big along the foot, bleeding off
+     the sides the way a cabinet's attract screen does */
+  .hero { min-height: 100svh; }
+  .hero .wrap { display: block; padding-top: 110px; padding-bottom: 108vw; }
+  .hero .copy { padding-bottom: 0; max-width: none; margin: 0 auto; gap: 10px; }
+  .hero .kicker, .hero .sub2, .hero .fine { display: none; }
+  .hero h1 { font-size: 44px; }
+  .hero .key { margin-top: 6px; font-size: 18px; padding: 16px 32px; }
+  .hero .left, .hero .right { position: absolute; bottom: 0; }
+  /* a figure is the middle quarter of its cell: centres at 27vw and 73vw
+     keep both whole on a phone */
+  .hero .left { left: -30vw; transform: scaleX(-1); } .hero .right { left: 16vw; transform: none; }
+  .hero .singer { --h: 114vw; }
+  .hero .sub { font-size: 12px; }
+  /* phone: the join screen stands tall, the copy on top and the whole crowd
+     across the foot, so the figures stay big */
+  .tv { aspect-ratio: 3 / 4; }
+  .tv-panel { background: linear-gradient(180deg, rgba(18,10,36,.95) 0 34%, rgba(18,10,36,.25)); }
+  .join { left: 6cqw; top: 5cqw; gap: 3cqw; }
+  .tv-logo { width: 60cqw; }
+  .headline { font-size: 9cqw; }
+  .tagline, .tv-blink, .join-count { font-size: 3.4cqw; }
+  .crowd { left: 0; }
+  .member { height: calc((1 - var(--row) * 0.06) * 70%); left: calc(var(--x) * 1% - 14.3cqh * (1 - var(--row) * 0.06)); }
+  .member:nth-child(1) { --x: 0; }  .member:nth-child(2) { --x: 20; } .member:nth-child(3) { --x: 40; } .member:nth-child(4) { --x: 62; }
+  .member:nth-child(5) { --x: 10; } .member:nth-child(6) { --x: 30; } .member:nth-child(7) { --x: 50; } .member:nth-child(8) { --x: 68; }
+  .top nav { gap: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .singer, .blink, .hero h1, .ticker div, .panel.battle .vs { animation: none; }
+  
+}

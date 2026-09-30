@@ -28,6 +28,19 @@
       "env": {
         "NODE_ENV": "development"
       }
+    },
+    {
+      "name": "hugo",
+      "runtimeExecutable": "hugo",
+      "runtimeArgs": [
+        "serve",
+        "--source",
+        "docs",
+        "-p",
+        "1313",
+        "--disableFastRender"
+      ],
+      "port": 1313
     }
   ]
 }

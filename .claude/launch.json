@@ -2,44 +2,33 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "dev",
-      "runtimeExecutable": "sh",
+      "name": "app",
+      "runtimeExecutable": "npx",
       "runtimeArgs": [
-        "-c",
-        "NODE_ENV=development npx tsx watch server/main.ts -p $PORT"
+        "tsx",
+        "server/main.ts",
+        "-p",
+        "3000",
+        "--data",
+        "/private/tmp/claude-501/-Users-antone-KaraokeArcade--claude-worktrees-hugo-docs-redesign-185a7f/744b03d9-9ddb-4d62-9ebb-26cfffecf316/scratchpad/kes-data"
       ],
-      "port": 3738,
-      "autoPort": true
+      "port": 3000,
+      "env": {
+        "NODE_ENV": "development"
+      }
     },
     {
-      "name": "serve",
-      "runtimeExecutable": "sh",
+      "name": "hugo",
+      "runtimeExecutable": "hugo",
       "runtimeArgs": [
-        "-c",
-        "KES_PORT=$PORT npm run serve"
+        "serve",
+        "--source",
+        "docs",
+        "-p",
+        "1313",
+        "--disableFastRender"
       ],
-      "port": 3737,
-      "autoPort": true
-    },
-    {
-      "name": "docs",
-      "runtimeExecutable": "sh",
-      "runtimeArgs": [
-        "-c",
-        "npm run docs:tokens && hugo server --source docs -p $PORT"
-      ],
-      "port": 1313,
-      "autoPort": true
-    },
-    {
-      "name": "dev-test",
-      "runtimeExecutable": "sh",
-      "runtimeArgs": [
-        "-c",
-        "NODE_ENV=development KES_DEV_LOGIN=1 KES_PATH_DATA=.test-data npx tsx watch server/main.ts -p $PORT"
-      ],
-      "port": 3739,
-      "autoPort": true
+      "port": 1313
     }
   ]
 }

@@ -4,13 +4,31 @@
 
 <body{{ if .IsHome }} class="home"{{ end }}>
   <a class="skip-link" href="#content">Skip to content</a>
-  {{ if .IsHome }}{{ partial "topbar.html" . }}{{ else }}{{ partial "sidebar.html" . }}{{ end }}
-  <main id="content" class="content container">
-    {{ block "main" . }}
-    {{ end }}
-  </main>
+  {{ if .IsHome }}
+    {{ block "main" . }}{{ end }}
+  {{ else }}
+    {{ partial "topbar.html" . }}
+    <div class="wrap docs">
+      {{ partial "sidebar.html" . }}
+      <main id="content">
+        <article>
+          {{ block "main" . }}{{ end }}
+        </article>
+      </main>
+      {{ $heads := findRE `<h2 id="[^"]+">[^<]*</h2>` .Content }}
+      {{ if $heads }}
+      <nav class="toc" aria-label="On this page">
+        <p class="kicker">ON THIS PAGE</p>
+        {{ range $heads }}
+          {{ $id := replaceRE `<h2 id="([^"]+)">.*` "$1" . }}
+          {{ $text := replaceRE `<h2 id="[^"]+">([^<]*)</h2>` "$1" . }}
+          <a href="#{{ $id }}">{{ $text }}</a>
+        {{ end }}
+      </nav>
+      {{ end }}
+    </div>
+  {{ end }}
   {{ partial "footer.html" . }}
-  <script src='{{ (resources.Get "js/gumshoe.min.js").Permalink }}'></script>
   <script src='{{ (resources.Get "js/main.js").Permalink }}'></script>
   <script src='{{ (resources.Get "js/copy-code.js").Permalink }}'></script>
 </body>

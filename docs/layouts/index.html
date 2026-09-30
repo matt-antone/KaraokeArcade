@@ -1,105 +1,170 @@
 {{ define "main" }}
-{{ $p := .Params }}
-{{/* the app page's screenshots, in gallery order */}}
-{{ $shots := slice }}
-{{ with .Site.GetPage "docs/karaokearcade-app" }}
-  {{ range sort (where ((.Resources.ByType "image").Match "app-*") "Params.galleryOrder" "!=" nil) "Params.galleryOrder" "asc" }}
-    {{ $shots = $shots | append . }}
-  {{ end }}
-{{ end }}
-{{ $player := "" }}
-{{ $phones := slice }}
-{{ range $shots }}
-  {{ if eq .Name "app-player.jpg" }}{{ $player = . }}{{ else }}{{ $phones = $phones | append . }}{{ end }}
-{{ end }}
+<header class="hero-top">
+<div class="wrap">
+<a class="logo" href="{{ .Site.BaseURL }}"><img src="/assets/logo.svg" alt="KaraokeArcade"></a>
+<nav>
+<a href="#roster">SINGERS</a>
+<a href="#night">THE NIGHT</a>
+<a href="{{ .Site.BaseURL }}docs/getting-started/">DOCS</a>
+<a class="git" href="https://github.com/matt-antone/KaraokeArcade">GITHUB</a>
+</nav>
+</div>
+</header>
 
-{{/* The screenshots ship at panel size (800x1400, 1728x1080) and are drawn
-     here at anything from 108 to 493 CSS px depending on the slot and the
-     viewport. Each one goes through partials/imgset.html, which cuts a set of
-     WebP widths and lets the browser pick; `sizes` below restates what the
-     stylesheet does, measured rather than guessed. The phones in the hero and
-     the two in each `duo` share a `sizes` because they are drawn within a few
-     pixels of each other.
-
-     The three steps in each `sizes` are the three things the stylesheet does:
-     under 52rem every stage is pinned by a `max-width`, so the drawn width is
-     a fixed number of pixels rather than a fraction of the viewport — only a
-     phone narrower than that cap falls back to vw. Over 52rem the slot is a
-     share of the viewport until `--page` (72rem) caps the whole page. */}}
-{{ $sizePlayer := "(max-width: 24rem) 85vw, (max-width: 52rem) 325px, (max-width: 72rem) 42vw, 480px" }}
-{{ $sizeHeroPhone := "(max-width: 24rem) 33vw, (max-width: 52rem) 125px, (max-width: 72rem) 16vw, 185px" }}
-{{ $sizeFan := "(max-width: 24rem) 42vw, (max-width: 52rem) 160px, (max-width: 72rem) 24vw, 280px" }}
-{{ $sizeDuoTv := "(max-width: 24rem) 75vw, (max-width: 52rem) 285px, (max-width: 72rem) 43vw, 495px" }}
-{{ $sizeDuoPhone := "(max-width: 24rem) 29vw, (max-width: 52rem) 110px, (max-width: 72rem) 17vw, 190px" }}
-<section class="hero">
-  <div class="hero-grid" aria-hidden="true"></div>
-  <div class="hero-copy">
-    <p class="eyebrow">{{ $p.hero.eyebrow }}</p>
-    <h1>{{ $p.hero.title }}</h1>
-    <p class="lead">{{ $p.hero.lead }}</p>
-    <div class="cta">
-      <a class="key key-vu" href="{{ .Site.BaseURL }}docs/getting-started/">Get started</a>
-      <a class="key" href="{{ .Site.BaseURL }}overview/">Overview</a>
-    </div>
-  </div>
-  <div class="hero-stage" aria-hidden="true">
-    {{ with $player }}{{ partial "imgset.html" (dict "res" . "class" "layer tv" "style" "--depth: 60" "alt" "" "sizes" $sizePlayer "max" 960 "fetchpriority" "high") }}{{ end }}
-    {{ with index $phones 1 }}{{ partial "imgset.html" (dict "res" . "class" "layer phone phone-a" "style" "--depth: 160" "alt" "" "sizes" $sizeHeroPhone "max" 380) }}{{ end }}
-    {{ with index $phones 0 }}{{ partial "imgset.html" (dict "res" . "class" "layer phone phone-b" "style" "--depth: 260" "alt" "" "sizes" $sizeHeroPhone "max" 380) }}{{ end }}
-  </div>
+<section class="hero" aria-label="Attract mode">
+<div class="scan"></div>
+<div class="wrap">
+<div class="left"><div class="singer rows2" aria-hidden="true" style="--fx: 1s; --fy: 2s; background-image: url('/assets/singers/belter/sing-sheet.webp')"></div></div>
+<div class="copy">
+<p class="kicker">NOW PLAYING IN LIVING ROOMS EVERYWHERE</p>
+<h1>SING.<br>PLAY.<br>BATTLE.</h1>
+<p class="sub">ONE NIGHT. ONE QUEUE. EVERYBODY PLAYS.</p>
+<p class="sub2">YOUR TV IS THE STAGE. YOUR PHONE IS THE REMOTE.</p>
+<a class="key" href="{{ .Site.BaseURL }}docs/getting-started/"><span class="blink">▶</span> PRESS START</a>
+<p class="fine">FREE · OPEN SOURCE · NOTHING TO INSTALL</p>
+</div>
+<div class="right"><div class="singer rows2" aria-hidden="true" style="--fx: 1s; --fy: 2s; background-image: url('/assets/singers/screamer/sing-sheet.webp')"></div></div>
+</div>
 </section>
 
-<section class="band intro reveal">
-  <p class="eyebrow">{{ $p.modesIntro.kicker }}</p>
-  <p class="statement">{{ $p.modesIntro.lead }}</p>
+<div class="ticker" aria-hidden="true">
+<div><span>INSERT TOKEN</span><span>★</span><span>CHOOSE YOUR SINGER</span><span>★</span><span>SING</span><span>★</span><span>PLAY</span><span>★</span><span>BATTLE</span><span>★</span><span>NOBODY SITS OUT</span><span>★</span><span>INSERT TOKEN</span><span>★</span><span>CHOOSE YOUR SINGER</span><span>★</span><span>SING</span><span>★</span><span>PLAY</span><span>★</span><span>BATTLE</span><span>★</span><span>NOBODY SITS OUT</span><span>★</span></div>
+</div>
+
+<section class="band" id="roster" aria-labelledby="roster-h">
+<div class="wrap">
+<p class="kicker">16 SINGERS · 2 SETS</p>
+<h2 id="roster-h">CHOOSE YOUR SINGER</h2>
+<p class="lead">Who you pick is who the room sees. On the queue. On the TV. On the podium. In the battle.</p>
+</div>
+<!-- The TV's join screen (PlayerJoin.css): the room, one figure per singer
+     in, seated by crowd.ts. Sized off the screen's own height, as the app is. -->
+<div class="tv">
+<div class="tv-stage"></div>
+<div class="tv-panel"></div>
+<div class="crowd" aria-hidden="true">
+<img class="member" src="/assets/singers/belter/front.webp" alt="" style="--row: 0; --x: 0">
+<img class="member" src="/assets/singers/crooner/front.webp" alt="" style="--row: 1; --x: 9">
+<img class="member" src="/assets/singers/diva/front.webp" alt="" style="--row: 0; --x: 38">
+<img class="member" src="/assets/singers/heavyweight/front.webp" alt="" style="--row: 1; --x: 64">
+<img class="member" src="/assets/singers/hype-man/front.webp" alt="" style="--row: 1; --x: 28">
+<img class="member" src="/assets/singers/idol/front.webp" alt="" style="--row: 0; --x: 19">
+<img class="member" src="/assets/singers/outlaw/front.webp" alt="" style="--row: 1; --x: 47">
+<img class="member" src="/assets/singers/screamer/front.webp" alt="" style="--row: 0; --x: 57">
+</div>
+<div class="join">
+<img class="tv-logo" src="/assets/logo.svg" alt="KaraokeArcade">
+<div class="headline-group">
+<span class="headline">Scan to play</span>
+<span class="tagline">No singing necessary</span>
+</div>
+<div class="code">
+<span class="tv-blink">Insert token</span>
+<span class="join-count">8 singers in</span>
+</div>
+</div>
+<div class="tv-scan"></div>
+</div>
+<div class="wrap">
+<p class="more">BELTER · CROONER · DIVA · HEAVYWEIGHT · HYPE MAN · IDOL · OUTLAW · SCREAMER</p>
+<p class="more" style="color: var(--muted)">+ THE HALLOWEEN SET · BABS · BRAINZ · CHOPS · DEB · FRANK · HEX · MORT · SPOT</p>
+<p>Or make your own with <a href="https://github.com/matt-antone/CharacterAssetGenerator">CharacterAssetGenerator</a>.</p>
+</div>
 </section>
 
-{{ range $i, $m := $p.modes }}
-<section class="feature{{ if not (modBool $i 2) }} flip{{ end }}" id="{{ anchorize $m.name }}">
-  <div class="feature-copy reveal">
-    <p class="eyebrow">{{ $m.kicker }}</p>
-    <h2>{{ $m.name }}</h2>
-    <p class="lead">{{ $m.lead }}</p>
-    <ul class="ticks">
-      {{ range $m.bullets }}<li>{{ . }}</li>{{ end }}
-    </ul>
-  </div>
-  <figure class="feature-media">
-    {{ if $m.gallery }}
-      <div class="fan">
-        {{ range $j, $s := first 3 $phones }}
-          {{ partial "imgset.html" (dict "res" $s "class" "layer" "style" (printf "--depth: %d" (add 40 (mul $j 70))) "alt" $s.Title "sizes" $sizeFan "max" 560 "loading" "lazy") }}
-        {{ end }}
-      </div>
-    {{ else }}
-      <div class="duo">
-        {{ with resources.Get $m.tv }}{{ partial "imgset.html" (dict "res" . "class" "layer tv" "style" "--depth: 40" "alt" (printf "%s on the TV" $m.name) "sizes" $sizeDuoTv "max" 1000 "loading" "lazy") }}{{ end }}
-        {{ with resources.Get $m.phone }}{{ partial "imgset.html" (dict "res" . "class" "layer phone" "style" "--depth: 140" "alt" (printf "%s on a phone" $m.name) "sizes" $sizeDuoPhone "max" 380 "loading" "lazy") }}{{ end }}
-      </div>
-    {{ end }}
-  </figure>
-</section>
-{{ end }}
+<section class="band" id="night" aria-labelledby="night-h">
+<div class="wrap">
+<p class="kicker">SINGERS AND AUDIENCE ALIKE</p>
+<h2 id="night-h">NOBODY SITS OUT</h2>
+<p class="lead">It is one night, not a menu. The games run on the music you are already singing. The mic goes round. The whole room stays in play.</p>
+<div class="panels">
 
-<section class="band">
-  <div class="cards chips">
-    {{ range $p.highlights }}<div class="card reveal">{{ . }}</div>{{ end }}
-  </div>
+<article class="panel karaoke">
+<span class="tag">YOU SING</span>
+<div class="singer rows2" aria-hidden="true" style="--fx: 1s; --fy: 2s; background-image: url('/assets/singers/heavyweight/sing-sheet.webp')"></div>
+<div class="text">
+<h3>KARAOKE</h3>
+<p class="sub">TAKE THE MIC. OWN THE ROOM.</p>
+<p>Queue from the couch. Sing it in your key. The TV calls you to the stage.</p>
+</div>
+<div class="scan"></div>
+</article>
+
+<article class="panel trivia">
+<span class="tag">THE ROOM PLAYS</span>
+<div class="keys" aria-hidden="true"><span style="background:#c01723">A</span><span style="background:#3f7c68">B ✓</span><span style="background:#8a7300">C</span><span style="background:#4b3a7a">D</span></div>
+<div class="floor"></div>
+<div class="singer once" aria-hidden="true" style="background-image: url('/assets/singers/diva/ko-sheet.webp')"></div>
+<div class="text">
+<h3>MUSIC TRIVIA</h3>
+<p class="sub">FIVE QUESTIONS. FOUR KEYS. NO MIC NEEDED.</p>
+<p>Between singers, every phone is an answer pad. Wrong answer? You hit the floor.</p>
+</div>
+<div class="scan"></div>
+</article>
+
+<article class="panel battle">
+<span class="tag">THE ROOM DECIDES</span>
+<div class="singer rows2 p1" aria-hidden="true" style="--fx: 1s; --fy: 2s; background-image: url('/assets/singers/diva/sing-sheet.webp')"></div>
+<div class="singer rows2 p2" aria-hidden="true" style="--fx: 1s; --fy: 2s; background-image: url('/assets/singers/belter/sing-sheet.webp')"></div>
+<span class="vs" aria-hidden="true">VS</span>
+<div class="text">
+<h3>SINGER BATTLE</h3>
+<p class="sub">YOU PICK THEIR SONG. THEY PICK YOURS.</p>
+<p>Two sing. Everybody else votes. K.O.</p>
+</div>
+<div class="scan"></div>
+</article>
+
+<article class="panel soon">
+<span class="tag">COMING SOON</span>
+<span class="q blink" aria-hidden="true">?</span>
+<div class="text">
+<h3>KARAOKE BINGO</h3>
+<h3>NAME THAT KARAOKE</h3>
+<p class="sub">MORE GAMES. SAME NIGHT.</p>
+<p>Every new game plays off the songs on stage.</p>
+</div>
+<div class="scan"></div>
+</article>
+
+</div>
+</div>
 </section>
 
-<section class="band closer">
-  <div class="cards parts">
-    {{ range $i, $part := $p.parts }}
-    <div class="card reveal">
-      <span class="step">0{{ add $i 1 }}</span>
-      <h3>{{ $part.name }}</h3>
-      <p>{{ $part.text }}</p>
-    </div>
-    {{ end }}
-  </div>
-  <div class="cta reveal">
-    <a class="key key-vu" href="{{ .Site.BaseURL }}docs/getting-started/">Get started</a>
-    <a class="key" href="{{ .Site.BaseURL }}overview/">Read the overview</a>
-  </div>
+<section class="wrap board" id="board" aria-labelledby="board-h">
+<div>
+<p class="kicker">EVERY TURN SCORES</p>
+<h2 id="board-h" style="font-size: clamp(36px, 5vw, 64px); margin: 8px 0 16px">TOP THE BOARD</h2>
+<p class="lead" style="color: var(--text-2); font-size: 20px">Sing for 150. Win a battle for 1000. Nail the hard question for 500. Singers and the audience score on the same board. Highest score takes the night.</p>
+</div>
+<div class="scores">
+<header><span>TONIGHT</span><span>HIGH SCORES</span></header>
+<ol>
+<li><span>1ST</span><span>SCREAMER</span><span>1650</span></li>
+<li><span>2ND</span><span>DIVA</span><span>1150</span></li>
+<li><span>3RD</span><span>HYPE MAN</span><span>850</span></li>
+<li><span>4TH</span><span>CROONER</span><span>450</span></li>
+<li><span>5TH</span><span>YOU</span><span class="blink">?</span></li>
+</ol>
+</div>
+</section>
+
+<section class="plays">
+<div class="wrap">
+<span><svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke-width="2" aria-hidden="true"><rect x="2" y="5" width="24" height="15"></rect><path d="M9 24h10"></path></svg>ANY TV WITH A BROWSER</span>
+<span><svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke-width="2" aria-hidden="true"><rect x="8" y="2" width="12" height="24"></rect><path d="M12 22h4"></path></svg>EVERY PHONE IN THE ROOM</span>
+<span><svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke-width="2" aria-hidden="true"><circle cx="14" cy="14" r="11"></circle><path d="M6 6l16 16"></path></svg>NO DOWNLOAD. NO SIGN-UP.</span>
+<span><svg width="28" height="28" viewBox="0 0 28 28" fill="none" stroke-width="2" aria-hidden="true"><path d="M4 22V6h20v16zM4 12h20"></path></svg>YOUR OWN SONG LIBRARY</span>
+</div>
+</section>
+
+<section class="closer">
+<h2>NO COINS NEEDED</h2>
+<p class="sub">RUN IT ON A LAPTOP, A MAC MINI, A PI OR A NAS. EVERYBODY ELSE JUST SCANS.</p>
+<div class="keys">
+<a class="key" href="{{ .Site.BaseURL }}docs/getting-started/">GET THE GAME</a>
+<a class="key plain" href="https://github.com/matt-antone/KaraokeArcade">SOURCE CODE</a>
+</div>
 </section>
 {{ end }}

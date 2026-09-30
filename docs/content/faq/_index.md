@@ -1,5 +1,5 @@
 ---
-title: F.A.Q.
+title: FAQ
 description: Frequently asked questions for KaraokeArcade (the app) and KaraokeArcade Server
 cascade:
   build:

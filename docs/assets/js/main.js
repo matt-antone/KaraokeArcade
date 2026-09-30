@@ -1,27 +1,7 @@
 (function () {
   'use strict';
 
-  const segs = new URL(document.URL).pathname.split('/').filter(s => !!s)
-  let btn, nav
-
-  function toggleNav() {
-    btn.classList.toggle('active')
-    nav.classList.toggle('active')
-    btn.setAttribute('aria-expanded', String(nav.classList.contains('active')))
-  }
-
-  document.addEventListener("DOMContentLoaded", e => {
-    btn = document.getElementById('btn-nav')
-    nav = document.getElementsByTagName('nav')[0]
-
-    if (btn) {
-      btn.addEventListener('click', toggleNav)
-    }
-
-    if (btn && nav) {
-      toggleNav()
-    }
-
+  document.addEventListener("DOMContentLoaded", () => {
     // A box that scrolls sideways (a wide table, a long code line) has to be
     // reachable by keyboard too, not just by dragging it.
     document.querySelectorAll('pre, table').forEach(el => {
@@ -29,36 +9,6 @@
         el.tabIndex = 0
         el.setAttribute('role', 'group')
         el.setAttribute('aria-label', el.tagName === 'TABLE' ? 'Table, scrolls sideways' : 'Code, scrolls sideways')
-      }
-    })
-
-    // init nav highlighter if we're in docs
-    if (segs[0] === 'docs' && typeof Gumshoe !== 'undefined') {
-      new Gumshoe(`#${segs[1]}-toc a`)
-    }
-
-    // Open FAQ details if hash is present
-    const openFaq = () => {
-      if (window.location.hash) {
-        const id = window.location.hash.substring(1)
-        const el = document.getElementById(id)
-        if (el && el.tagName === 'DETAILS') {
-          el.open = true
-        }
-      }
-    }
-    openFaq()
-    window.addEventListener('hashchange', openFaq)
-
-    // Dismiss screenshot overlay with Escape key
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && window.location.hash) {
-        try {
-          const el = document.querySelector(window.location.hash)
-          if (el && el.classList.contains('overlay')) {
-            window.location.hash = "_"
-          }
-        } catch (err) { /* ignore invalid selectors */ }
       }
     })
   })

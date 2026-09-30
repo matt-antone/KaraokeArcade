@@ -1,66 +1,8 @@
-{{ $lastSeg := path.Base .RelPermalink }}
-<div class="sidebar">
-  <header>
-    <div class="logo">
-      <a href='{{ .Site.BaseURL }}'>
-        Karaoke<span class="logo-subtitle">Arcade</span>
-      </a>
-      <div class="tagline">Open karaoke party system</div>
-    </div>
-
-    {{ partial "github-buttons.html" . }}
-
-    <button id="btn-nav" class="active" type="button" aria-controls="site-nav" aria-expanded="true"
-      aria-label="Navigation">
-      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z" />
-      </svg>
-    </button>
-  </header>
-
-  <nav id="site-nav" class="active" aria-label="Site">
-    <ul>
-      <li class="{{ if eq .RelPermalink "/overview/" }} active{{ end }}">
-        <a href="{{ .Site.BaseURL }}overview/">Overview</a>
-      </li>
-      <li>
-        <a rel="external" href="{{ .Site.BaseURL }}repo">GitHub</a>
-        <svg class="icon external" viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
-        </svg>
-      </li>
-      <li class="{{ if eq .RelPermalink "/faq/" }} active{{ end }}">
-        <a href="{{ .Site.BaseURL }}faq/">F.A.Q.</a>
-      </li>
-      <li class="{{ if eq .RelPermalink "/docs/" }} active{{ end }}">
-        <a href="{{ .Site.BaseURL }}docs/">Documentation</a>
-        <ul>
-          <li class="{{ if eq $lastSeg "getting-started" }} active{{ end }}"><a
-              href="{{ .Site.BaseURL }}docs/getting-started/">Getting Started</a></li>
-          <li class="{{ if eq $lastSeg "karaokearcade-app" }} active{{ end }}"><a
-              href="{{ .Site.BaseURL }}docs/karaokearcade-app/">KaraokeArcade <span>(the app)</span></a>
-            <ul id="karaokearcade-app-toc">
-              <li><a href="{{ .Site.BaseURL }}docs/karaokearcade-app/#status-strip">Status strip</a></li>
-              <li><a href="{{ .Site.BaseURL }}docs/karaokearcade-app/#library">Library</a></li>
-              <li><a href="{{ .Site.BaseURL }}docs/karaokearcade-app/#queue">Queue</a></li>
-              <li><a href="{{ .Site.BaseURL }}docs/karaokearcade-app/#my-account">My Account</a></li>
-              <li><a href="{{ .Site.BaseURL }}docs/karaokearcade-app/#settings-admin-only">Settings</a></li>
-              <li><a href="{{ .Site.BaseURL }}docs/karaokearcade-app/#player">Player</a></li>
-            </ul>
-          </li>
-          <li class="{{ if eq $lastSeg "karaokearcade-server" }} active{{ end }}"><a
-              href="{{ .Site.BaseURL }}docs/karaokearcade-server/">KaraokeArcade Server</a>
-            <ul id="karaokearcade-server-toc">
-              <li><a href="{{ .Site.BaseURL }}docs/karaokearcade-server/#installation">Installation</a></li>
-              <li><a href="{{ .Site.BaseURL }}docs/karaokearcade-server/#media-files">Media Files</a></li>
-              <li><a href="{{ .Site.BaseURL }}docs/karaokearcade-server/#metadata-parser">Metadata Parser</a></li>
-              <li><a href="{{ .Site.BaseURL }}docs/karaokearcade-server/#cli--env">CLI &amp; ENV</a></li>
-              <li><a href="{{ .Site.BaseURL }}docs/karaokearcade-server/#file-locations">File Locations</a></li>
-            </ul>
-          </li>
-        </ul>
-      </li>
-    </ul>
-  </nav>
-</div>
+{{ $seg := path.Base .RelPermalink }}
+<nav class="side" aria-label="Docs">
+  <p class="kicker">MANUAL</p>
+  <a href="{{ .Site.BaseURL }}docs/getting-started/"{{ if eq $seg "getting-started" }} aria-current="page"{{ end }}>Getting started</a>
+  <a href="{{ .Site.BaseURL }}docs/karaokearcade-app/"{{ if eq $seg "karaokearcade-app" }} aria-current="page"{{ end }}>The app</a>
+  <a href="{{ .Site.BaseURL }}docs/karaokearcade-server/"{{ if eq $seg "karaokearcade-server" }} aria-current="page"{{ end }}>The server</a>
+  <a href="{{ .Site.BaseURL }}faq/"{{ if eq .Section "faq" }} aria-current="page"{{ end }}>FAQ</a>
+</nav>

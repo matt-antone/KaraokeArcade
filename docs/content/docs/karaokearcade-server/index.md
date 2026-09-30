@@ -1,5 +1,5 @@
 ---
-title: KaraokeArcade Server
+title: The server
 description: Documentation for KaraokeArcade Server
 ---
 

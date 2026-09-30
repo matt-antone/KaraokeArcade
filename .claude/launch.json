@@ -2,18 +2,6 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "site",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": [
-        "-m",
-        "http.server",
-        "8090",
-        "--directory",
-        "site"
-      ],
-      "port": 8090
-    },
-    {
       "name": "app",
       "runtimeExecutable": "npx",
       "runtimeArgs": [

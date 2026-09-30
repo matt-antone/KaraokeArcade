@@ -15,6 +15,7 @@ import SongHistoryList, { type SongHistoryDisplayItem } from 'components/SongHis
 import Spinner from 'components/Spinner/Spinner'
 import TextOverlay from 'components/TextOverlay/TextOverlay'
 import { formatShortDate } from 'lib/dateTime'
+import { PAGE_SCROLL } from 'components/App/CoreLayout/useCarryHeader'
 import styles from './QueueView.css'
 
 /** 07b: one sentence and one amber key, no headline. Every empty tab here
@@ -89,6 +90,7 @@ const QueueView = () => {
   return (
     <div
       className={styles.container}
+      {...PAGE_SCROLL}
       style={{
         paddingTop: headerHeight,
         paddingBottom: footerHeight,

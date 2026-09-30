@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { List, type DynamicRowHeight, type RowComponentProps, type ListImperativeAPI } from 'react-window'
+import { PAGE_SCROLL } from 'components/App/CoreLayout/useCarryHeader'
 import styles from './PaddedList.css'
 
 // react-window stamps this on each rendered row before handing the elements to
@@ -145,6 +146,7 @@ const PaddedList = ({
       listRef={handleListRef}
       className={styles.container}
       style={{ width, height }}
+      {...PAGE_SCROLL}
     />
   )
 }

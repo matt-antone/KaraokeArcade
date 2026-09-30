@@ -1,11 +1,11 @@
-/* 08b Tonight's scores: the title and the You strip are fixed, and only the
-   board under them scrolls. One viewport tall, clearing the fixed chrome with
-   the heights CoreLayout publishes. */
+/* 08b Tonight's scores: one page, title and You strip included, scrolled by
+   the document like every other route (see useCarryHeader). Clears the fixed
+   chrome with the heights CoreLayout publishes. */
 .container {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  height: 100dvh;
+  min-height: 100dvh;
   max-width: var(--content-max);
   margin: 0 auto;
   padding: var(--header-h, 0px) 0 var(--nav-h, 0px);
@@ -69,9 +69,6 @@
 }
 
 .list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 2px;

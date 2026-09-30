@@ -20,6 +20,7 @@ import socket from 'lib/socket'
 import { requestBattleSingers } from 'store/modules/battle'
 import { fetchCurrentRoom } from 'store/modules/rooms'
 import { clearErrorMessage, setFooterHeight, setHeaderHeight } from 'store/modules/ui'
+import useCarryHeader from './useCarryHeader'
 import styles from './CoreLayout.css'
 
 const CoreLayout = () => {
@@ -45,6 +46,8 @@ const CoreLayout = () => {
     },
     ref: headerRef,
   })
+
+  useCarryHeader(headerRef)
 
   useResizeObserver({
     onResize: ({ height }) => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { NO_MEDIA, getBattleSide, getIsMediaVisible, getIsRowOnStage, resolveMedia, songVideoRect } from './playerStage'
+import { NO_MEDIA, getBattleSide, getIsMediaVisible, getIsRowOnStage, isKnockedOut, mediaStage, resolveMedia, songVideoRect } from './playerStage'
 import type { QueueItem } from 'shared/types'
+import battleVideoRect from '../PlayerBattle/battleVideoRect'
 
 /**
  * The three decisions where being wrong is silent.
@@ -71,16 +72,12 @@ describe('resolveMedia', () => {
     })
   })
 
-  // Keying is a property of the folder a file was scanned from, so two
-  // fighters can disagree about it through no doing of their own — and the
-  // side that has it on gets the alpha player's blurred, darkened backdrop
-  // inside the bezel while the other side gets a plain picture. Off on both
-  // halves, whatever the folders say.
-  it('plays both fighters unkeyed, whatever their folders say', () => {
-    const keyed = { ...battleRow, isVideoKeyingEnabled: true } as unknown as QueueItem
-
-    expect(resolveMedia(keyed, 1).isVideoKeyingEnabled).toBe(false)
-    expect(resolveMedia(keyed, 2).isVideoKeyingEnabled).toBe(false)
+  // Keying is a property of the folder each file was scanned from, and each
+  // half plays as its song would on its own: keyed lyrics on that fighter's
+  // stage, an unkeyed picture as it is (see mediaStage)
+  it('keys each fighter by their own song\'s folder', () => {
+    expect(resolveMedia(battleRow, 1).isVideoKeyingEnabled).toBe(false)
+    expect(resolveMedia(battleRow, 2).isVideoKeyingEnabled).toBe(true)
   })
 
   it('leaves keying alone on an ordinary row', () => {
@@ -166,5 +163,80 @@ describe('songVideoRect', () => {
   // 11b: the design's 764x430 frame at (168, 84) on its 960x540 TV
   it('places the video in the design\'s frame, scaled to the display', () => {
     expect(songVideoRect(1920, 1080)).toEqual({ left: 336, top: 168, width: 1528, height: 860 })
+  })
+})
+
+describe('isKnockedOut', () => {
+  it('takes the frame off keyed media, so the stage shows through', () => {
+    expect(isKnockedOut({ mediaType: 'cdg', isVideoKeyingEnabled: true }, false)).toBe(true)
+    expect(isKnockedOut({ mediaType: 'mp4', isVideoKeyingEnabled: true }, true)).toBe(true)
+  })
+
+  it('keeps the frame when keying is off', () => {
+    expect(isKnockedOut({ mediaType: 'cdg', isVideoKeyingEnabled: false }, true)).toBe(false)
+    expect(isKnockedOut({ mediaType: 'mp4', isVideoKeyingEnabled: false }, true)).toBe(false)
+  })
+
+  it('keeps it on an MP4 the browser cannot key (no WebGL)', () => {
+    expect(isKnockedOut({ mediaType: 'mp4', isVideoKeyingEnabled: true }, false)).toBe(false)
+  })
+})
+
+describe('mediaStage', () => {
+  const at = { isWebGLSupported: true, width: 1920, height: 1080 }
+  const song = { ...battleRow, userAvatarId: 'diva', singerId: null } as unknown as QueueItem
+  const fight = {
+    ...battleRow,
+    userAvatarId: 'diva',
+    singerId: 'belter',
+    opponentAvatarId: 'idol',
+    opponentSingerId: null,
+  } as unknown as QueueItem
+
+  it('plays a song in 11b\'s frame on its singer\'s stage', () => {
+    expect(mediaStage({ ...at, queueItem: song, battleSide: null, isMediaVisible: true, isBattleRow: false }))
+      .toEqual({ rect: songVideoRect(1920, 1080), backdropRect: null, singer: 'diva', frame: 'song' })
+  })
+
+  it('takes the frame off a keyed song', () => {
+    const keyed = { ...song, isVideoKeyingEnabled: true } as unknown as QueueItem
+    expect(mediaStage({ ...at, queueItem: keyed, battleSide: null, isMediaVisible: true, isBattleRow: false }).frame).toBeNull()
+  })
+
+  it('stands each battle half on its own fighter\'s stage, bezelled unless keyed', () => {
+    const one = mediaStage({ ...at, queueItem: fight, battleSide: 1, isMediaVisible: true, isBattleRow: true })
+    const two = mediaStage({ ...at, queueItem: fight, battleSide: 2, isMediaVisible: true, isBattleRow: true })
+
+    expect(one.singer).toBe('belter') // the fighter picked for the battle
+    expect(two.singer).toBe('idol') // no pick: their account's
+    // the fixture's first half is unkeyed, its second keyed
+    expect(one.frame).toBe('bezel')
+    expect(two.frame).toBeNull()
+    expect(one.rect).toEqual(battleVideoRect(1920, 1080, 1))
+    expect(two.rect).toEqual(battleVideoRect(1920, 1080, 2))
+  })
+
+  it('has no stage between beats or with nothing playing', () => {
+    expect(mediaStage({ ...at, queueItem: fight, battleSide: null, isMediaVisible: false, isBattleRow: true }))
+      .toEqual({ rect: null, backdropRect: null, singer: undefined, frame: null })
+    expect(mediaStage({ ...at, queueItem: song, battleSide: null, isMediaVisible: false, isBattleRow: false }).singer).toBeUndefined()
+  })
+})
+
+describe('mediaStage backdrop box', () => {
+  const fight = { ...battleRow, singerId: 'belter', userAvatarId: 'diva' } as unknown as QueueItem
+
+  // the stage through the hole must be the plate's own 16:9 box, or the two
+  // copies of the art meet in a seam on a screen that is not 16:9
+  it('draws a battle half\'s stage in the battle\'s centred 16:9 box', () => {
+    const { backdropRect } = mediaStage({ queueItem: fight, battleSide: 1, isMediaVisible: true, isBattleRow: true, isWebGLSupported: true, width: 1181, height: 700 })
+
+    expect(backdropRect).toEqual({ left: 0, top: (700 - 1181 * 9 / 16) / 2, width: 1181, height: 1181 * 9 / 16 })
+  })
+
+  it('letterboxes it on a screen squarer than 16:9', () => {
+    const { backdropRect } = mediaStage({ queueItem: fight, battleSide: 2, isMediaVisible: true, isBattleRow: true, isWebGLSupported: true, width: 1000, height: 1000 })
+
+    expect(backdropRect).toEqual({ left: 0, top: (1000 - 562.5) / 2, width: 1000, height: 562.5 })
   })
 })

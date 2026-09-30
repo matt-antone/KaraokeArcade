@@ -1,3 +1,10 @@
+/* the box the player gives it; the lyrics sit in its middle */
+.stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .container {
   background-color: transparent;
   position: relative;
@@ -10,4 +17,6 @@
 
 .canvas {
   position: relative;
+  /* a block, so no inline baseline gap hangs under the lyrics */
+  display: block;
 }

@@ -9,9 +9,12 @@ interface PlayerBackdropProps {
   isCovered: boolean
   /** 11b · the singer's own location, dimmed, behind the framed video. */
   stage?: string
+  /** Where to draw it, when not full bleed: a battle half's 16:9 box, so it
+   *  meets the plate's copy of it without a seam (see mediaStage). */
+  stageRect?: { left: number, top: number, width: number, height: number } | null
 }
 
-const PlayerBackdrop = ({ isCovered, stage }: PlayerBackdropProps) => {
+const PlayerBackdrop = ({ isCovered, stage, stageRect }: PlayerBackdropProps) => {
   const ref = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -27,8 +30,8 @@ const PlayerBackdrop = ({ isCovered, stage }: PlayerBackdropProps) => {
       {stage && (
         <>
           {/* the shared plate under the location, for a fighter with no art */}
-          <div className={styles.stage} style={{ backgroundImage: `url('${stage}'), url('${BATTLE_STAGE_PLATE}')` }} />
-          <div className={styles.dim} />
+          <div className={styles.stage} style={{ ...stageRect, backgroundImage: `url('${stage}'), url('${BATTLE_STAGE_PLATE}')` }} />
+          <div className={styles.dim} style={stageRect ?? undefined} />
         </>
       )}
     </>

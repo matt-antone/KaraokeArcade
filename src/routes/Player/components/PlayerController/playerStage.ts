@@ -1,5 +1,5 @@
 import type { BattlePhase, BattleSide, QueueItem } from 'shared/types'
-import type { BattleVideoRect } from '../PlayerBattle/battleVideoRect'
+import battleVideoRect, { type BattleVideoRect } from '../PlayerBattle/battleVideoRect'
 
 /**
  * The decisions PlayerController makes about what is on the stage, apart from
@@ -65,15 +65,12 @@ export const NO_MEDIA: StageMedia = {
  * off applying the next song's replay gain until it plays. Negated rather than
  * invented so it stays one row's key, and stays a number.
  *
- * Video keying is the one prop a battle overrides rather than resolves. It is
- * a property of the *folder* a file was scanned from, so two fighters whose
- * songs live in different folders get different answers to it — and keying
- * swaps the plain MP4 player for the alpha one, which lays a blurred, darkened
- * backdrop behind the picture and turns the visualizer on behind that. Inside
- * the stage's bezel that is a television with its brightness pulled down on
- * one fighter's song and not the other's, decided by nothing either of them
- * did. The panel is a hole cut in the plate with a real player behind it: what
- * belongs in it is the video, at full brightness, both times.
+ * Video keying resolves like everything else: each half from its own file's
+ * folder. It used to be forced off in a battle, because keying then drew a
+ * darkened, blurred backdrop behind the picture and one fighter's song came up
+ * dim beside the other's. A keyed song now wears nothing behind its lyrics but
+ * the singer's own stage (see mediaStage), in a battle's hole as on an
+ * ordinary song, so a battle half plays exactly as that song would on its own.
  */
 export function resolveMedia (queueItem: QueueItem | undefined, battleSide: BattleSide | null): StageMedia {
   if (!queueItem) return NO_MEDIA
@@ -86,7 +83,7 @@ export function resolveMedia (queueItem: QueueItem | undefined, battleSide: Batt
       keyChange: queueItem.opponentKeyChange,
       rgTrackGain: queueItem.opponentRgTrackGain,
       rgTrackPeak: queueItem.opponentRgTrackPeak,
-      isVideoKeyingEnabled: false,
+      isVideoKeyingEnabled: !!queueItem.opponentIsVideoKeyingEnabled,
     }
   }
 
@@ -97,7 +94,7 @@ export function resolveMedia (queueItem: QueueItem | undefined, battleSide: Batt
     keyChange: queueItem.keyChange,
     rgTrackGain: queueItem.rgTrackGain,
     rgTrackPeak: queueItem.rgTrackPeak,
-    isVideoKeyingEnabled: battleSide ? false : queueItem.isVideoKeyingEnabled,
+    isVideoKeyingEnabled: queueItem.isVideoKeyingEnabled,
   }
 }
 
@@ -149,5 +146,72 @@ export function songVideoRect (width: number, height: number): BattleVideoRect {
     top: height * 84 / 540,
     width: width * 764 / 960,
     height: height * 430 / 540,
+  }
+}
+
+/**
+ * Whether a song's media has its background knocked out, so 11b's black box
+ * and amber frame come off and the singer's club stage shows through behind
+ * the lyrics. Keying is the path's "Video keying" pref: an MP4 is keyed by the
+ * WebGL player (MP4AlphaPlayer), so it needs WebGL; a CD+G draws on a clear
+ * canvas already and, keyed, drops its tinted backdrop too (CDGPlayer), so the
+ * pref alone decides. Anything not keyed keeps the frame: an opaque video in a
+ * frameless box is just a video with its edges missing.
+ */
+export function isKnockedOut (media: Pick<StageMedia, 'mediaType' | 'isVideoKeyingEnabled'>, isWebGLSupported: boolean): boolean {
+  if (!media.isVideoKeyingEnabled) return false
+  return media.mediaType === 'cdg' || (media.mediaType === 'mp4' && isWebGLSupported)
+}
+
+/**
+ * Where the media plays and what stands behind it: one answer for an ordinary
+ * song and for either half of a battle, so the two can never drift apart.
+ *
+ * - rect: 11b's frame for a song, the bezel's hole for a battle half (the
+ *   whole display when nothing is on stage; PlayerFrame explains why the box
+ *   always exists).
+ * - singer: whose club stage stands behind the media, which is what keyed
+ *   lyrics sit on. The row's singer for a song; for a battle half, the
+ *   fighter that half picked, falling back to their account's.
+ * - backdropRect: where that stage is drawn. Full bleed under a song; under a
+ *   battle half, exactly the battle's own 16:9 box (PlayerBattle's Stage), or
+ *   the stage seen through the hole and the plate's copy of it round the hole
+ *   are scaled differently and meet in a visible seam on any screen that is
+ *   not exactly 16:9.
+ * - frame: what is drawn around opaque media — 11b's amber frame on a song,
+ *   the bezel round the hole on a battle half (13e/13g). Keyed media wears
+ *   neither: the singer's stage behind it is the point.
+ */
+export function mediaStage ({ queueItem, battleSide, isMediaVisible, isBattleRow, isWebGLSupported, width, height }: {
+  queueItem?: QueueItem
+  battleSide: BattleSide | null
+  isMediaVisible: boolean
+  isBattleRow: boolean
+  isWebGLSupported: boolean
+  width: number
+  height: number
+}): { rect: BattleVideoRect | null, backdropRect: BattleVideoRect | null, singer: string | null | undefined, frame: 'song' | 'bezel' | null } {
+  if (battleSide && queueItem) {
+    // PlayerBattle's Stage: as wide as fits at 16:9, centred
+    const boxWidth = Math.min(width, Math.round(height * 16 / 9))
+    const boxHeight = boxWidth * 9 / 16
+
+    return {
+      rect: battleVideoRect(width, height, battleSide),
+      backdropRect: { left: (width - boxWidth) / 2, top: (height - boxHeight) / 2, width: boxWidth, height: boxHeight },
+      singer: battleSide === 1
+        ? queueItem.singerId ?? queueItem.userAvatarId
+        : queueItem.opponentSingerId ?? queueItem.opponentAvatarId,
+      frame: isKnockedOut(resolveMedia(queueItem, battleSide), isWebGLSupported) ? null : 'bezel',
+    }
+  }
+
+  if (!isMediaVisible || isBattleRow || !queueItem) return { rect: null, backdropRect: null, singer: undefined, frame: null }
+
+  return {
+    rect: songVideoRect(width, height),
+    backdropRect: null,
+    singer: queueItem.userAvatarId,
+    frame: isKnockedOut(resolveMedia(queueItem, null), isWebGLSupported) ? null : 'song',
   }
 }

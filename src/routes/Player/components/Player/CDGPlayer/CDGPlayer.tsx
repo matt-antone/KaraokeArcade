@@ -6,12 +6,20 @@ import playMedia from '../playMedia'
 
 const api = new HttpApi('media')
 const BACKDROP_PADDING = 10 // px at 1:1 scale
+
+/** CD+G is a 4:3 picture drawn into a 16:9 box, so the box's height caps it
+ *  and its text came up far smaller than a video's lyrics. Magnified on top
+ *  of the lyrics-size setting, CD+G only, and never past the whole box. */
+const CDG_MAGNIFY = 1.5
 const BORDER_RADIUS = parseInt(getComputedStyle(document.body).getPropertyValue('--border-radius'))
 
 interface CDGPlayerProps {
   cdgAlpha: number
   cdgSize: number
   isPlaying: boolean
+  /** The path's "Video keying": no backdrop at all, so the singer's club
+   *  stage shows clear behind the lyrics (see isKnockedOut) */
+  isVideoKeyingEnabled?: boolean
   mediaId: number
   mediaKey: number
   mediaReplayKey?: number
@@ -82,7 +90,8 @@ class CDGPlayer extends React.Component<CDGPlayerProps> {
 
     // apply sizing as % of max height, leaving room for the backdrop
     const wScale = (width - (BACKDROP_PADDING * 2)) / 300
-    const hScale = ((height - (BACKDROP_PADDING * 2)) * cdgSize) / 216
+    const fullHScale = (height - (BACKDROP_PADDING * 2)) / 216
+    const hScale = Math.min(fullHScale * cdgSize * CDG_MAGNIFY, fullHScale)
     const scale = Math.min(wScale, hScale)
     const pad = (x2 - x1) && (y2 - y1) ? BACKDROP_PADDING : 0
 
@@ -93,37 +102,42 @@ class CDGPlayer extends React.Component<CDGPlayerProps> {
     }
 
     return (
-      <div className={styles.container}>
-        <div
-          className={styles.backdrop}
-          style={{
-            backdropFilter: this.supportsFilters && cdgAlpha !== 1 ? filters.join(' ') : 'none',
-            backgroundColor: this.supportsFilters && cdgAlpha !== 1 ? 'transparent' : `rgba(${r},${g},${b},${cdgAlpha})`,
-            borderRadius: BORDER_RADIUS * scale,
-            left: (x1 - pad) * scale,
-            top: (y1 - pad) * scale,
-            width: ((x2 - x1) + pad * 2) * scale,
-            height: ((y2 - y1) + pad * 2) * scale,
-          }}
-        >
+      // the canvas is sized by cdgSize and is usually smaller than the box it
+      // plays in; centred there, not parked in its top-left corner
+      <div className={styles.stage} style={{ width, height }}>
+        <div className={styles.container}>
+          {!this.props.isVideoKeyingEnabled && (
+            <div
+              className={styles.backdrop}
+              style={{
+                backdropFilter: this.supportsFilters && cdgAlpha !== 1 ? filters.join(' ') : 'none',
+                backgroundColor: this.supportsFilters && cdgAlpha !== 1 ? 'transparent' : `rgba(${r},${g},${b},${cdgAlpha})`,
+                borderRadius: BORDER_RADIUS * scale,
+                left: (x1 - pad) * scale,
+                top: (y1 - pad) * scale,
+                width: ((x2 - x1) + pad * 2) * scale,
+                height: ((y2 - y1) + pad * 2) * scale,
+              }}
+            >
+            </div>
+          )}
+          <canvas
+            ref={this.canvas}
+            className={styles.canvas}
+            width={300 * scale}
+            height={216 * scale}
+          />
+          <audio
+            preload='auto'
+            onCanPlayThrough={this.updateIsPlaying}
+            onEnded={this.handleEnded}
+            onError={this.handleError}
+            onLoadStart={this.props.onLoad}
+            onPlay={this.handlePlay}
+            onTimeUpdate={this.handleTimeUpdate}
+            ref={this.audio}
+          />
         </div>
-        <canvas
-          ref={this.canvas}
-          className={styles.canvas}
-          width={300 * scale}
-          height={216 * scale}
-        />
-        <br />
-        <audio
-          preload='auto'
-          onCanPlayThrough={this.updateIsPlaying}
-          onEnded={this.handleEnded}
-          onError={this.handleError}
-          onLoadStart={this.props.onLoad}
-          onPlay={this.handlePlay}
-          onTimeUpdate={this.handleTimeUpdate}
-          ref={this.audio}
-        />
       </div>
     )
   }

@@ -249,7 +249,13 @@ const HudSide = ({ turn, side, isLive }: { turn: BattleTurn, side: BattleSide, i
  * which is a hole cut in the stage plate rather than a box the video is put
  * inside. The panel is only a bezel, drawn around the hole.
  */
-export const Sing = ({ turn, at, msLeft }: { turn: BattleTurn, at: BattleSide, msLeft: number }) => {
+export const Sing = ({ turn, at, msLeft, isBezeled = true }: {
+  turn: BattleTurn
+  at: BattleSide
+  msLeft: number
+  /** off for a keyed half: its lyrics stand on the fighter's stage unframed */
+  isBezeled?: boolean
+}) => {
   const frame = useSpriteFrame(singerOf(turn, at), 'sing')
 
   return (
@@ -260,7 +266,7 @@ export const Sing = ({ turn, at, msLeft }: { turn: BattleTurn, at: BattleSide, m
         className={clsx(styles.singSprite, at === 1 ? styles.singSpriteOne : styles.singSpriteTwo)}
       />
 
-      <div className={clsx(styles.panel, at === 1 ? styles.panelOne : styles.panelTwo)} />
+      {isBezeled && <div className={clsx(styles.panel, at === 1 ? styles.panelOne : styles.panelTwo)} />}
 
       <div className={styles.hud}>
         <HudSide turn={turn} side={1} isLive={at === 1} />

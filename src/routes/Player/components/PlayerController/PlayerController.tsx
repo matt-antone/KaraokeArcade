@@ -9,7 +9,6 @@ import PlayerJoin from '../PlayerJoin/PlayerJoin'
 import PlayerTrivia, { PlayerTriviaSplash } from '../PlayerTrivia/PlayerTrivia'
 import PlayerBattle from '../PlayerBattle/PlayerBattle'
 import type { BattleUpNext } from '../PlayerBattle/battleBeats'
-import battleVideoRect from '../PlayerBattle/battleVideoRect'
 import PlayerFrame from './PlayerFrame'
 import SoundGate from './SoundGate'
 import frameStyles from './PlayerFrame.css'
@@ -22,7 +21,7 @@ import useBattleStage from 'lib/useBattleStage'
 import { requestTriviaRound } from 'store/modules/trivia'
 import { battleSongEnded, requestBattleTurn } from 'store/modules/battle'
 import getSkipEndsAt, { INTERMISSION_MS } from './getSkipEndsAt'
-import { getBattleSide, getIsMediaVisible, getIsRowOnStage, resolveMedia, songVideoRect } from './playerStage'
+import { getBattleSide, getIsMediaVisible, getIsRowOnStage, mediaStage, resolveMedia } from './playerStage'
 import { battleSingerOrDefault, battleSingerStage } from 'lib/battleSingers'
 import { SONG_PLAYED } from 'shared/actionTypes'
 import {
@@ -84,6 +83,7 @@ const StageOverlay = ({
   isTriviaLeadIn,
   isBattleRow,
   battleQueueId,
+  isBezeled,
   battleUpNext,
   getAudioCtx,
   width,
@@ -96,6 +96,8 @@ const StageOverlay = ({
   isTriviaLeadIn: boolean
   isBattleRow: boolean
   battleQueueId: number
+  /** the bezel round the battle's hole; off when the half is keyed */
+  isBezeled: boolean
   battleUpNext: BattleUpNext | null
   getAudioCtx: () => AudioContext | null
   width: number
@@ -121,6 +123,7 @@ const StageOverlay = ({
     return (
       <PlayerBattle
         queueId={battleQueueId}
+        isBezeled={isBezeled}
         getAudioCtx={getAudioCtx}
         upNext={battleUpNext}
         width={width}
@@ -234,9 +237,6 @@ const PlayerController = (props: PlayerControllerProps) => {
   const isBattleOnStage = isBattleRow && liveBattle.turn?.queueId === player.queueId
 
   const battleSide = getBattleSide(isBattleOnStage, liveBattle.phase)
-  // Null on every beat but the two singing ones, which is also the only time
-  // the stage leaves a hole for the media to play in.
-  const videoRect = battleSide ? battleVideoRect(props.width, props.height, battleSide) : null
   const media = resolveMedia(queueItem as QueueItem | undefined, battleSide)
 
   // Player owns the page's AudioContext and stays mounted even on the beats
@@ -668,9 +668,16 @@ const PlayerController = (props: PlayerControllerProps) => {
   // 11a · the intermission draws the next singer's own stage, full bleed —
   // except before a trivia round (its splash) or a battle (only a clock)
   const isOnStageNext = stage === 'intermission' && !isTriviaItem(nextQueueItem) && !isBattleItem(nextQueueItem)
-  // 11b · an ordinary song plays in a frame on its singer's own stage
-  const isSongOnStage = isMediaVisible && !isBattleRow
-  const frameRect = videoRect ?? (isSongOnStage ? songVideoRect(props.width, props.height) : null)
+  // 11b and 13e/13g alike: where the media plays and whose stage is behind it
+  const { rect: frameRect, backdropRect, singer: stageSinger, frame } = mediaStage({
+    queueItem: queueItem as QueueItem | undefined,
+    battleSide,
+    isMediaVisible,
+    isBattleRow,
+    isWebGLSupported: player.isWebGLSupported,
+    width: props.width,
+    height: props.height,
+  })
 
   return (
     <>
@@ -681,7 +688,8 @@ const PlayerController = (props: PlayerControllerProps) => {
           are opaque too. */}
       <PlayerBackdrop
         isCovered={isMediaVisible || isTriviaLeadIn || isBattleRow || isJoinShown || isOnStageNext}
-        stage={isSongOnStage ? battleSingerStage(battleSingerOrDefault(queueItem.userAvatarId)) : undefined}
+        stage={stageSinger === undefined ? undefined : battleSingerStage(battleSingerOrDefault(stageSinger))}
+        stageRect={backdropRect}
       />
       {/* On a singing beat the stage above is a bezel with a hole cut in it and
           this is what shows through, so the media is sized and placed to the
@@ -695,7 +703,7 @@ const PlayerController = (props: PlayerControllerProps) => {
         rect={frameRect}
         width={props.width}
         height={props.height}
-        className={isSongOnStage ? frameStyles.framed : undefined}
+        className={frame === 'song' ? frameStyles.framed : undefined}
       >
         <Player
           ref={playerRef}
@@ -742,6 +750,7 @@ const PlayerController = (props: PlayerControllerProps) => {
         isTriviaLeadIn={isTriviaLeadIn}
         isBattleRow={isBattleRow}
         battleQueueId={player.queueId}
+        isBezeled={frame === 'bezel'}
         battleUpNext={battleUpNext}
         getAudioCtx={getAudioCtx}
         width={props.width}

@@ -69,6 +69,10 @@ interface PlayerBattleProps {
    *  an effect dependency, and a fresh arrow every render restarts the
    *  microphone on every tick of the clock. */
   getAudioCtx: () => AudioContext | null
+  /** Draw the bezel round the singing hole: the half's media is opaque. Off
+   *  when it is keyed, so the lyrics stand on the fighter's stage unframed,
+   *  as an ordinary keyed song does (mediaStage). */
+  isBezeled?: boolean
   /** @deprecated 13i draws no up-next strip. Still accepted so the player can
    *  stop passing it on its own schedule; nothing reads it. */
   upNext?: BattleUpNext | null
@@ -136,6 +140,7 @@ const beatContent = (
   msLeft: number,
   venue: string | undefined,
   night: Record<number, number>,
+  isBezeled: boolean,
 ): React.ReactNode => {
   switch (beat) {
     // `logo` is never sent now (D10): the lockup opens the versus scene
@@ -147,7 +152,7 @@ const beatContent = (
       return <Intro turn={turn} at={at} venue={venue} />
     case 'sing1':
     case 'sing2':
-      return <Sing turn={turn} at={at} msLeft={msLeft} />
+      return <Sing turn={turn} at={at} msLeft={msLeft} isBezeled={isBezeled} />
     case 'judge':
       return <Judge turn={turn} msLeft={msLeft} venue={venue} />
     case 'meter1':
@@ -178,7 +183,7 @@ const beatContent = (
  * stage plate, so the fighter can stand beside the song rather than the whole
  * design standing down for four of a battle's five minutes.
  */
-const PlayerBattle = ({ queueId, getAudioCtx, width, height }: PlayerBattleProps) => {
+const PlayerBattle = ({ queueId, getAudioCtx, isBezeled = true, width, height }: PlayerBattleProps) => {
   const { turn, phase, msLeft } = useBattleStage()
   // The last beat the server sent, expiry ignored. Only the holding card wants
   // this: it is the one thing that tells "the server has not answered yet"
@@ -233,7 +238,7 @@ const PlayerBattle = ({ queueId, getAudioCtx, width, height }: PlayerBattleProps
   return (
     <Stage width={width} height={height} beat={beat} plate={plate}>
       {live && beat
-        ? beatContent(beat, live, at, crowd, msLeft, venue, night)
+        ? beatContent(beat, live, at, crowd, msLeft, venue, night, isBezeled)
         : <Holding isStarted={stored?.queueId === queueId} />}
     </Stage>
   )

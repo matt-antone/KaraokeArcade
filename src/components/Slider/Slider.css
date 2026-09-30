@@ -33,9 +33,9 @@
   }
 }
 
-/* the cap: a raised amber key, not a knob — the Knob is the only circle in
-   the system. rc-slider sets `left` + `transform: translateX(-50%)`
-   inline, so vertical centering has to come from top/margin, not transform. */
+/* the cap: a raised amber key, square like everything but the StartButton.
+   rc-slider sets `left` + `transform: translateX(-50%)` inline, so vertical
+   centering has to come from top/margin, not transform. */
 .handle {
   position: absolute;
   top: 50%;

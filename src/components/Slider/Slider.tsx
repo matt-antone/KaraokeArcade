@@ -62,7 +62,7 @@ const Slider = ({
   }
 
   // slider handle/grabber — a machined key cap, styled entirely via .handle;
-  // knobs and radios are the only circles in the system, so this isn't one.
+  // the StartButton is the only circle in the system, so this isn't one.
   const defaultHandle = (node: React.ReactElement): React.ReactElement => {
   // rc-slider passes a node (div) to which we add style
     return React.cloneElement(node as React.ReactElement<HandleProps>, {

@@ -10,8 +10,8 @@ interface StartButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>
  * The cabinet's "1 Player Start" button (Arcade Flow v2, 02): a round, lit
  * arcade key in a chrome bezel, with the blinking label under it.
  *
- * Modelled hardware rather than a flat key, so it is the one place outside
- * the Knob that is round, soft-shadowed and coloured off the palette; the
+ * Modelled hardware rather than a flat key, so it is the one place that is
+ * round, soft-shadowed and coloured off the palette; the
  * rules test exempts this folder by name. A submit button by default, since
  * both forms that draw it submit on it.
  */

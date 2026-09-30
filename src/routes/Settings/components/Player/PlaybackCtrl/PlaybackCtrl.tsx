@@ -3,7 +3,7 @@ import { useAppDispatch, useAppSelector } from 'store/hooks'
 import clsx from 'clsx'
 import { requestPause, requestPlay, requestPlayNext, requestVolume } from 'store/modules/status'
 import Button from 'components/Button/Button'
-import Knob from 'components/Knob/Knob'
+import Slider from 'components/Slider/Slider'
 import VuMeter from 'components/VuMeter/VuMeter'
 import styles from './PlaybackCtrl.css'
 
@@ -13,8 +13,8 @@ import styles from './PlaybackCtrl.css'
  * during their own song. Order never changes — play/pause, skip, volume.
  * Play/pause is the single amber key; skip is graphite with an amber glyph,
  * because skipping someone's song deserves one more moment of thought than
- * pausing. The knob is the input and the meter beside it is the readout; there
- * is no volume number.
+ * pausing. Volume is a slider laid over the meter, whose lit cells are its
+ * track; there is no volume number.
  *
  * Display options are not here: they belong to the Player panel itself.
  *
@@ -53,11 +53,20 @@ const PlaybackCtrl = ({ isDisabled = false }: { isDisabled?: boolean }) => {
       />
 
       <div className={styles.volume}>
-        <Knob value={status.volume} onChange={handleVolume} label='vol' />
+        {/* the slider's track: lit to exactly where the cap sits */}
         <VuMeter
-          value={status.isPlaying ? status.volume * 0.85 : 0}
+          value={status.volume}
           segments={14}
-          label='Room level'
+          label='Volume'
+        />
+        <Slider
+          min={0}
+          max={1}
+          step={0.01}
+          value={status.volume}
+          onChange={handleVolume}
+          className={styles.slider}
+          aria-label='Volume'
         />
       </div>
     </div>

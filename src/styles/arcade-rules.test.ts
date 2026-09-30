@@ -175,16 +175,14 @@ describe('ARCADE rules', () => {
     expect([...new Set(hits)]).toEqual([])
   })
 
-  it('is square: radius 0 everywhere, the Knob and the StartButton the circles', () => {
-    // "Radius: 0 throughout." A corner is a token (all of which are 0) or 0;
-    // --radius-round is the Knob's, and nothing else may take it. The one
-    // other circle is the StartButton (02 "1 Player Start"): modelled
+  it('is square: radius 0 everywhere, the StartButton the one circle', () => {
+    // "Radius: 0 throughout." A corner is a token (all of which are 0) or 0.
+    // The one circle is the StartButton (02 "1 Player Start"): modelled
     // hardware, round because the design draws it round, at 50% and only 50%.
     const OK = /border-radius:\s*(0|none|var\(--(radius-(key|panel|tab)|border-radius)\))\s*;/
     const round = search('border-radius', '*.css')
       .filter(l => !l.startsWith('styles/variables.css'))
       .filter(l => !OK.test(l))
-      .filter(l => !(l.startsWith('components/Knob/') && /var\(--radius-round\)/.test(l)))
       .filter(l => !(l.startsWith(START_BUTTON) && /border-radius:\s*50%\s*;/.test(l)))
     expect(round).toEqual([])
   })

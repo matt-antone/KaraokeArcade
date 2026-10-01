@@ -19,6 +19,7 @@ import useTriviaStage from 'lib/useTriviaStage'
 import { answerTrivia } from 'store/modules/trivia'
 import { myStanding } from 'store/selectors/points'
 import {
+  TRIVIA_FINAL_REST_MS,
   TRIVIA_QUESTIONS_PER_ROUND,
   TRIVIA_ROUND_MIX,
   triviaPoints,
@@ -126,6 +127,24 @@ const TriviaDialog = () => {
   useEffect(() => {
     if (isOpen) alertCue()
   }, [isOpen])
+
+  // The final board rests "until it is put away" — but nobody puts it away on
+  // a phone nobody is holding, and this screen is a native <dialog> that sits
+  // over everything else regardless of z-index (see TRIVIA_FINAL_REST_MS).
+  // Left open, it blocks whatever this phone is asked for next. Read through
+  // the same tick every other deadline on this screen uses, not Date.now()
+  // directly, so this stays a pure function of render.
+  const finalResult = isOpen && screen && screen.kind === 'round' && screen.result?.isFinal ? screen.result : null
+  const finalKey = finalResult ? screen!.key : null
+  const finalBoardFrom = finalResult?.boardFrom ?? null
+
+  useEffect(() => {
+    if (!finalKey || !finalResult || finalBoardFrom === null) return
+
+    const remaining = finalBoardFrom + TRIVIA_FINAL_REST_MS - serverNow(finalResult, tick)
+    const timerID = setTimeout(() => setDismissed(finalKey), Math.max(0, remaining))
+    return () => clearTimeout(timerID)
+  }, [finalKey, finalResult, finalBoardFrom, tick])
 
   if (!screen || !isOpen) return null
 

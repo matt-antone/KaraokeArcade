@@ -4,7 +4,7 @@ const fs = require('fs');
 const { pathToFileURL } = require('url');
 const { execFileSync } = require('child_process');
 const dir = process.env.CLAUDE_PROJECT_DIR || process.cwd();
-const BAKED = "/Users/matthewantone/.nvm/versions/node/v24.19.0/lib/node_modules/@nanonets/graft/dist/claude";
+const BAKED = "/home/antone/.local/share/mise/installs/node/26.8.2/lib/node_modules/@nanonets/graft/dist/claude";
 
 // The dist/claude dir of @nanonets/graft resolved from a base whose node_modules is searched.
 function fromPkg(base) {
@@ -55,14 +55,13 @@ function best(dirs, name) {
 
 function entry(name) {
   // Cheap candidates first, and only shell out to npm when every one of them misses.
-  const cheap = [BAKED, fromPkg(path.join(path.dirname(process.execPath), '..', 'lib'))];
+  const cheap = [BAKED, fromPkg(dir), fromPkg(path.join(path.dirname(process.execPath), '..', 'lib'))];
   const hit = best(cheap, name);
   if (hit) return path.join(hit, name);
   const gr = globalRoot();
   const global = gr && path.join(gr, '@nanonets', 'graft', 'dist', 'claude');
   if (global && fs.existsSync(path.join(global, name))) return path.join(global, name);
-  return null;
+  return path.join(dir, 'dist', 'claude', name); // last-ditch; import will no-op if absent
 }
 
-const e = entry("hooks.js");
-if (e) import(pathToFileURL(e).href).then((m) => m.main(process.argv[2])).catch(() => { /* graft unavailable — no-op */ });
+import(pathToFileURL(entry("hooks.js")).href).then((m) => m.main(process.argv[2])).catch(() => { /* graft unavailable — no-op */ });

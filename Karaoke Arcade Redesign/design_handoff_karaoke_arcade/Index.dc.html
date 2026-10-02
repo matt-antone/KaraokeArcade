@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<title>Karaoke Arcade · Demos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Space+Grotesk:wght@400;600&display=swap" rel="stylesheet">
+<style>html,body{margin:0;min-height:100%;background:#120a24;color:#e9e2ff;font-family:'Space Grotesk',sans-serif}a{color:#ff8a1e;text-decoration:none}a:hover{color:#ffd600}</style>
+</helmet>
+<div style="min-height:100vh;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:48px;padding:72px 24px 56px;background:repeating-linear-gradient(0deg,rgba(0,0,0,.3) 0 1px,transparent 1px 3px),#120a24">
+  <img src="logo/approved/karaokearcade-transparent.svg" alt="KaraokeArcade" style="width:min(360px,80vw);display:block">
+  <span style="font-family:Silkscreen;font-size:18px;color:#ff8a1e">Select a demo</span>
+  <div style="width:100%;max-width:880px;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:28px">
+    <a href="TV%20Demo.dc.html" style="display:flex;flex-direction:column;gap:18px;padding:28px;background:#1b1330;color:#e9e2ff;box-shadow:0 -4px 0 #ffd600,0 4px 0 #ffd600,-4px 0 0 #ffd600,4px 0 0 #ffd600" style-hover="background:#2a1f48">
+      <div style="aspect-ratio:16/9;position:relative;overflow:hidden;background:#0b0618">
+        <img src="uploads/default/screamer/location.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.7">
+        <img src="uploads/default/screamer/views/front.png" alt="" style="position:absolute;left:50%;bottom:4px;height:80%;transform:translateX(-50%)">
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+        <span style="font-family:Silkscreen;font-weight:700;font-size:28px;color:#ffd600;text-shadow:3px 3px 0 #ff2e88">TV</span>
+        <span style="font-family:Silkscreen;font-size:12px;color:#a08fd0">Player screen · 1920×1080</span>
+      </div>
+      <span style="font-size:16px;line-height:1.4;color:#d8ccff;text-wrap:pretty">Join crowd, now singing, trivia, singer battle and tonight's leaderboard.</span>
+      <span style="font-family:Silkscreen;font-size:14px;color:#ff8a1e">Press start ▸</span>
+    </a>
+    <a href="Mobile%20Demo.dc.html" style="display:flex;flex-direction:column;gap:18px;padding:28px;background:#1b1330;color:#e9e2ff;box-shadow:0 -4px 0 #7ef9d0,0 4px 0 #7ef9d0,-4px 0 0 #7ef9d0,4px 0 0 #7ef9d0" style-hover="background:#2a1f48">
+      <div style="aspect-ratio:16/9;position:relative;overflow:hidden;background:#0b0618">
+        <img src="uploads/default/belter/location.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.7">
+        <img src="uploads/default/belter/views/front.png" alt="" style="position:absolute;left:50%;bottom:4px;height:80%;transform:translateX(-50%)">
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+        <span style="font-family:Silkscreen;font-weight:700;font-size:28px;color:#7ef9d0;text-shadow:3px 3px 0 #0b0618">Mobile</span>
+        <span style="font-family:Silkscreen;font-size:12px;color:#a08fd0">Phone · 390×844</span>
+      </div>
+      <span style="font-size:16px;line-height:1.4;color:#d8ccff;text-wrap:pretty">Token, sign in, pick a singer, songs, queue, scores, trivia and battle. Fully tappable.</span>
+      <span style="font-family:Silkscreen;font-size:14px;color:#ff8a1e">Press start ▸</span>
+    </a>
+  </div>
+  <span style="font-family:Silkscreen;font-size:11px;color:#6e6488">Use ◂ ▸ or arrow keys to step through screens</span>
+</div>
+</x-dc>
+</body>
+</html>

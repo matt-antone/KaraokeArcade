@@ -54,7 +54,7 @@ async function request (url: string): Promise<OpenTdbResponse> {
   if (since < RATE_LIMIT_MS) await wait(RATE_LIMIT_MS - since)
 
   lastRequestAt = Date.now()
-  const res = await fetch(url)
+  const res = await fetch(url, { signal: AbortSignal.timeout(8000) })
 
   if (!res.ok) throw new Error(`OpenTDB returned HTTP ${res.status}`)
   return await res.json()
@@ -101,7 +101,7 @@ export default async function fetchRound (): Promise<TriviaQuestion[]> {
   return questions
 }
 
-async function fetchQuestions (count: number, difficulty: string): Promise<TriviaQuestion[]> {
+export async function fetchQuestions (count: number, difficulty: string): Promise<TriviaQuestion[]> {
   try {
     if (!token) token = await requestToken()
 

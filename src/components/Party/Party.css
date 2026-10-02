@@ -1,0 +1,20 @@
+.content { padding: 1rem; max-width: 48rem; margin: auto; display: flex; flex-direction: column; gap: 1rem; }
+.content h2, .content h3, .content p { margin: 0; }
+.content select { display: block; width: 100%; margin-top: .5rem; padding: .7rem; background: var(--faceplate); color: var(--ink); border: 1px solid var(--hairline); border-radius: 0; }
+.eyebrow { color: var(--arc-mint); text-transform: uppercase; letter-spacing: .12em; }
+.launcher { position: fixed; bottom: calc(var(--nav-h, 64px) + .5rem); right: 1rem; display: flex; gap: .5rem; z-index: 20; }
+.rejoin { position: fixed; top: calc(var(--header-h, 64px) + .5rem); right: 1rem; z-index: 20; }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+.square { min-height: 7.5rem; padding: .6rem; border: 1px solid var(--hairline); border-radius: 0; display: flex; flex-direction: column; justify-content: space-between; gap: .4rem; text-align: center; background: var(--faceplate); color: var(--ink); }
+.square strong { color: var(--arc-gold); }
+.square span:last-child { font-size: .75rem; }
+.done { border-color: var(--arc-mint); background: var(--arc-mint-well); }
+.answers { display: grid; gap: .75rem; }
+.tags { display: flex; gap: .5rem; flex-wrap: wrap; }
+.stage { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; background: var(--chassis); color: var(--ink); font-size: clamp(1rem, 2vw, 2rem); }
+
+.audioOnly { visibility: hidden; pointer-events: none; }
+
+.option { padding: .6em 1em; border: 2px solid var(--hairline); background: var(--faceplate); color: var(--ink); }
+.correct { border-color: var(--arc-mint); background: var(--arc-mint-well); }
+.stage .content { width: 80%; max-width: 60rem; }

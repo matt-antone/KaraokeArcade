@@ -1,3 +1,7 @@
+import { isPartyItem, gameLabel } from 'shared/party'
+import { partyRequest } from 'store/modules/party'
+import { RoundContent } from 'components/Party/Party'
+import partyStyles from 'components/Party/Party.css'
 import React, { useEffect, useCallback, useRef, useState } from 'react'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
 import Player from '../Player/Player'
@@ -166,6 +170,11 @@ const PlayerController = (props: PlayerControllerProps) => {
   const liveBattle = useBattleStage()
   const battle = useAppSelector(state => state.battle)
   const queueItem = queue.entities[player.queueId]
+  const party = useAppSelector(state => state.party)
+  const isPartyRow = isPartyItem(queueItem) && !player.isAtQueueEnd
+  const partyRound = isPartyRow && party.round?.queueId === player.queueId ? party.round : null
+  const partyRoundId = partyRound?.id
+  const partyRoundClosed = partyRound?.closed
   const nextIdx = queue.result.indexOf(player.queueId) + 1
   const nextQueueItem = queue.entities[queue.result[nextIdx]]
   // the three singers after the next one, shown during the intermission (11a)
@@ -238,6 +247,11 @@ const PlayerController = (props: PlayerControllerProps) => {
 
   const battleSide = getBattleSide(isBattleOnStage, liveBattle.phase)
   const media = resolveMedia(queueItem as QueueItem | undefined, battleSide)
+  if (isPartyRow) {
+    media.mediaId = partyRound?.closed ? undefined : partyRound?.mediaId
+    media.mediaType = partyRound?.mediaType ?? null
+    media.isVideoKeyingEnabled = false
+  }
 
   // Player owns the page's AudioContext and stays mounted even on the beats
   // where its render returns null, so the crowd microphone can borrow it
@@ -318,7 +332,7 @@ const PlayerController = (props: PlayerControllerProps) => {
       // out loud rather than left to addPlay's INNER JOIN quietly matching
       // nothing on a null songId, which works by accident and would stop
       // working the day that join changed.
-      if (!isTriviaItem(queueItem)) {
+      if (!isTriviaItem(queueItem) && !isPartyItem(queueItem)) {
         dispatch({
           type: SONG_PLAYED,
           payload: {
@@ -363,6 +377,9 @@ const PlayerController = (props: PlayerControllerProps) => {
 
   // song finished on its own: hold for the intermission before loading the next one
   const handleMediaEnd = useCallback(() => {
+    // Natural track end does not discard unanswered guesses. The room can
+    // still answer after the audio ends; the host retains the skip control.
+    if (isPartyRow) return
     // A battle's song running out is not the end of the row. The server owns
     // the sequence, so the player only reports which half finished and waits
     // for the next beat. Falling through to the intermission below would set a
@@ -374,11 +391,10 @@ const PlayerController = (props: PlayerControllerProps) => {
     }
 
     endedRunRef.current = `${player.queueId}:${player._lastReplayTime}`
+    dispatch({ type: SONG_PLAYED, payload: { queueId: player.queueId, isSkipped: false } })
 
-    // Neither the history dispatch nor a timer to clear lives here any more:
-    // a song is recorded as sung on the way out through handleLoadNext, and
-    // the intermission's timer is owned by the effect below so it can re-arm
-    // when a trivia round claims the gap.
+    // Notify the server at completion so an interlude can join the queue
+    // before the handover. The departure notification is idempotent.
 
     // nothing to wait for at the end of the queue
     if (!nextQueueItem) {
@@ -403,7 +419,7 @@ const PlayerController = (props: PlayerControllerProps) => {
       queueId: player.queueId,
       replayTime: player._lastReplayTime,
     })
-  }, [battleSide, dispatch, handleLoadNext, nextQueueItem, player.queueId, player._lastReplayTime])
+  }, [isPartyRow, battleSide, dispatch, handleLoadNext, nextQueueItem, player.queueId, player._lastReplayTime])
 
   // Dev only: end the song early, exactly as if it had run out, so intermission,
   // points and battles all see a normal ending. Its own ref rather than
@@ -420,6 +436,26 @@ const PlayerController = (props: PlayerControllerProps) => {
     devCutRef.current = run
     handleMediaEnd()
   }, [battleSide, handleMediaEnd, player.isPlaying, player.position, player.queueId, player._lastReplayTime])
+
+  useEffect(() => {
+    if (isPartyRow && player.isPlaying && !partyRound && party.resolvedQueueId !== player.queueId) dispatch(partyRequest('start', { queueId: player.queueId }))
+  }, [dispatch, isPartyRow, player.isPlaying, player.queueId, partyRound, party.resolvedQueueId])
+
+  useEffect(() => {
+    if (!isPartyRow || !player.isPlaying) return
+    if (party.resolvedQueueId === player.queueId) {
+      loadNextRef.current()
+      return
+    }
+    if (!partyRoundId) {
+      const timer = setTimeout(() => loadNextRef.current(), 45000)
+      return () => clearTimeout(timer)
+    }
+    if (partyRoundClosed) {
+      const timer = setTimeout(() => loadNextRef.current(), 7000)
+      return () => clearTimeout(timer)
+    }
+  }, [isPartyRow, player.isPlaying, player.queueId, party.resolvedQueueId, partyRoundId, partyRoundClosed])
 
   // Reached a trivia row: ask the room's question. The server decides whether
   // there is one to ask — it owns the shuffle and the countdown, so two
@@ -653,7 +689,7 @@ const PlayerController = (props: PlayerControllerProps) => {
 
   // Which state the text overlay is in, when it is drawn at all — the same
   // ladder it runs, so the join screen and the stage it draws never disagree.
-  const stage = isTriviaRow || isBattleRow
+  const stage = isTriviaRow || isBattleRow || isPartyRow
     ? null
     : overlayState({
         isQueueEmpty: !queue.result.length,
@@ -703,14 +739,14 @@ const PlayerController = (props: PlayerControllerProps) => {
         rect={frameRect}
         width={props.width}
         height={props.height}
-        className={frame === 'song' ? frameStyles.framed : undefined}
+        className={isPartyRow ? partyStyles.audioOnly : frame === 'song' ? frameStyles.framed : undefined}
       >
         <Player
           ref={playerRef}
           cdgAlpha={player.cdgAlpha}
           cdgSize={player.cdgSize}
           isPlaying={player.isPlaying}
-          isVisible={isMediaVisible}
+          isVisible={isPartyRow ? !!partyRound?.mediaId && !partyRound.closed : isMediaVisible}
           keyChange={media.keyChange}
           isReplayGainEnabled={prefs.isReplayGainEnabled}
           isVideoKeyingEnabled={media.isVideoKeyingEnabled}
@@ -743,37 +779,40 @@ const PlayerController = (props: PlayerControllerProps) => {
           qr={<PlayerQR height={props.height} prefs={roomPrefs?.qr} />}
         />
       )}
-      <StageOverlay
-        trivia={trivia}
-        isTriviaOnStage={isTriviaOnStage}
-        isTriviaRow={isTriviaRow}
-        isTriviaLeadIn={isTriviaLeadIn}
-        isBattleRow={isBattleRow}
-        battleQueueId={player.queueId}
-        isBezeled={frame === 'bezel'}
-        battleUpNext={battleUpNext}
-        getAudioCtx={getAudioCtx}
-        width={props.width}
-        height={props.height}
-        overlay={{
-          queueItem: queueItem as QueueItem,
-          nextQueueItem: nextQueueItem as QueueItem,
-          comingUpQueueItems: comingUpQueueItems as QueueItem[],
-          comingUpSongTitles,
-          songTitle: song?.title,
-          songArtist: artist?.name,
-          nextSongTitle: nextSong?.title,
-          nextSongArtist: nextArtist?.name,
-          isAtQueueEnd: player.isAtQueueEnd,
-          isQueueEmpty: !queue.result.length,
-          intermissionEndsAt,
-          isErrored: player.isErrored,
-          venue: roomName,
-          position: player.position,
-          duration: player.duration,
-          getAnalyser,
-        }}
-      />
+      {isPartyRow && <div className={partyStyles.stage}>{partyRound ? <RoundContent round={partyRound} television /> : <h2>{gameLabel(queueItem?.type)}</h2>}</div>}
+      {!isPartyRow && (
+        <StageOverlay
+          trivia={trivia}
+          isTriviaOnStage={isTriviaOnStage}
+          isTriviaRow={isTriviaRow}
+          isTriviaLeadIn={isTriviaLeadIn}
+          isBattleRow={isBattleRow}
+          battleQueueId={player.queueId}
+          isBezeled={frame === 'bezel'}
+          battleUpNext={battleUpNext}
+          getAudioCtx={getAudioCtx}
+          width={props.width}
+          height={props.height}
+          overlay={{
+            queueItem: queueItem as QueueItem,
+            nextQueueItem: nextQueueItem as QueueItem,
+            comingUpQueueItems: comingUpQueueItems as QueueItem[],
+            comingUpSongTitles,
+            songTitle: song?.title,
+            songArtist: artist?.name,
+            nextSongTitle: nextSong?.title,
+            nextSongArtist: nextArtist?.name,
+            isAtQueueEnd: player.isAtQueueEnd,
+            isQueueEmpty: !queue.result.length,
+            intermissionEndsAt,
+            isErrored: player.isErrored,
+            venue: roomName,
+            position: player.position,
+            duration: player.duration,
+            getAnalyser,
+          }}
+        />
+      )}
       {isSoundBlocked && <SoundGate onTap={handleSoundTap} />}
     </>
   )

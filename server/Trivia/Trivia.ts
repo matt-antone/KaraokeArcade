@@ -1,3 +1,4 @@
+import Party from '../Party/Party.js'
 import sql from 'sqlate'
 import { db } from '../lib/Database.js'
 import getLogger from '../lib/Log.js'
@@ -171,7 +172,7 @@ class Trivia {
       // "already sung" is recorded, so that is what has to be excluded here,
       // or a room down to nothing but trivia keeps being handed another round.
       const history = new Set(Rooms.getPlayerHistory(io, roomId))
-      const query = sql`SELECT queueId FROM queue WHERE roomId = ${roomId} AND type <> 'trivia'`
+      const query = sql`SELECT queueId FROM queue WHERE roomId = ${roomId} AND type IN ('song', 'battle')`
       const stillToSing = db.all<{ queueId: number }>(String(query), query.parameters)
         .filter(row => !history.has(row.queueId))
       if (stillToSing.length === 0) return removed
@@ -384,7 +385,12 @@ class Trivia {
 
     active.current = null
 
-    if (isFinal) countRound(roomId, active)
+    if (isFinal) {
+      countRound(roomId, active)
+      const standings = getStandings(active.tally)
+      for (const winner of standings.filter(s => s.points > 0 && s.points === standings[0]?.points)) Party.event(roomId, 'triviaWin', winner.userId)
+    }
+    if (Party.enabled(roomId).bingo) Party.push(io, roomId)
 
     io.to(Rooms.prefix(roomId)).emit('action', {
       type: TRIVIA_RESULT,
@@ -479,6 +485,7 @@ class Trivia {
     // and onto the night's board, which the room is shown when this question
     // closes rather than now — see Points
     Points.add(roomId, userId, points, 'trivia')
+    Party.event(roomId, 'triviaPlay', userId, undefined, isCorrect ? ['triviaCorrect'] : [])
   }
 
   /** Everyone who has answered at least once in this room, best first.

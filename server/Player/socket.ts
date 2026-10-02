@@ -1,3 +1,4 @@
+import Party from '../Party/Party.js'
 import Battle from '../Battle/Battle.js'
 import Points from '../Points/Points.js'
 import Rooms from '../Rooms/Rooms.js'
@@ -49,6 +50,7 @@ const ACTION_HANDLERS = {
     // to move on as for a song — and the round is wound up here, or the phones
     // keep being asked questions about a row that has left the stage.
     Trivia.closeRound(sock.server, sock.user.roomId)
+    Party.finish(sock.server, sock.user.roomId)
 
     // @todo: emit to players only
     sock.server.to(Rooms.prefix(sock.user.roomId)).emit('action', {
@@ -97,7 +99,10 @@ const ACTION_HANDLERS = {
     sock._lastPlayerStatus = payload
 
     // this socket is the TV, not a singer: take it out of the room's count
-    if (!wasPlayer) Rooms.pushSingers(sock.server, sock.user.roomId)
+    if (!wasPlayer) {
+      Rooms.pushSingers(sock.server, sock.user.roomId)
+      Party.sync(sock.server, sock.user.roomId)
+    }
 
     sock.server.to(Rooms.prefix(sock.user.roomId)).emit('action', {
       type: PLAYER_STATUS,
@@ -108,20 +113,22 @@ const ACTION_HANDLERS = {
     // room has none waiting — this is the moment it gets one. On the edge
     // only: status lands several times a second while a song plays.
     if (!wasPlaying && payload.isPlaying) {
-      Trivia.syncQueueAndPush(sock.server, sock.user.roomId)
+      Party.syncQueueAndPush(sock.server, sock.user.roomId)
     }
   },
   // the song left the stage, whether it ended on its own or was skipped
   [SONG_PLAYED]: (sock, { payload }) => {
+    if (!sock.user.isAdmin) return
     User.addPlay({ queueId: payload.queueId, roomId: sock.user.roomId })
 
     // Points only for a song sung to its end, and only on the player's word:
     // it is the one screen that knows whether a song ran out or was cut, and
     // it is admin-only, so a guest's phone cannot pay itself by sending this.
     if (sock.user.isAdmin && !payload.isSkipped) {
-      Points.addSong(sock.user.roomId, payload.queueId)
-      Points.push(sock.server, sock.user.roomId)
+      if (!Party.read<number[]>(sock.user.roomId, 'completed', []).includes(payload.queueId)) Points.addSong(sock.user.roomId, payload.queueId)
     }
+    Party.completed(sock.server, sock.user.roomId, payload.queueId, !!payload.isSkipped)
+    Points.push(sock.server, sock.user.roomId)
   },
   [PLAYER_EMIT_LEAVE]: (sock) => {
     sock._lastPlayerStatus = null

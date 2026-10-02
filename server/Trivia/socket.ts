@@ -7,26 +7,10 @@ import {
 } from '../../shared/actionTypes.js'
 
 const ACTION_HANDLERS = {
-  // The player reached a trivia row in the queue. It asks rather than starts:
-  // the question, the shuffle and the countdown all have to be the room's, not
-  // one client's, or two players in a room would disagree about the answer.
-  [TRIVIA_REQ_ROUND]: async (sock, { payload }, acknowledge) => {
-    const { roomId } = sock.user
+  // Older players may still request a queued full round; let them advance.
+  [TRIVIA_REQ_ROUND]: async (_sock, { payload }, acknowledge) => {
     const { queueId } = payload
-
-    // "A round is already running on this row" and "there is nothing to play
-    // here" are opposite answers and must not share one. The player waits for
-    // the first and moves on from the second; collapsing them into a single
-    // falsy `isStarted` made a duplicate request — which React's StrictMode
-    // guarantees in development — end the round after its first question.
-    // The questions are fetched when the round starts, so this acknowledgement
-    // waits on the network: 'started' means the first question is already on
-    // its way to the room.
-    const status = Trivia.isRoundInProgress(roomId, queueId)
-      ? 'inProgress'
-      : await Trivia.startRound(sock.server, roomId, queueId)
-        ? 'started'
-        : 'unavailable'
+    const status = 'unavailable'
 
     acknowledge({
       type: TRIVIA_REQ_ROUND + '_SUCCESS',

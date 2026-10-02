@@ -32,7 +32,7 @@ export const clampKeyChange = (n: number): number => (
  *  0 rather than null on the wire: every consumer that already filters by
  *  userId or looks a song up by songId keeps working untouched, because no
  *  user or song has id 0. The database stores real NULLs. */
-export type QueueItemType = 'song' | 'trivia' | 'battle'
+export type QueueItemType = 'song' | 'trivia' | 'battle' | 'spot' | 'name'
 
 /** Rounds are told apart by this and nothing else — never by a missing song or
  *  an absent singer, which are consequences rather than the fact itself. */
@@ -71,6 +71,7 @@ const BATTLE_ROTATION_ID = -1
  *  and one of the reserved ids above for the two kinds of row that are the
  *  room's turn rather than anyone's. */
 export const rotationIdOf = (item: { type?: QueueItemType, userId: number }): number => {
+  if (item.type === 'spot' || item.type === 'name') return TRIVIA_ROTATION_ID
   if (isTriviaItem(item)) return TRIVIA_ROTATION_ID
   if (isBattleItem(item)) return BATTLE_ROTATION_ID
 
@@ -142,6 +143,10 @@ export interface SongHistoryItem {
 }
 
 export interface IRoomPrefs {
+  bingo?: { isEnabled?: boolean }
+  roulette?: { isEnabled?: boolean }
+  spotTrivia?: { isEnabled?: boolean }
+  nameThatKaraoke?: { isEnabled?: boolean }
   qr: {
     isEnabled: boolean
     opacity: number

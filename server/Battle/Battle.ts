@@ -1,3 +1,4 @@
+import Party from '../Party/Party.js'
 import sql from 'sqlate'
 import { db } from '../lib/Database.js'
 import getLogger from '../lib/Log.js'
@@ -148,6 +149,9 @@ function payFighters (io, roomId: number, active: ActiveBattle): void {
     ? Points.add(roomId, userId, POINTS_BATTLE_WIN, 'battleWin')
     : Points.add(roomId, userId, POINTS_BATTLE_TAKE_PART, 'battlePlay'))
 
+  if (one > two) Party.event(roomId, 'battleWin', challengerUserId)
+  if (two > one) Party.event(roomId, 'battleWin', opponentUserId)
+  if (Party.enabled(roomId).bingo) Party.push(io, roomId)
   pay(challengerUserId, one > two)
   pay(opponentUserId, two > one)
   Points.push(io, roomId)
@@ -643,6 +647,8 @@ class Battle {
     // them from five minutes later, so this is the last moment they can be
     // saved at all.
     setSingerIds(rowId, challengerSingerId, opponentSingerId)
+    Party.event(roomId, 'battleStart', challengerUserId)
+    if (Party.enabled(roomId).bingo) Party.push(io, roomId)
 
     await emitToUsers(io, roomId, [challengerUserId, opponentUserId], {
       type: BATTLE_INVITE_CLEAR,
@@ -747,6 +753,9 @@ class Battle {
     // a second one armed behind us
     if (active.timer) clearTimeout(active.timer)
 
+    if (active.turn?.phase === 'sing1' || active.turn?.phase === 'sing2') {
+      Party.battleSong(io, roomId, (active.turn.phase === 'sing1' ? active.fighters.challengerSong : active.fighters.opponentSong).songId)
+    }
     active.index++
 
     const phase = active.beats[active.index]

@@ -1,3 +1,4 @@
+import { isPartyItem, gameLabel, type Interlude } from '../../shared/party.js'
 import path from 'path'
 import { db } from '../lib/Database.js'
 import sql from 'sqlate'
@@ -59,7 +60,7 @@ function shapeRow (
   const oppPathPrefs = prefsForPath(row.opponentPathId, row.opponentPathData)
   const item = row as QueueRow & Record<string, unknown>
 
-  item.mediaType = row.type === 'trivia' ? null : getType(row.relPath)
+  item.mediaType = (row.type === 'trivia' || isPartyItem(row)) ? null : getType(row.relPath)
   item.isVideoKeyingEnabled = !!pathPrefs?.isVideoKeyingEnabled
 
   // a round has no singer and no song; 0 keeps every consumer that filters
@@ -95,8 +96,8 @@ function shapeRow (
   // corner panel and in the coming-up line. A round is up next like anyone
   // else, so it is given a name here rather than teaching each of those
   // three places what an absent singer looks like.
-  if (row.type === 'trivia') {
-    item.userDisplayName = 'Trivia'
+  if (row.type === 'trivia' || isPartyItem(row)) {
+    item.userDisplayName = gameLabel(row.type)
     item.isPlayed = row.datePlayed !== null
   }
 
@@ -113,6 +114,13 @@ function shapeRow (
 }
 
 class Queue {
+  static addParty (roomId: number, type: Interlude): number {
+    const pending = db.get<{ queueId: number }>('SELECT queueId FROM queue WHERE roomId = ? AND type IN (\'spot\', \'name\') AND datePlayed IS NULL', [roomId])
+    if (pending) return pending.queueId
+    const res = db.run('INSERT INTO queue (roomId, type, prevQueueId) VALUES (?, ?, (SELECT q.queueId FROM queue q WHERE q.roomId = ? AND NOT EXISTS (SELECT 1 FROM queue n WHERE n.prevQueueId = q.queueId AND n.roomId = q.roomId) ORDER BY q.queueId DESC LIMIT 1))', [roomId, type, roomId])
+    return res.lastID
+  }
+
   /**
    * Add a songId to a room's queue
    */
@@ -388,7 +396,7 @@ class Queue {
         LEFT JOIN paths AS oppPaths ON oppPaths.pathId = oppMedia.pathId
       WHERE queue.roomId = ${roomId}
         AND (
-          queue.type = 'trivia'
+          queue.type IN ('trivia', 'spot', 'name')
           OR (queue.type = 'song' AND media.mediaId IS NOT NULL)
           OR (queue.type = 'battle' AND media.mediaId IS NOT NULL AND oppMedia.mediaId IS NOT NULL)
         )

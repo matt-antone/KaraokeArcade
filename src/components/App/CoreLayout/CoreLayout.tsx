@@ -12,6 +12,7 @@ import Button from 'components/Button/Button'
 import Header from 'components/Header/Header'
 import Navigation from 'components/Navigation/Navigation'
 import Modal from 'components/Modal/Modal'
+import Party from 'components/Party/Party'
 import TriviaDialog from 'components/TriviaDialog/TriviaDialog'
 import ConnectionScreen from '../ConnectionScreen/ConnectionScreen'
 import useSocketStatus from '../ConnectionScreen/useSocketStatus'
@@ -137,6 +138,7 @@ const CoreLayout = () => {
       {/* the answer pad follows the guest across every tab, and never opens on
           the player itself — that screen is showing the question */}
       {hasPopovers && <TriviaDialog />}
+      {hasPopovers && <Party />}
 
       {/* and the challenge follows them the same way — a fight is arranged
           between two phones, and the television has no part in it.

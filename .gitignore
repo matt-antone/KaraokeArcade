@@ -3,6 +3,7 @@ dockerfiles/
 docs/public/
 docs/resources/
 node_modules/
+/node_modules
 
 .DS_Store
 .fallow/

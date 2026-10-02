@@ -1,9 +1,11 @@
+import { gameLabel } from 'shared/party'
 import React from 'react'
 import clsx from 'clsx'
 import TriviaMark from 'components/TriviaMark/TriviaMark'
 import styles from './QueueTriviaItem.css'
 
 interface QueueTriviaItemProps {
+  type?: string
   isPlayed: boolean
   /** 1-based place in the turns still to come. Absent on played rows. */
   position?: number
@@ -21,7 +23,7 @@ interface QueueTriviaItemProps {
  * replaced after each round — so there is nothing here to act on. It answers
  * one question: when is the next round.
  */
-const QueueTriviaItem = ({ isPlayed, position }: QueueTriviaItemProps) => (
+const QueueTriviaItem = ({ isPlayed, position, type }: QueueTriviaItemProps) => (
   <div className={styles.shell}>
     <div className={clsx(styles.container, isPlayed && styles.spent)}>
       {position !== undefined && <div className={styles.position}>{position}</div>}
@@ -31,7 +33,7 @@ const QueueTriviaItem = ({ isPlayed, position }: QueueTriviaItemProps) => (
       </div>
 
       <div className={styles.primary}>
-        <div className={styles.title}>Trivia</div>
+        <div className={styles.title}>{gameLabel(type)}</div>
         <div className={clsx('silkscreen', styles.subtitle)}>
           {isPlayed ? 'Round played' : 'Music round'}
         </div>

@@ -13,6 +13,8 @@ import {
   ROOM_STATUS_PUSH,
 } from '../../shared/actionTypes.js'
 
+vi.mock('../Party/Party.js', () => ({ default: { reset: vi.fn(), push: vi.fn() } }))
+
 vi.mock('./Rooms.js', () => ({
   default: {
     setStatus: vi.fn(),

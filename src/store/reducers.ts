@@ -4,6 +4,7 @@ import { optimistic } from 'redux-optimistic-ui'
 import artists from 'routes/Library/modules/artists'
 import battle from './modules/battle'
 import library from 'routes/Library/modules/library'
+import party from './modules/party'
 import points from './modules/points'
 import prefs from './modules/prefs'
 import queue from 'routes/Queue/modules/queue'
@@ -25,6 +26,7 @@ const combinedReducer = combineSlices({
   battle,
   library,
   points,
+  party,
   prefs,
   queue: optimistic(queue),
   rooms,

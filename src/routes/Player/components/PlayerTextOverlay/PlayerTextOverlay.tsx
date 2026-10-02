@@ -1,3 +1,4 @@
+import { isPartyItem } from 'shared/party'
 import React from 'react'
 import CornerPanel from './CornerPanel/CornerPanel'
 import SpriteLoop from 'components/SpriteLoop/SpriteLoop'
@@ -39,7 +40,7 @@ interface PlayerTextOverlayProps {
 const IDLE_LEVEL = 13 / 32
 
 /** The rows that are not a singer: the next row's own screen names them. */
-const isSingerRow = (item?: QueueItem): item is QueueItem => !!item && !isTriviaItem(item) && !isBattleItem(item)
+const isSingerRow = (item?: QueueItem): item is QueueItem => !!item && !(isTriviaItem(item) || isPartyItem(item)) && !isBattleItem(item)
 
 // Before a battle the page stands down to its clock: the battle's own `versus`
 // beat names both fighters and both songs, and this page can only name one.

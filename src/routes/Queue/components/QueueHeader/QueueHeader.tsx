@@ -1,3 +1,4 @@
+import { isPartyItem, gameLabel } from 'shared/party'
 import React from 'react'
 import { ensureState } from 'redux-optimistic-ui'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
@@ -29,11 +30,11 @@ const QueueHeader = () => {
   const artists = useAppSelector(state => state.artists)
 
   const current = isAtQueueEnd ? undefined : queue.entities[queueId]
-  const song = current && !isTriviaItem(current) ? songs.entities[current.songId] : undefined
+  const song = current && !(isTriviaItem(current) || isPartyItem(current)) ? songs.entities[current.songId] : undefined
 
   let stage: NowSingingProps = { isEmpty: true }
-  if (current && isTriviaItem(current)) {
-    stage = { singer: 'Trivia', avatarId: null }
+  if (current && (isTriviaItem(current) || isPartyItem(current))) {
+    stage = { singer: gameLabel(current.type), avatarId: null }
   } else if (current && song) {
     stage = {
       avatarId: isBattleItem(current) ? current.singerId : current.userAvatarId,

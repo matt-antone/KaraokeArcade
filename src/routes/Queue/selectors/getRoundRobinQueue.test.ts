@@ -249,3 +249,29 @@ describe('getRoundRobinQueue with a battle', () => {
     expect(getRoundRobinQueue(paused).result).not.toContain(7)
   })
 })
+
+describe('alternating room games in the singer rotation', () => {
+  it.each(['spot', 'name'])('gives %s the old trivia slot without jumping the next singer', (type) => {
+    const input = state({ history: [1], queueId: 1, nextUserId: 2 })
+    input.queue = {
+      ...input.queue,
+      result: [...input.queue.result, 9],
+      entities: { ...ENTITIES, 9: { queueId: 9, type, userId: 0, songId: 0, prevQueueId: 5 } },
+    }
+    expect(getRoundRobinQueue(input).result).toEqual([1, 4, 9, 2, 5, 3])
+  })
+
+  it('treats both games as the same room turn across successive laps', () => {
+    const input = state({ history: [1, 4, 9], queueId: 9 })
+    input.queue = {
+      ...input.queue,
+      result: [...input.queue.result, 9, 10],
+      entities: {
+        ...ENTITIES,
+        9: { queueId: 9, type: 'spot', userId: 0, songId: 0, isPlayed: true },
+        10: { queueId: 10, type: 'name', userId: 0, songId: 0 },
+      },
+    }
+    expect(getRoundRobinQueue(input).result).toEqual([1, 4, 9, 2, 5, 10, 3])
+  })
+})

@@ -1,6 +1,8 @@
 import getLogger from './lib/Log.js'
 import jsonWebToken from 'jsonwebtoken'
 import parseCookie from './lib/parseCookie.js'
+import Party from './Party/Party.js'
+import PartySocket from './Party/socket.js'
 import Battle from './Battle/Battle.js'
 import BattleSocket from './Battle/socket.js'
 import Library from './Library/Library.js'
@@ -12,7 +14,6 @@ import Rooms, { STATUSES } from './Rooms/Rooms.js'
 import RoomsSocket from './Rooms/socket.js'
 import Queue from './Queue/Queue.js'
 import QueueSocket from './Queue/socket.js'
-import Trivia from './Trivia/Trivia.js'
 import TriviaSocket from './Trivia/socket.js'
 import Points from './Points/Points.js'
 
@@ -27,7 +28,6 @@ import {
   PLAYER_STATUS,
   PLAYER_LEAVE,
   PREFS_PUSH,
-  TRIVIA_ROUND,
   SOCKET_AUTH_ERROR,
   _ERROR,
 } from '../shared/actionTypes.js'
@@ -38,6 +38,7 @@ const log = getLogger('server')
 // acknowledge — and the client's optimistic transaction then waits for an
 // answer that is never coming, for the life of the page.
 const handlers = {
+  ...PartySocket,
   ...BattleSocket,
   ...LibrarySocket,
   ...QueueSocket,
@@ -95,6 +96,7 @@ export default function (io, jwtKey) {
       }
 
       Rooms.pushSingers(io, sock.user.roomId)
+      Party.sync(io, sock.user.roomId)
     })
 
     // attach action handler
@@ -169,6 +171,7 @@ export default function (io, jwtKey) {
     // add user to room and track membership
     sock.join(Rooms.prefix(sock.user.roomId))
     Rooms.trackUser(sock.user.roomId, sock.user.userId)
+    Party.push(io, sock.user.roomId)
     Rooms.pushSingers(io, sock.user.roomId)
 
     // if there's a player in room, emit its last known status
@@ -213,22 +216,7 @@ export default function (io, jwtKey) {
     if (Points.join(sock.user.roomId, sock.user.userId)) Points.push(io, sock.user.roomId)
     else Points.push(io, sock.user.roomId, sock.id)
 
-    // A room whose queue predates trivia being switched on has no round waiting
-    // in it; put one there rather than making someone queue a song first.
-    Trivia.syncQueueAndPush(io, sock.user.roomId)
-
-    // a guest who picked their phone up mid-question still gets to answer it
-    const round = Trivia.getRound(sock.user.roomId)
-
-    if (round) {
-      io.to(sock.id).emit('action', {
-        type: TRIVIA_ROUND,
-        // re-stamped: this phone is meeting the round part-way through, and
-        // its own clock offset has to be measured against now, not against
-        // whenever the room first saw the question
-        payload: { ...round, sentAt: Date.now() },
-      })
-    }
+    Party.syncQueueAndPush(io, sock.user.roomId)
 
     // A challenge is only ever sent to the two phones it concerns, so a
     // fighter whose phone dropped and came back has no other way to get it —

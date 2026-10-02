@@ -1,3 +1,4 @@
+import { isPartyItem } from 'shared/party'
 import React from 'react'
 import { DragDropContext, Draggable, Droppable, DropResult, DraggableProvidedDragHandleProps } from '@hello-pangea/dnd'
 import { useAppDispatch, useAppSelector } from 'store/hooks'
@@ -37,7 +38,7 @@ const QueueList = () => {
     let lastPlayed = queueId // default in case user has no played items
 
     for (let i = queue.result.indexOf(queueId); i >= 0; i--) {
-      if (isTriviaItem(queue.entities[queue.result[i]])) continue
+      if ((isTriviaItem(queue.entities[queue.result[i]]) || isPartyItem(queue.entities[queue.result[i]]))) continue
       if (queue.entities[queue.result[i]].userId === userId) {
         lastPlayed = queue.result[i]
         break
@@ -130,8 +131,8 @@ const QueueList = () => {
 
     // a round has no song to read a duration or an artist from, and none of
     // the row's actions apply to it
-    if (isTriviaItem(item)) {
-      return <QueueTriviaItem key={qId} isPlayed={isPlayed} position={position} />
+    if ((isTriviaItem(item) || isPartyItem(item))) {
+      return <QueueTriviaItem key={qId} isPlayed={isPlayed} position={position} type={item.type} />
     }
 
     // Two singers and two songs, so nothing in renderSong applies: it reads a
@@ -183,7 +184,7 @@ const QueueList = () => {
                   // every enabled Draggable has one, and the assert fires as a
                   // console error on every render. A held row keeps its place
                   // until its singer is back, so it does not move either.
-                  isDragDisabled={isTriviaItem(queue.entities[qId]) || isBattleItem(queue.entities[qId])
+                  isDragDisabled={(isTriviaItem(queue.entities[qId]) || isPartyItem(queue.entities[qId])) || isBattleItem(queue.entities[qId])
                     || (queueTab === 'queue' && pausedUserIds.includes(queue.entities[qId].userId))}
                 >
                   {dragProvided => (

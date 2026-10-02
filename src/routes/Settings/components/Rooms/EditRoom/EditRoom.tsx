@@ -1,3 +1,4 @@
+import InputCheckbox from 'components/InputCheckbox/InputCheckbox'
 import React, { useRef, useState } from 'react'
 import { useAppDispatch } from 'store/hooks'
 import { createRoom, removeRoom, updateRoom, requestPrefsPush } from 'store/modules/rooms'
@@ -6,7 +7,6 @@ import Modal from 'components/Modal/Modal'
 import useConfirm from 'components/Modal/useConfirm'
 import UserPrefs from './UserPrefs/UserPrefs'
 import QRPrefs from './QRPrefs/QRPrefs'
-import TriviaPrefs from './TriviaPrefs/TriviaPrefs'
 import BattlePrefs from './BattlePrefs/BattlePrefs'
 import type { Room, IRoomPrefs } from 'shared/types'
 import styles from './EditRoom.css'
@@ -110,7 +110,9 @@ const EditRoom = ({ onClose, room }: EditRoomProps) => {
         <div className={styles.prefsContainer}>
           <UserPrefs prefs={prefs} onChange={handlePrefsChange} />
           <QRPrefs prefs={prefs} onChange={handlePrefsChange} roomPassword={roomPassword} roomPasswordDirty={isPasswordDirty} />
-          <TriviaPrefs prefs={prefs} onChange={handlePrefsChange} roomId={room?.roomId} />
+          {(['bingo', 'roulette', 'spotTrivia', 'nameThatKaraoke'] as const).map((game, index) => (
+            <InputCheckbox key={game} label={['Karaoke bingo', 'Karaoke roulette', 'Spot Trivia', 'Name That Karaoke'][index]} checked={!!prefs[game]?.isEnabled} onChange={event => handlePrefsChange({ ...prefs, [game]: { isEnabled: event.currentTarget.checked } })} />
+          ))}
           <BattlePrefs prefs={prefs} onChange={handlePrefsChange} />
         </div>
 

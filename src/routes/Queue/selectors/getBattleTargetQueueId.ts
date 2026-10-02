@@ -1,3 +1,4 @@
+import { isPartyItem } from 'shared/party'
 import type { RootState } from 'store/store'
 import { ensureState } from 'redux-optimistic-ui'
 import { createSelector } from '@reduxjs/toolkit'
@@ -34,7 +35,7 @@ const getBattleTargetQueueId = createSelector(
       // carries was invented by the reducer and belongs to nothing. A trivia
       // round is nobody's turn to spend, and a row that is already a battle
       // cannot be spent twice.
-      if (item.isOptimistic === true || isTriviaItem(item) || isBattleItem(item)) continue
+      if (item.isOptimistic === true || (isTriviaItem(item) || isPartyItem(item)) || isBattleItem(item)) continue
 
       return qId
     }

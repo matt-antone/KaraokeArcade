@@ -25,10 +25,9 @@ const SettingsView = () => {
 
   return (
     <div className={styles.container}>
-      {/* 09's order: the room, who is in it, the machine playing it, the media */}
       <Rooms />
-      <Users />
       <Player />
+      <Users />
       <Prefs />
     </div>
   )

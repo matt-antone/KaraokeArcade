@@ -25,6 +25,7 @@ export default function publicRoomPrefs (prefs: Partial<IRoomPrefs> | undefined)
   if (!prefs) return {}
 
   return {
+    ...Object.fromEntries(['bingo', 'roulette', 'spotTrivia', 'nameThatKaraoke'].filter(key => prefs[key]).map(key => [key, prefs[key]])),
     // which kinds of account the sign-up form may offer
     ...(prefs.roles ? { roles: prefs.roles } : {}),
     // Whether the header's Battle key is live. Without this that key is dead

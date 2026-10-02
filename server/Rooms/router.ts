@@ -1,3 +1,4 @@
+import Party from '../Party/Party.js'
 import KoaRouter from '@koa/router'
 import { requireAdmin } from '../lib/util.js'
 import sql from 'sqlate'
@@ -71,9 +72,7 @@ router.put('/:roomId', requireAdmin, async (ctx) => {
 
   log.verbose('%s updated a room (roomId: %s)', ctx.user.name, roomId)
 
-  // trivia may have just been switched on or off, which adds or removes the
-  // round waiting in the queue. Pushes the queue only if it actually changed.
-  Trivia.syncQueueAndPush(ctx.io, roomId)
+  Party.sync(ctx.io, roomId)
 
   const sockets = await ctx.io.in(Rooms.prefix(roomId)).fetchSockets()
 
@@ -143,6 +142,7 @@ router.delete('/:roomId', requireAdmin, (ctx) => {
   Points.reset(roomId)
 
   Trivia.stopRoom(roomId)
+  Party.reset(roomId)
 
   // same for a battle: its beats are on setTimeout and the room they emit into
   // is about to stop existing

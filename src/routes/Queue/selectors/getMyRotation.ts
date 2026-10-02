@@ -1,3 +1,4 @@
+import { isPartyItem } from 'shared/party'
 import type { RootState } from 'store/store'
 import { createSelector } from '@reduxjs/toolkit'
 import { isBattleItem, isTriviaItem } from 'shared/types'
@@ -30,7 +31,7 @@ const getMyRotation = createSelector(
     for (const qId of result.slice(result.indexOf(queueId) + 1)) {
       // a trivia round takes a turn but is nobody's turn: counting it would
       // make the rotation one longer than the number of singers in it
-      if (isTriviaItem(entities[qId])) continue
+      if ((isTriviaItem(entities[qId]) || isPartyItem(entities[qId]))) continue
 
       const singer = entities[qId]?.userId
       if (singer !== undefined && !order.includes(singer)) order.push(singer)

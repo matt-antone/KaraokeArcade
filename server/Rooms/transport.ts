@@ -1,3 +1,4 @@
+import Party from '../Party/Party.js'
 import Rooms from './Rooms.js'
 import Battle from '../Battle/Battle.js'
 import Queue from '../Queue/Queue.js'
@@ -52,6 +53,8 @@ export default function setRoomTransport (io, roomId: number, status: string): v
   // throws away.
   Queue.clear(roomId)
   Trivia.resetScores(roomId)
+  Party.reset(roomId)
+  Party.push(io, roomId)
   Points.reset(roomId)
   Points.push(io, roomId)
 

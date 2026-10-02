@@ -6,7 +6,7 @@ import { POINTS_PUSH } from '../../shared/actionTypes.js'
 
 /** What a payment was for, which decides the ledger column it counts toward
  *  (023): a song, a battle won, a battle lost or drawn, or a trivia answer. */
-type PointsKind = 'sing' | 'battleWin' | 'battlePlay' | 'trivia'
+type PointsKind = 'sing' | 'battleWin' | 'battlePlay' | 'trivia' | 'party'
 
 type Ledger = Pick<LeaderboardEntry, 'points' | 'sings' | 'battleWins' | 'battlePlays' | 'triviaPoints' | 'triviaRounds'>
 

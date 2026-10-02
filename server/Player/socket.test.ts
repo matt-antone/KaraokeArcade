@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest'
+vi.mock('../Party/Party.js', () => ({ default: { sync: vi.fn() } }))
+import { describe, it, expect, vi } from 'vitest'
 import handlers from './socket.js'
 import { PLAYER_EMIT_LEAVE, PLAYER_EMIT_STATUS, PLAYER_STATUS, ROOM_SINGERS_PUSH } from '../../shared/actionTypes.js'
 

@@ -331,6 +331,15 @@ export const clampTriviaCountdown = (n: number): number => (
     : TRIVIA_COUNTDOWN_DEFAULT
 )
 
+/** How long the pad's Final screen (12g/12g2) rests before it puts itself
+ *  away. It is drawn in a native `<dialog>`, which sits in the browser's top
+ *  layer above every other screen regardless of z-index — a phone nobody is
+ *  holding leaves it there through whatever comes next on that device, most
+ *  visibly a battle ballot the guest can see on the TV but never tap. Long
+ *  enough to read a standing; bounded so an unattended one cannot block the
+ *  room all night. */
+export const TRIVIA_FINAL_REST_MS = 45000
+
 /** A round in progress, as the room sees it. Deliberately carries no hint of
  *  which answer is right: the player screen and every phone get this same
  *  payload, and a client that knows the answer early is a client that can be
